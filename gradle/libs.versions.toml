@@ -2,16 +2,18 @@
 kotlin = "2.1.20"
 simbot-core = "4.14.0"
 simbot-qq = "4.2.2"
-ktor = "2.3.0"
-koin-ktor = "4.1.1"
+ktor = "2.3.12"
+koin = "3.5.5"
+
 
 [libraries]
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 simbot-core = { module = "love.forte.simbot:simbot-core", version.ref = "simbot-core" }
 simbot-component-qq = { module = "love.forte.simbot.component:simbot-component-qq-guild-core", version.ref = "simbot-qq" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
-koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin-ktor" }
+koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-freemarker = { module = "io.ktor:ktor-freemarker", version = "1.6.8" }
 ktor-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 [plugins]

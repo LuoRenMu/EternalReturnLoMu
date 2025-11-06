@@ -4,9 +4,10 @@ import cn.luorenmu.command.entity.CommandFindResult
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.CommandFilter
 import cn.luorenmu.common.util.ReflectionUtil
+import cn.luorenmu.exception.MessageReplyException
+import io.github.oshai.kotlinlogging.KotlinLogging
 import love.forte.simbot.component.qguild.event.QGGroupAtMessageCreateEvent
 import love.forte.simbot.event.Event
-import org.slf4j.LoggerFactory
 
 
 /**
@@ -14,7 +15,7 @@ import org.slf4j.LoggerFactory
  * @author LoMu
  * Date 2025/10/24 13:42
  */
-private val log = LoggerFactory.getLogger("cn.luorenmu.LoMu-QQBot")
+private val log = KotlinLogging.logger {}
 
 class CommandListenAllocator {
     companion object {
@@ -32,6 +33,7 @@ class CommandListenAllocator {
                     result[command] = obj
                 }
             }
+            log.debug { "COMMANDS: $result" }
             result
         }
 
@@ -46,6 +48,8 @@ class CommandListenAllocator {
                 val split = key.split("\\s".toRegex())
                 result[split[0].trim()] = key
             }
+            log.debug { "COMMAND_MATCH: $result" }
+
             result
         }
     }
@@ -56,8 +60,12 @@ class CommandListenAllocator {
                 val plainText = event.messageContent.plainText.trim()
                 val result = commandFind(plainText)
                 result?.let { it ->
-                    it.eventObj.listen(MessageSender.builder(event, it.commandParse))?.apply {
-                        event.reply(this)
+                    try {
+                        it.eventObj.listen(MessageSender.builder(event, it.commandParse))?.apply {
+                            event.reply(this)
+                        }
+                    } catch (e: MessageReplyException) {
+                        event.reply(e.returnMsg)
                     }
                 } ?: run {
                     // 未找到命令
@@ -72,8 +80,6 @@ class CommandListenAllocator {
             val originCommand = plainText.replaceFirst("/", "")
             val inputCommand = originCommand.split("\\s".toRegex())
             val inputCommandFirst = inputCommand[0]
-            log.debug("COMMAND_MATCH: {}", COMMAND_MATCH)
-            log.debug("COMMANDS: {}", COMMANDS)
             val command = COMMAND_MATCH[inputCommandFirst] ?: run { return null }
             return CommandFindResult(COMMANDS[command]!!, parseCommand(command, originCommand))
         }

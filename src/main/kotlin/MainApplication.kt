@@ -2,18 +2,30 @@ package cn.luorenmu
 
 
 import cn.luorenmu.api.qqBotRouting
+import cn.luorenmu.api.resourcesRouting
+import cn.luorenmu.api.templateRouting
+import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.listen.GroupAtMessageCreateListen
+import cn.luorenmu.render.PlayerPageRender
+import cn.luorenmu.render.TierStatisticsNumberRender
 import cn.luorenmu.service.QGBotService
+import cn.luorenmu.service.ResourcesDownloadService
+import cn.luorenmu.service.TemplateService
+import freemarker.cache.ClassTemplateLoader
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
+import io.ktor.server.freemarker.*
 import io.ktor.server.netty.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import love.forte.simbot.application.listeners
 import love.forte.simbot.common.function.ConfigurerFunction
 import love.forte.simbot.component.qguild.event.QGAtMessageCreateEvent
-import love.forte.simbot.component.qguild.event.QGGroupAtMessageCreateEvent
 import love.forte.simbot.component.qguild.firstQQGuildBotManager
 import love.forte.simbot.component.qguild.useQQGuild
 import love.forte.simbot.core.application.launchSimpleApplication
@@ -22,7 +34,10 @@ import love.forte.simbot.event.EventResult
 import love.forte.simbot.event.listen
 import love.forte.simbot.event.process
 import love.forte.simbot.qguild.event.EventIntents
-import kotlin.reflect.full.isSubclassOf
+import org.koin.dsl.module
+import org.koin.ktor.plugin.Koin
+import java.io.FileInputStream
+import java.util.concurrent.Executors
 
 /**
  *
@@ -32,13 +47,23 @@ import kotlin.reflect.full.isSubclassOf
  */
 class MainApplication
 
+private val json = Json.parseToJsonElement(FileInputStream("C:\\Users\\LoMu\\Desktop\\Game\\qgbot token").use {
+    it.bufferedReader().readText()
+})
+public  val APP_ID = json.jsonObject["APP_ID"]!!.jsonPrimitive.content
+private  val SECRET = json.jsonObject["SECRET"]!!.jsonPrimitive.content
+private  val TOKEN = json.jsonObject["TOKEN"]!!.jsonPrimitive.content
 
+public val apiKey = mutableMapOf("x-api-key" to json.jsonObject["API_KEY"]!!.jsonPrimitive.content)
+
+const val SERVER_PORT = 8080
 
 lateinit var simbotApplication: love.forte.simbot.application.Application
 
-suspend fun main(args: Array<String>) {
+suspend fun main1(args: Array<String>) {
+    BrowserPool.getBrowser()
     simbotApplication = launchSimbot()
-    embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
+    embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0") {
         module()
     }.start(wait = true)
 }
@@ -93,16 +118,39 @@ suspend fun love.forte.simbot.application.Application.configure() {
 
 fun Application.module() {
     configureRouting()
+    configureInstall()
+}
+
+
+val appModule = module {
+    single { TemplateService() }
+    single { ResourcesDownloadService() }
+    single { QGBotService() }
+    single { PlayerPageRender() }
+    single { TierStatisticsNumberRender() }
+    single { Executors.newFixedThreadPool(10).asCoroutineDispatcher() }
+}
+
+fun Application.configureInstall() {
+    install(FreeMarker) {
+        templateLoader = ClassTemplateLoader(this::class.java.classLoader, "static/templates")
+    }
+
+    install(Koin) {
+        modules(appModule)
+    }
+
 }
 
 
 fun Application.configureRouting() {
-    val qgBotService = QGBotService()
     routing {
         get("/") {
-            call.respondText("Hello World!", ContentType.Text.Html)
+            call.respondText("Biu biu ~", ContentType.Text.Html)
             return@get
         }
-        qqBotRouting(qgBotService)
+        templateRouting()
+        qqBotRouting()
+        resourcesRouting()
     }
 }
