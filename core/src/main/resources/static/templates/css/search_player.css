@@ -1,0 +1,689 @@
+* {
+    padding: 0;
+    margin: 0;
+    font-family: '微软雅黑';
+}
+
+body {
+    background-color: #F5F5F5;
+}
+
+#content-container {
+    overflow: hidden;
+    width: 1200px;
+    background-size: cover;
+    background-position: center;
+    padding: 20px;
+}
+
+#header {
+    width: 1200px;
+    overflow: hidden;
+}
+
+#banner_user_info {
+    height: 177px;
+    width: 100%;
+    border-radius: 10px 10px 0 0;
+    height: 177px;
+    width: 100%;
+    background-size: contain;
+    background-position: center;
+    background-image: url("https://cdn.dak.gg/er/images/bg/bg-landing-search-v9.jpg");
+    box-sizing: content-box;
+    border: 1px solid #363944;
+}
+
+#describe {
+    width: 100%;
+    border: 1px solid rgb(54, 57, 68);
+    height: 34px;
+    background-color: rgb(54, 57, 68);
+    text-align: center;
+}
+
+
+.profile-image-wrapper,
+#header>.profile-image-wrapper img {
+    width: 222px;
+    height: 177px;
+    float: left;
+}
+
+
+#top {
+    width: 355px;
+    height: 100px;
+    float: left;
+    font-weight: bold;
+    margin-left: 20px;
+    margin-top: 50px;
+    text-align: left;
+    color: rgb(255, 255, 255);
+}
+
+.nickname {
+    margin-top: 10px;
+    font-size: 28px;
+}
+
+#verison {
+    margin-right: 10px;
+    margin-top: 10px;
+    float: right;
+    font-size: 10px;
+    height: 20px;
+    border: 1px #808080 solid;
+    border-radius: 8px;
+}
+
+#logo {
+    color: #d1cfcf;
+    font-size: 10px;
+    line-height: 34px;
+}
+
+
+#top>p {
+    margin-top: 20px;
+    font-size: 12px;
+    color: #ffffff;
+}
+
+.level {
+    width: 70px;
+    text-align: center;
+    border-radius: 30px;
+    border: 2px solid #ffffff;
+}
+
+#body {
+    width: 100%;
+    margin-top: 20px;
+    float: left;
+}
+
+#left {
+    float: left;
+    border-radius: 10px;
+    margin-top: 20px;
+    width: 352px;
+}
+
+
+#right {
+    padding: 20px;
+    margin-left: 20px;
+    width: 775px;
+    height: 100%;
+    float: left;
+
+}
+
+#rank {
+    border-radius: 10px;
+    background-color: #fff;
+    overflow: hidden;
+    display: inline-block;
+    width: 100%;
+    border: 1px solid rgb(230, 230, 230);
+    text-align: center;
+}
+
+#rank>h4 {
+    padding: 10px 0;
+    font-size: 20px;
+    border-bottom: 1px solid rgb(230, 230, 230);
+}
+
+#score {
+    height: 106px;
+    border-bottom: 1px solid rgb(230, 230, 230);
+}
+
+#rp_img,
+#rp_box {
+    display: inline-block;
+}
+
+#rp_img {
+    margin-top: 20px;
+    height: 64px;
+    width: 64px;
+    vertical-align: top;
+}
+
+#rp_box {
+    margin-left: 15px;
+    margin-top: 25px;
+}
+
+#rp {
+    font-size: 25px;
+    font-weight: 900;
+    color: #CA9372;
+}
+
+#rp_name {
+    font-size: 12px;
+    font-weight: 900;
+}
+
+#record {
+    height: 135px;
+
+    text-align: center;
+    padding: 10px 0;
+    margin-bottom: 10px;
+}
+
+
+.record_box {
+    background-color: #f0e9e9;
+    margin: 5px;
+    border-radius: 5px;
+    display: inline-block;
+    width: 100px;
+    height: 40px;
+}
+
+.record_box>h4:nth-child(2) {
+    color: #ff500b
+}
+
+.record_box>h4 {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+
+
+
+
+.war_record {
+    border: 1px solid rgb(230, 230, 230);
+    margin-top: 35px;
+    height: 100%;
+    width: 810px;
+    border-radius: 20px;
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.game_id {
+    font-size: 14px;
+    position: absolute;
+    color: #1b1a1a93;
+    font-weight: bold;
+    top: -11px;
+    left: 50%;
+    height: 20px;
+    padding: 0 10px;
+    text-align: center;
+    line-height: 20px;
+    z-index: 0;
+    border-radius: 5px 5px 0 0;
+    background-color: #ffffff;
+    border: 1px solid rgb(230, 230, 230);
+    transform: translate(-50%, -50%);
+}
+
+.war_record_left_top1,
+.war_record_left_top2,
+.war_record_left_top3,
+.war_record_left_escape {
+    border-radius: 20px 0 0 20px;
+    height: 100%;
+    width: 15px;
+    position: absolute;
+}
+
+
+
+.war_record_right_top1,
+.war_record_right_top2,
+.war_record_right_top3,
+.war_record_right_escape {
+    border-radius: 0 20px 20px 0;
+    height: 100%;
+    width: 15px;
+    right: 0;
+    position: absolute;
+}
+
+.war_record_right_escape,
+.war_record_left_escape {
+    background-color: #475482;
+}
+
+
+.war_record_left_top1,
+.war_record_right_top1,
+.war_record_left_top1,
+.war_record_right_top1 {
+    background-color: #11B288;
+}
+
+.war_record_left_top2,
+.war_record_right_top2,
+.war_record_right_top2,
+.war_record_left_top2 {
+    background-color: #207AC7;
+}
+
+.war_record_left_top3,
+.war_record_right_top3,
+.war_record_right_top3,
+.war_record_left_top3 {
+    background-color: #4b525d;
+}
+
+.war_rank {
+    margin-top: 5px;
+    width: 60px;
+    height: 66px;
+    padding-left: 25px;
+    padding-top: 10px;
+    font-size: 14px;
+    float: left;
+}
+
+.war_rank>div {
+    margin: 5px;
+    height: 14px;
+    width: 66px;
+}
+
+.war_rank>div:nth-child(1) {
+    margin-top: 0;
+    color: #999999;
+    font-size: 14px;
+}
+
+.war_rank>div:nth-child(2) {
+    color: #000000;
+    font-size: 12px;
+}
+
+.war_rank>div:nth-child(3) {
+    color: #999999;
+    font-size: 12px;
+}
+
+.war_rank>div:nth-child(4) {
+    color: #999999;
+    font-size: 12px;
+}
+
+
+.war_record_character_info {
+    margin-top: 4px;
+    float: left;
+    width: 54px;
+    height: 74px;
+    text-align: center;
+}
+
+.war_record_character_info .character_name {
+    width: 64px;
+    text-align: center;
+    font-size: 12px;
+}
+
+
+.hero_avatar,
+.hero_avatar>img {
+    width: 64px;
+    height: 64px;
+}
+
+.hero_avatar {
+    margin-top: 5px;
+}
+
+.hero_avatar>img {
+    border-radius: 50%;
+}
+
+.war_record1 {
+    height: 98px;
+    width: 100% -10;
+    overflow: hidden;
+}
+
+.war_record2 {
+    overflow: hidden;
+    height: 50px;
+    width: 100% -10;
+    border-top: 1px solid rgb(230, 230, 230);
+}
+
+
+.war_record2 .hero_avatar,
+.war_record2 .hero_avatar>img {
+    float: left;
+    width: 32.65px;
+    height: 32.65px;
+    margin-top: 2.55px;
+}
+
+
+.war_record2 .play_data {
+    margin-top: 7px;
+    margin-left: 8px;
+    width: 280px;
+    height: 35.2px;
+}
+
+
+
+.war_record2 .skill {
+    margin-top: 5px;
+    margin-left: 5px;
+    width: 48px;
+    height: 48px;
+
+}
+
+
+.weapon {
+    border-radius: 20px;
+    background-color: #323232;
+}
+
+.war_record2 .damage {
+    margin-left: 150px;
+}
+
+.war_record2 .play_data {
+    margin-left: 50px;
+}
+
+.teammate_rp_img {
+    margin-left: 25px;
+    margin-top: 3px;
+    float: left;
+    width: 14px;
+    height: 14px;
+}
+
+.teammate_rp span {
+    margin-left: 5px;
+    margin-top: 2px;
+    float: left;
+    font-size: 12px;
+    color: #808080;
+}
+
+.war_record2 .weapon,
+.war_record2 .trait {
+    width: 16.24px;
+    height: 16.24px;
+}
+
+
+.war_record2 .stat,
+.war_record2 .play_data_title {
+    font-size: 14px;
+}
+
+.war_record2 .label,
+.war_record2 .play_data_label {
+    margin-top: 2px;
+    font-size: 12px;
+}
+
+.weapon,
+.trait {
+    height: 24px;
+    display: inline-block;
+    width: 24px;
+}
+
+.war_record2 .item_box {
+    margin-left: 75px;
+    margin-top: 6px;
+    width: 102.4px;
+    height: 41.6px;
+}
+
+.war_record2 .item {
+    width: 27.4px;
+    height: 17.4px;
+}
+
+
+.skill {
+    margin-top: 20px;
+    margin-left: 20px;
+    width: 54px;
+    height: 54px;
+    float: left;
+}
+
+img {
+    width: 100%;
+    height: 100%;
+}
+
+
+
+.play_data {
+    margin-top: 30px;
+    padding-left: 20px;
+    height: 44px;
+    width: 400px;
+    float: left;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+
+
+.play_stat,
+.damage,
+.rp,
+.route {
+    height: 100%;
+}
+
+
+.rp svg {
+    width: 8px;
+    height: 5px;
+}
+
+
+.play_data_title {
+    font: 14px;
+    font-weight: bold;
+}
+
+.play_data_label {
+    margin-top: 3px;
+    font-size: 12px;
+    text-align: center;
+    color: #808080;
+}
+
+.rp span {
+    font-size: 13px;
+    font-weight: normal;
+    color: red;
+}
+
+.item_box {
+    margin-top: 23px;
+    width: 128px;
+    float: right;
+    margin-right: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: center;
+    height: 52px;
+}
+
+.item {
+    position: relative;
+    background-color: #E6E6E6;
+    border-radius: 4px;
+    width: 40.5px;
+    height: 25.5px;
+    list-style: none;
+}
+
+
+.item_box>.item:nth-child(1),
+.item_box>.item:nth-child(2),
+.item_box>.item:nth-child(3) {
+    margin-bottom: 2px;
+}
+
+.item_box>.item:nth-child(2),
+.item_box>.item:nth-child(3),
+.item_box>.item:nth-child(5) {
+    margin-left: 2px;
+}
+
+.item_bg {
+    position: relative;
+    z-index: 1;
+}
+
+
+.item_img {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 50%;
+    height: 80%;
+    width: 80%;
+    transform: translate(-50%, -50%);
+}
+
+.teammate_name {
+    float: left;
+    width: 130px;
+    margin-left: 20px;
+    margin-top: 7px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.teammate_name .play_name {
+    overflow: hidden;
+    text-overflow: ellipsis
+}
+
+.teammate_name .character_name {
+    font-size: 9px;
+    color: #323232;
+}
+
+
+
+#recent_play,
+#rank_character_stats {
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+    margin-top: 30px;
+    border-collapse: collapse;
+    background-color: rgb(255, 255, 255);
+    width: 100%;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+
+td {
+    border-bottom: solid 1px rgb(201, 201, 201);
+}
+
+
+#recent_play>thead,
+#rank_character_stats>thead {
+    color: rgb(255, 255, 255);
+    background: rgb(54, 57, 68);
+}
+
+#recent_play>thead>tr>th,
+#rank_character_stats>thead>tr>th {
+    height: 40px;
+}
+
+
+#recent_play>tbody>tr>td {
+    height: 40px;
+}
+
+.character {
+    text-indent: 10px;
+    text-align: left;
+}
+
+.info {
+    overflow: hidden;
+    margin-top: 5px;
+    margin-left: 8px;
+    float: left;
+    height: 38px;
+    font-size: 13px;
+}
+
+.plays {
+    font-size: 12px;
+    color: #646464;
+}
+
+.avg-rank {
+    padding-right: 10px;
+    text-align: right;
+}
+
+.avg-dmg {
+    padding-right: 10px;
+    text-align: right;
+}
+
+#rank_character_stats tbody .avg-dmg {
+    color: #646464;
+}
+
+
+#rank_character_stats>tbody>tr>td .win-rate,
+.get-rp {
+    text-align: center;
+}
+
+#rank_character_stats tbody .get-rp img {
+    width: 8px;
+}
+
+
+.image-wrapper,
+.image-wrapper>img {
+    margin-left: 10px;
+    border-radius: 50%;
+    float: left;
+    height: 40px;
+    width: 40px;
+}
+
+#lomu_rating {
+    height: 44px;
+    width: 810px;
+    text-align: center;
+    background-color: #727CF2;
+    line-height: 44px;
+    color: #FFFFFF;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+#rank_stats {
+    margin-top: 10px;
+    border-top: 1px solid rgb(230, 230, 230);
+    padding: 10px 0;
+}

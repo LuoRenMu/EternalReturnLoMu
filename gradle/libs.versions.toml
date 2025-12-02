@@ -2,6 +2,7 @@
 kotlin = "2.1.20"
 simbot-core = "4.14.0"
 simbot-qq = "4.2.2"
+simbot-onebot="1.8.2"
 ktor = "2.3.12"
 koin = "3.5.5"
 
@@ -10,6 +11,7 @@ koin = "3.5.5"
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 simbot-core = { module = "love.forte.simbot:simbot-core", version.ref = "simbot-core" }
 simbot-component-qq = { module = "love.forte.simbot.component:simbot-component-qq-guild-core", version.ref = "simbot-qq" }
+simbot-component-onebot = { module = "love.forte.simbot.component:simbot-component-onebot-v11-core", version.ref = "simbot-onebot"}
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
