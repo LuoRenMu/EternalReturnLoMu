@@ -1,5 +1,6 @@
 package cn.luorenmu.service.entity
 
+import cn.luorenmu.HTTP_SERVER_URL
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
 
 /**
@@ -13,7 +14,8 @@ data class TierStatistics(
     val count: Map<String, Int>,
     val rate: Map<String, String>,
     val eternal: DakGGLeaderboardResponse.Cutoffs,
-    val demigod: DakGGLeaderboardResponse.Cutoffs
+    val demigod: DakGGLeaderboardResponse.Cutoffs,
+    val httpServer: String = HTTP_SERVER_URL
 ){
     override fun toString(): String {
         return """

@@ -119,14 +119,14 @@ sealed class EternalReturnDakGGApi(
         ) :
             Image(
                 url.replace(DakGGCharacterImgType.regex(), imageType.value),
-                path = ImageResourcesType.getCharacterPath(characterId, skinId, imageType).toPath()
+                path = ImageResourcesType.getCharacterPath(characterId, skinId, imageType)
             )
 
         class DakGGImageUrlItemBg(
             name: String,
         ) : Image(
             "//cdn.dak.gg/er/images/item/ico-itemgradebg-0${name}.svg",
-            path = ImageResourcesType.ItemBg.getGeneralPath(name).toPath()
+            path = ImageResourcesType.ItemBg.getGeneralPath(name)
         )
 
         class DakGGImageUrlResources(
@@ -135,7 +135,7 @@ sealed class EternalReturnDakGGApi(
             name: String,
         ) : Image(
             url,
-            path = imageResourcesType.getGeneralPath(name).toPath()
+            path = imageResourcesType.getGeneralPath(name)
         )
 
     }

@@ -116,25 +116,25 @@
             height: 150px;
         }
 
-        #content-container {
+        #app {
             padding: 30px;
         }
     </style>
 </head>
 <body>
-<div id="content-container">
+<div id="app">
     <div id="tier_box">
         <h1>${season}</h1>
         <div id="tier_cutoffs">
             <div class="tier_item">
                 <div class="tier_img">
-                    <img src="/resources/images/tier/full/8.png" alt="">
+                    <img src="${httpServer}/resources/images/tier/full/8.png" alt="">
                 </div>
                 ${eternal.mmr}
             </div>
             <div class="tier_item">
                 <div class="tier_img">
-                    <img src="/resources/images/tier/full/7.png" alt="">
+                    <img src="${httpServer}/resources/images/tier/full/7.png" alt="">
                 </div>
                 ${demigod.mmr}
             </div>
@@ -143,7 +143,7 @@
             <#list tierTypes as tierType>
                 <div class="tier_item">
                     <div class="tier_img">
-                        <img src="/resources/images/tier/full/${tierType}.png" alt="">
+                        <img src="${httpServer}/resources/images/tier/full/${tierType}.png" alt="">
                     </div>
                     ${count[tierType]!0}人(占比${rate[tierType]!"0"}%)
                 </div>

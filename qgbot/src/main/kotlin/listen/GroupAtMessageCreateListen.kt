@@ -1,7 +1,6 @@
 package cn.luorenmu.qqbot.listen
 
-import cn.luorenmu.command.CommandListenAllocator
-import cn.luorenmu.command.annotation.EventDefine
+import cn.luorenmu.command.CommandRouter
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.listen.EventHandle
 import love.forte.simbot.component.qguild.event.QGGroupAtMessageCreateEvent
@@ -15,10 +14,9 @@ import love.forte.simbot.event.Event
 /**
  * 官方BOT只有AT事件附带的消息才会发送给机器人
  */
-@EventDefine(QGGroupAtMessageCreateEvent::class)
 class GroupAtMessageCreateListen : EventHandle {
 
-    private val commandListenAllocator = CommandListenAllocator()
+    private val commandListenAllocator = CommandRouter()
     override suspend fun handle(event: Event) {
         val atEvent = event as QGGroupAtMessageCreateEvent
 

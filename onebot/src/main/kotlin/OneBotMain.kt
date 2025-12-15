@@ -2,12 +2,12 @@ package cn.luorenmu.onebot
 
 import cn.luorenmu.Adapter
 import cn.luorenmu.SERVER_PORT
-import cn.luorenmu.command.CommandListenAllocator
+import cn.luorenmu.command.CommandRouter
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.moduleCore
-import io.ktor.http.Url
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
+import io.ktor.http.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
 import love.forte.simbot.application.Application
 import love.forte.simbot.application.listeners
 import love.forte.simbot.component.onebot.v11.core.bot.OneBotBotConfiguration
@@ -16,7 +16,9 @@ import love.forte.simbot.component.onebot.v11.core.useOneBot11
 import love.forte.simbot.core.application.launchSimpleApplication
 import love.forte.simbot.event.ChatGroupMessageEvent
 import love.forte.simbot.event.process
-import java.util.UUID
+import java.net.ConnectException
+import java.util.*
+import kotlin.system.exitProcess
 
 /**
  *
@@ -24,9 +26,9 @@ import java.util.UUID
  * Date 2025/11/25 21:19
  *
  *
-*/
+ */
 
-private val commandListenAllocator = CommandListenAllocator()
+private val commandRouter = CommandRouter()
 suspend fun main() {
     val app = launchSimpleApplication {
         useOneBot11()
@@ -51,9 +53,9 @@ suspend fun Application.configure() {
         }
     )
     listeners {
-        process <ChatGroupMessageEvent> { event ->
+        process<ChatGroupMessageEvent> { event ->
 
-            val reply = commandListenAllocator.call(
+            val reply = commandRouter.call(
                 MessageSender(
                     groupOpenId = event.id,
                     senderName = event.author().name,
@@ -67,5 +69,13 @@ suspend fun Application.configure() {
     }
 
     // 启动你的bot
-    bot.start()
+    try {
+        bot.start()
+    } catch (e: ConnectException) {
+        println("================")
+        println("请先启动OneBot服务")
+        println("================")
+        exitProcess(0)
+    }
+
 }

@@ -53,6 +53,10 @@ fun String.toPath(): Path {
     return PathUtils.pathResolve(PathUtils.currentDirectory, this)
 }
 
+fun String.toPathString(): String {
+    return PathUtils.pathResolve(PathUtils.currentDirectory, this).toString()
+}
+
 fun String.toResourcesPath(): Path {
     return PathUtils.resourcesPathResolve(this)
 }

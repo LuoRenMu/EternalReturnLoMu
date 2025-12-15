@@ -3,8 +3,9 @@ package cn.luorenmu.command
 import cn.luorenmu.command.entity.CommandFindResult
 import cn.luorenmu.command.entity.CommandInfo
 import cn.luorenmu.command.entity.MessageSender
-import cn.luorenmu.common.annotation.CommandFilter
+import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.ReflectionUtil
+import cn.luorenmu.currentAdapter
 import io.github.oshai.kotlinlogging.KotlinLogging
 import love.forte.simbot.message.Message
 
@@ -16,41 +17,28 @@ import love.forte.simbot.message.Message
  */
 private val log = KotlinLogging.logger {}
 
-class CommandListenAllocator {
+class CommandRouter {
     companion object {
         /**
-         * KEY IS CommandFilter Annotation Value Field
-         * VALUE IS CommandEvent obj
+         * KEY IS ALIAS
+         * VALUE IS CommandInfo
          */
         private val COMMANDS by lazy {
             val c = ReflectionUtil.getSubTypesOf(this::class.java.packageName, CommandEvent::class.java)
-            val result = mutableMapOf<Array<String>, CommandInfo>()
+            val result = mutableMapOf<String, CommandInfo>()
             for (klass in c) {
-                if (klass.isAnnotationPresent(CommandFilter::class.java)) {
-                    val command = klass.getAnnotation(CommandFilter::class.java)
+                if (klass.isAnnotationPresent(BotCommand::class.java)) {
+                    val command = klass.getAnnotation(BotCommand::class.java)
                     val obj = klass.getDeclaredConstructor().newInstance() as CommandEvent
-                    result[command.alias] = CommandInfo(command, obj)
+                    if (command.adapter.contains(currentAdapter)) {
+                        result[command.alias] = CommandInfo(command, obj)
+                    }
                 }
             }
-            log.debug { "COMMANDS: $result" }
+            log.debug { "current adapter -> $currentAdapter , load command ${result.keys}" }
             result
         }
 
-
-        /**
-         *  KEY是经过加工处理后的 sample -> search <nickname>  ==>  search
-         *  VALUE是原始不变的
-         */
-        private val COMMAND_MATCH by lazy {
-            val result = mutableMapOf<String, Array<String>>()
-            COMMANDS.keys.forEach { alias ->
-                for (string in alias) {
-                    result[string] = alias
-                }
-            }
-            log.debug { "COMMAND_MATCH: $result" }
-            result
-        }
     }
 
     suspend fun call(messageSender: MessageSender): Message? {
@@ -66,10 +54,10 @@ class CommandListenAllocator {
             val originCommand = plainText.replaceFirst("/", "")
             val inputCommand = originCommand.split("\\s".toRegex())
             val inputCommandFirst = inputCommand[0]
-            val command = COMMAND_MATCH[inputCommandFirst] ?: run { return null }
+            val command = COMMANDS[inputCommandFirst] ?: run { return null }
             return CommandFindResult(
-                COMMANDS[command]!!.commandEvent,
-                parseCommand(COMMANDS[command]!!.commandFilter.value, originCommand)
+                command.commandEvent,
+                parseCommand(command.command.value, originCommand)
             )
         }
         return null

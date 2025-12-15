@@ -3,7 +3,6 @@ package cn.luorenmu.api
 import cn.luorenmu.common.util.PathUtils
 import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
-import love.forte.simbot.resource.fileResource
 
 /**
  *
@@ -12,6 +11,6 @@ import love.forte.simbot.resource.fileResource
  */
 fun Route.resourcesRouting() {
     staticFiles("/resources", PathUtils.resourcesPathResolve().toFile())
-    staticResources("/static/css","static/templates/css")
-    staticResources("/static/js","static/templates/js")
+    staticResources("/static/css", "static/templates/css")
+    staticResources("/static/js", "static/templates/js")
 }

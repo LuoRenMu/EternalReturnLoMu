@@ -20,7 +20,7 @@ object BrowserPool {
     private val webPageScreenshots = run {
         val item = CopyOnWriteArrayList<WebPageScreenshot>()
         (1..POOL).forEach { i ->
-            item.add(WebPageScreenshot(true))
+            item.add(WebPageScreenshot(false))
         }
         item
     }
@@ -95,6 +95,22 @@ object BrowserPool {
             }
         }
 
+        fun screenshotContentSelector(
+            html: String,
+            output: Path,
+            selector: String,
+        ) {
+            synchronized(this) {
+                page.setContent(html)
+                val locator = page.locator(selector)
+                val boundingBox = locator.boundingBox()
+                page.screenshot(
+                    Page.ScreenshotOptions().setPath(output)
+                        .setFullPage(true)
+                        .setClip(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height)
+                )
+            }
+        }
 
         fun screenshot(
             url: String,

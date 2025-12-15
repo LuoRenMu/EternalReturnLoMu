@@ -58,7 +58,7 @@ class TemplateService {
                 oldName,
                 contentType = ContentType.Text.Html
                     .withCharset(Charsets.UTF_8)
-            )
+            ).template
         )
     }
 

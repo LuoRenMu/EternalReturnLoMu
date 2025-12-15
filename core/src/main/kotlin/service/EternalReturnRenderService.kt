@@ -242,14 +242,20 @@ class EternalReturnRenderService {
         }
         val eternal: DakGGLeaderboardResponse.Cutoffs
         val demigod: DakGGLeaderboardResponse.Cutoffs
-        if (leaderboard.cutoffs.size == 1) {
-            eternal = leaderboard.cutoffs[0]
-            demigod = leaderboard.cutoffs[0]
-        } else if (leaderboard.cutoffs.size == 2) {
-            eternal = leaderboard.cutoffs[1]
-            demigod = leaderboard.cutoffs[0]
-        } else {
-            throw MessageReplyException("数据收集中...".toText())
+        when (leaderboard.cutoffs.size) {
+            1 -> {
+                eternal = leaderboard.cutoffs[0]
+                demigod = leaderboard.cutoffs[0]
+            }
+
+            2 -> {
+                eternal = leaderboard.cutoffs[1]
+                demigod = leaderboard.cutoffs[0]
+            }
+
+            else -> {
+                throw MessageReplyException("数据收集中...".toText())
+            }
         }
 
         val rateStr = rate.mapValues { String.format("%.2f", it.value * 100) }.mapKeys { it.key.toString() }

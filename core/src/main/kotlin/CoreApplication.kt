@@ -2,11 +2,7 @@ package cn.luorenmu
 
 
 import cn.luorenmu.api.resourcesRouting
-import cn.luorenmu.api.templateRouting
 import cn.luorenmu.common.util.BrowserPool
-import cn.luorenmu.render.OldNameRender
-import cn.luorenmu.render.PlayerPageRender
-import cn.luorenmu.render.TierStatisticsNumberRender
 import cn.luorenmu.service.EternalReturnRenderService
 import cn.luorenmu.service.ResourcesDownloadService
 import cn.luorenmu.service.TemplateService
@@ -32,15 +28,15 @@ class CoreApplication
 public val apiKey = mutableMapOf("x-api-key" to File("E:\\code\\Kotlin Code\\api-key.txt").readText())
 
 var SERVER_PORT: Int = 8080
+var HTTP_SERVER_URL = "https://127.0.0.1:${SERVER_PORT}"
 
 enum class Adapter {
-    ONE_BOT,
-    QG_BOT
+    ONE_BOT, QG_BOT
 }
 
 lateinit var currentAdapter: Adapter
 
-private val log = KotlinLogging.logger{}
+private val log = KotlinLogging.logger {}
 fun Application.moduleCore(adapter: Adapter) {
     currentAdapter = adapter
     configureRouting()
@@ -57,9 +53,6 @@ fun Application.moduleCore(adapter: Adapter) {
 val appModule = module {
     single { TemplateService() }
     single { ResourcesDownloadService() }
-    single { PlayerPageRender() }
-    single { TierStatisticsNumberRender() }
-    single { OldNameRender() }
     single { Executors.newFixedThreadPool(10).asCoroutineDispatcher() }
     single { EternalReturnRenderService() }
 }
@@ -78,7 +71,6 @@ fun Application.configureInstall() {
 
 fun Application.configureRouting() {
     routing {
-        templateRouting()
         resourcesRouting()
     }
 }

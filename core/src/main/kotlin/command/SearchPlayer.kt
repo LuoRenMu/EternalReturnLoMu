@@ -1,7 +1,7 @@
 package cn.luorenmu.command
 
 import cn.luorenmu.command.entity.MessageSender
-import cn.luorenmu.common.annotation.CommandFilter
+import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.render.PlayerPageRender
 import cn.luorenmu.request.api.EternalReturnOpenApiClient
 import cn.luorenmu.request.entity.module.MatchingMode
@@ -20,7 +20,7 @@ import org.koin.java.KoinJavaComponent.inject
  * Date 2025/10/24 14:06
  */
 
-@CommandFilter("search",["search"],"<nickname> <mode>",)
+@BotCommand("search", "search", "<nickname> <mode>")
 class SearchPlayer : CommandEvent {
 
     private val log = KotlinLogging.logger {}
@@ -32,7 +32,7 @@ class SearchPlayer : CommandEvent {
     )
 
 
-    override suspend fun listen(sender: MessageSender,command: Map<String, String>): Message {
+    override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         if (command.isEmpty() || command["nickname"] == null) {
             return "请使用命令格式/search (!名称)".toText()
         }
@@ -60,12 +60,12 @@ class SearchPlayer : CommandEvent {
                 resourcesDownloadService.gameDataDownload(games.userGames)
                 log.debug { "gameDataDownload 预备请求数据已完成" }
             }
-            launch (executors){
+            launch(executors) {
 
                 resourcesDownloadService.downloadProfileData(nickname)
                 log.debug { "downloadProfileData 预备请求数据已完成" }
             }
-            launch (executors){
+            launch(executors) {
                 EternalReturnOpenApiClient.getGamesByUserNum(
                     user.user.userId
                 )

@@ -1,10 +1,12 @@
 package cn.luorenmu.request.api.entity.module
 
+import cn.luorenmu.common.util.toPath
 import cn.luorenmu.request.api.EternalReturnDakGGApi
 import cn.luorenmu.request.api.EternalReturnDakGGApiClient
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharacterImgType
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.nio.file.Path
 
 /**
  *
