@@ -1,16 +1,13 @@
 package cn.luorenmu.service
 
+import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.EternalReturnDakGGApi
 import cn.luorenmu.request.api.EternalReturnDakGGApiClient
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
-import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import org.koin.java.KoinJavaComponent.inject
 
 /**
  *
@@ -20,16 +17,13 @@ import org.koin.java.KoinJavaComponent.inject
 class ResourcesDownloadService {
 
     private val log = KotlinLogging.logger {}
-    private val executors: ExecutorCoroutineDispatcher by inject(
-        ExecutorCoroutineDispatcher::class.java
-    )
 
     /**
      * 物品、装备
      */
     suspend fun downloadItemImage(item: DakGGItemsResponse.Item) {
         coroutineScope {
-            launch(executors) {
+            ioAsync {
                 EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                     item.imageUrl,
                     ImageResourcesType.Item,
@@ -41,17 +35,18 @@ class ResourcesDownloadService {
 
     suspend fun downloadProfileData(nickname: String) {
         coroutineScope {
-            val profileDF = async(executors) {
+            val profileDF = ioAsync {
                 EternalReturnDakGGApiClient.getProfile(nickname)
             }
-            val charactersDF = async(executors) {
+            val charactersDF = ioAsync {
                 EternalReturnDakGGApiClient.getCharacters()
             }
             val (profile, charactersResponse) = profileDF.await() to charactersDF.await()
             val characters = profile.playerSeasonOverviews.firstOrNull()?.characterStats
             characters?.forEach { character ->
-                launch(executors) {
+                ioAsync {
                     val characterById = charactersResponse.getCharacterById(character.key)
+
                     /**
                      * 不存在皮肤则获取第一个，第一个为原皮
                      */
@@ -69,7 +64,7 @@ class ResourcesDownloadService {
      */
     suspend fun downloadWeaponImage(weapon: DakGGWeaponResponse.Weapon) {
         coroutineScope {
-            launch(executors) {
+            ioAsync {
                 EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                     weapon.iconUrl,
                     ImageResourcesType.Weapon,
@@ -84,7 +79,7 @@ class ResourcesDownloadService {
      */
     suspend fun downloadTacticalSkillImage(tacticalSkill: DakGGTacticalSkillResponse.TacticalSkill) {
         coroutineScope {
-            launch(executors) {
+            ioAsync {
                 EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                     tacticalSkill.imageUrl,
                     ImageResourcesType.TacticalSkill,
@@ -99,7 +94,7 @@ class ResourcesDownloadService {
      */
     suspend fun downloadTraitSkillImage(traitSkillId: Long, traitSkills: DakGGTraitSkillsResponse) {
         coroutineScope {
-            launch(executors) {
+            ioAsync {
                 val traitSkill = traitSkills.traitSkills.first { it.id == traitSkillId }
                 val traitSkillGroup = traitSkills.traitSkillGroups.firstOrNull { it.key == traitSkill.group }
                 traitSkillGroup?.let {
@@ -112,7 +107,7 @@ class ResourcesDownloadService {
                     EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                         ImageResourcesType.TRAIT_SKILL_GROUP_PLACEHOLDER_WILSON_URL,
                         ImageResourcesType.TraitSkillGroupPlaceholder,
-                       ""
+                        ""
                     ).callStream()
                 }
                 EternalReturnDakGGApi.Image.DakGGImageUrlResources(
@@ -132,7 +127,7 @@ class ResourcesDownloadService {
         coroutineScope {
             val characterSkinById = character.getCharacterSkinById(skinCode)
             DakGGCharacterImgType.entries.forEach {
-                launch(executors) {
+                ioAsync {
                     EternalReturnDakGGApi.Image.DakGGImageUrlCharacter(
                         characterSkinById.imageUrl,
                         character.id.toInt(),
@@ -148,14 +143,14 @@ class ResourcesDownloadService {
         coroutineScope {
             for (tier in tiers.tiers.distinctBy { it.id }) {
                 val tierType = tier.id
-                launch(executors) {
+                ioAsync {
                     EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                         url = tier.imageUrl.replace("assets/", "").replace("rank", "tier"),
                         ImageResourcesType.TierFull,
                         tierType.toString()
                     ).callStream()
                 }
-                launch(executors) {
+                ioAsync {
                     EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                         tier.iconUrl,
                         ImageResourcesType.TierRound,
@@ -223,7 +218,7 @@ class ResourcesDownloadService {
 
     suspend fun downloadItemBgImage(id: Int) {
         coroutineScope {
-            launch(executors) {
+            ioAsync {
                 EternalReturnDakGGApi.Image.DakGGImageUrlItemBg(
                     id.toString()
                 ).callStream()

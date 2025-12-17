@@ -20,6 +20,9 @@ data class DakGGTiersResponse(
         val iconUrl: String = "",
     )
 
+    /**
+     * 获取 "无段位"信息
+     */
     fun getUnRank(): EternalReturnTier {
         return tiers.first { it.id == 0 }
     }

@@ -206,9 +206,7 @@ body {
     text-align: center;
     line-height: 20px;
     z-index: 0;
-    border-radius: 5px 5px 0 0;
-    background-color: #ffffff;
-    border: 1px solid rgb(230, 230, 230);
+
     transform: translate(-50%, -50%);
 }
 
@@ -534,20 +532,34 @@ img {
 
 #recent_play,
 #rank_character_stats {
-    border-radius: 10px 10px 0 0;
-    overflow: hidden;
     margin-top: 30px;
-    border-collapse: collapse;
+    border-spacing: 0;
+    overflow: hidden;
     background-color: rgb(255, 255, 255);
+    border-radius: 10px;
+    border: solid 1px rgb(201, 201, 201);
     width: 100%;
     font-size: 12px;
+    border-collapse: separate;
     font-weight: normal;
 }
 
-
-td {
-    border-bottom: solid 1px rgb(201, 201, 201);
+#rank_character_stats thead .character {
+    padding-left: 20px;
 }
+
+#recent_play tbody tr:last-child td,
+#rank_character_stats tbody tr:last-child td {
+    border-bottom: none;
+}
+
+#recent_play tbody td,
+#rank_character_stats tbody td {
+    padding: 5px 10px;
+    border-bottom: 1px solid rgb(201, 201, 201);
+}
+
+
 
 
 #recent_play>thead,
@@ -555,6 +567,7 @@ td {
     color: rgb(255, 255, 255);
     background: rgb(54, 57, 68);
 }
+
 
 #recent_play>thead>tr>th,
 #rank_character_stats>thead>tr>th {
@@ -596,6 +609,7 @@ td {
 #rank_character_stats tbody .avg-dmg {
     color: #646464;
 }
+
 
 
 #rank_character_stats>tbody>tr>td .win-rate,

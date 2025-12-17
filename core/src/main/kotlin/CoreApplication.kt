@@ -53,7 +53,6 @@ fun Application.moduleCore(adapter: Adapter) {
 val appModule = module {
     single { TemplateService() }
     single { ResourcesDownloadService() }
-    single { Executors.newFixedThreadPool(10).asCoroutineDispatcher() }
     single { EternalReturnRenderService() }
 }
 
