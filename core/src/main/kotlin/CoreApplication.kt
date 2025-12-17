@@ -5,17 +5,14 @@ import cn.luorenmu.api.resourcesRouting
 import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.service.EternalReturnRenderService
 import cn.luorenmu.service.ResourcesDownloadService
-import cn.luorenmu.service.TemplateService
 import freemarker.cache.ClassTemplateLoader
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.freemarker.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.asCoroutineDispatcher
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 import java.io.File
-import java.util.concurrent.Executors
 
 /**
  *
@@ -28,7 +25,7 @@ class CoreApplication
 public val apiKey = mutableMapOf("x-api-key" to File("E:\\code\\Kotlin Code\\api-key.txt").readText())
 
 var SERVER_PORT: Int = 8080
-var HTTP_SERVER_URL = "https://127.0.0.1:${SERVER_PORT}"
+var HTTP_SERVER_URL = "http://127.0.0.1:${SERVER_PORT}"
 
 enum class Adapter {
     ONE_BOT, QG_BOT
@@ -51,7 +48,7 @@ fun Application.moduleCore(adapter: Adapter) {
 
 
 val appModule = module {
-    single { TemplateService() }
+
     single { ResourcesDownloadService() }
     single { EternalReturnRenderService() }
 }

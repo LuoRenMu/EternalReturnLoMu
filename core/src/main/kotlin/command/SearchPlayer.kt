@@ -2,16 +2,18 @@ package cn.luorenmu.command
 
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
-import cn.luorenmu.render.PlayerPageRender
+import cn.luorenmu.common.util.BrowserPool
+import cn.luorenmu.common.util.PathUtils
+import cn.luorenmu.render.FreemarkerRenderer
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.EternalReturnOpenApiClient
 import cn.luorenmu.request.entity.module.MatchingMode
+import cn.luorenmu.service.EternalReturnRenderService
 import cn.luorenmu.service.ResourcesDownloadService
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import love.forte.simbot.message.Message
+import love.forte.simbot.message.OfflineImage
 import love.forte.simbot.message.toText
 import org.koin.java.KoinJavaComponent.inject
 
@@ -25,18 +27,28 @@ import org.koin.java.KoinJavaComponent.inject
 class SearchPlayer : CommandEvent {
 
     private val log = KotlinLogging.logger {}
-
-    private val render: PlayerPageRender by inject(PlayerPageRender::class.java)
     private val resourcesDownloadService: ResourcesDownloadService by inject(ResourcesDownloadService::class.java)
-
+    private val eternalReturnRenderService: EternalReturnRenderService by inject(
+        EternalReturnRenderService::class.java
+    )
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         if (command.isEmpty() || command["nickname"] == null) {
             return "请使用命令格式/search (!名称)".toText()
         }
 
-        preheatRequest(command["nickname"]!!)
-        return render.render(command["nickname"]!!)
+        val nickname = command["nickname"]!!
+        val mode = MatchingMode.convert(command["mode"]?.toInt())
+        preheatRequest(nickname)
+        val outputPath = PathUtils.resourcesPathResolve("render", "player", "$nickname.png")
+        val html =
+            FreemarkerRenderer.render(
+                "search_player.ftl",
+                eternalReturnRenderService.getEternalReturnRender(nickname, mode)
+            )
+        BrowserPool.getBrowser()
+            .screenshotContentSelector(html, outputPath, "#content-container")
+        return OfflineImage.fileOfflineImage(outputPath.toString())
     }
 
     private suspend fun preheatRequest(nickname: String) {
@@ -51,19 +63,19 @@ class SearchPlayer : CommandEvent {
                 )
                 log.debug { "getUserStats 预备请求数据已完成" }
             }
-            ioAsync  {
+            ioAsync {
                 val games = EternalReturnOpenApiClient.getGamesByUserNum(
                     user.user.userId
                 )
                 resourcesDownloadService.gameDataDownload(games.userGames)
                 log.debug { "gameDataDownload 预备请求数据已完成" }
             }
-            ioAsync  {
+            ioAsync {
 
                 resourcesDownloadService.downloadProfileData(nickname)
                 log.debug { "downloadProfileData 预备请求数据已完成" }
             }
-            ioAsync  {
+            ioAsync {
                 EternalReturnOpenApiClient.getGamesByUserNum(
                     user.user.userId
                 )

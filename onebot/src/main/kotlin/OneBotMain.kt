@@ -4,6 +4,7 @@ import cn.luorenmu.Adapter
 import cn.luorenmu.SERVER_PORT
 import cn.luorenmu.command.CommandRouter
 import cn.luorenmu.command.entity.MessageSender
+import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.moduleCore
 import io.ktor.http.*
 import io.ktor.server.engine.*
@@ -34,6 +35,7 @@ suspend fun main() {
         useOneBot11()
     }
     app.configure()
+    println(PathUtils.resourcesPathResolve().toFile())
     embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0") {
         moduleCore(Adapter.ONE_BOT)
     }.start(wait = true)

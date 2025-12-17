@@ -1,5 +1,6 @@
 package cn.luorenmu.service.entity
 
+import cn.luorenmu.HTTP_SERVER_URL
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -18,6 +19,8 @@ data class EternalReturnPlayRender(
     val mmrStats: EternalReturnPlayerMMRStats? = null,
     var matches: List<EternalReturnPlayerMatchData> = mutableListOf(),
     val season: String,
+    val httpServer: String = HTTP_SERVER_URL,
+    val mode :String = "排位"
 ) {
 
 

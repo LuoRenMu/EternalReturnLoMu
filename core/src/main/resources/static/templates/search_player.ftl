@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="/static/css/search_player.css">
-    <script src="/static/js/chart.js"></script>
+    <link rel="stylesheet" href="${httpServer}/static/css/search_player.css">
+    <script src="${httpServer}/static/js/chart.js"></script>
 </head>
 <body>
 <div id="content-container">
@@ -14,7 +14,7 @@
         <div id="banner_user_info">
             <div class="profile-image-wrapper">
                 <#if profileImageUrl??>
-                    <img src="${profileImageUrl}" alt=""/>
+                    <img src="${httpServer}${profileImageUrl}" alt=""/>
                 <#else>
                     <img src="" alt=""/>
                 </#if>
@@ -34,10 +34,10 @@
     <div id="body">
         <div id="left">
             <div id="rank">
-                <h4>排位(${season})</h4>
+                <h4>${mode}(${season})</h4>
                 <div id="score">
                     <div id="rp_img">
-                        <img src="${data.tierImageUrl}" alt="">
+                        <img src="${httpServer}${data.tierImageUrl}" alt="">
                     </div>
                     <div id="rp_box">
                         <div id="rp">
@@ -90,7 +90,7 @@
                     </div>
                 </div>
 
-                <#if mmrStats??>
+                <#if mmrStats?? && mode == "排位">
                     <div id="rank_stats">
                         <canvas id="rank_canvas"></canvas>
                     </div>
@@ -159,7 +159,7 @@
                             <tr>
                                 <td class="character">
                                     <div class="image-wrapper"><img
-                                                src="${character.imgUrl}"
+                                                src="${httpServer}${character.imgUrl}"
                                                 alt=""></div>
                                     <div class="info">${character.characterName}
                                         <div class="plays">${character.characterPlay} 游戏</div>
@@ -208,7 +208,7 @@
                             <tr>
                                 <td class="character">
                                     <div class="image-wrapper"><img
-                                                src="${recentPlayer.imageWrapperUrl}"
+                                                src="${httpServer}${recentPlayer.imageWrapperUrl}"
                                                 alt=""></div>
                                     <div class="info">${recentPlayer.nickname}
                                         <div class="plays">${recentPlayer.plays} 游戏</div>
@@ -271,27 +271,27 @@
                         </div>
                         <div class="war_record_character_info">
                             <div class="hero_avatar">
-                                <img src="${match.characterAvatarUrl}"
+                                <img src="${httpServer}${match.characterAvatarUrl}"
                                      alt="">
                             </div>
                             <div class="character_name">${match.characterName}</div>
                         </div>
                         <div class="skill">
                             <div class="weapon">
-                                <img src="${match.weaponUrl}"
+                                <img src="${httpServer}${match.weaponUrl}"
                                      alt="">
                             </div>
                             <div class="trait">
-                                <img src="${match.traitSkillUrl}"
+                                <img src="${httpServer}${match.traitSkillUrl}"
                                      alt="">
                             </div>
                             <div class="trait">
-                                <img src="${match.tacticalSkillUrl}"
+                                <img src="${httpServer}${match.tacticalSkillUrl}"
                                      alt="">
                             </div>
 
                             <div class="trait">
-                                <img src="${match.traitSkillGroupUrl}"
+                                <img src="${httpServer}${match.traitSkillGroupUrl}"
                                          alt="">
                             </div>
                         </div>
@@ -350,12 +350,12 @@
                             <#list match.equips as equip>
                                 <li class="item">
                                     <#if equip.itemBgUrl != "" >
-                                        <img class="item_bg" src="${equip.itemBgUrl}"
+                                        <img class="item_bg" src="${httpServer}${equip.itemBgUrl}"
                                              alt="">
                                     </#if>
                                     <#if equip.itemUrl != "" >
                                         <img class="item_img"
-                                             src="${equip.itemUrl}" alt="">
+                                             src="${httpServer}${equip.itemUrl}" alt="">
                                     </#if>
                                 </li>
                             </#list>
@@ -368,30 +368,30 @@
                                     <div class="play_name">${teamMate.nickName}</div>
                                     <div class="teammate_rp">
                                         <div class="teammate_rp_img"><img
-                                                    src="${teamMate.rpImageUrl}" alt=""></div>
+                                                    src="${httpServer}${teamMate.rpImageUrl}" alt=""></div>
                                         <span>${teamMate.rp} RP</span>
                                     </div>
                                 </div>
                                 <div class="hero_avatar">
-                                    <img src="${teamMate.avatarUrl}"
+                                    <img src="${httpServer}${teamMate.avatarUrl}"
                                          alt="">
                                 </div>
                                 <div class="skill">
                                     <div class="weapon">
-                                        <img src="${teamMate.weaponUrl}"
+                                        <img src="${httpServer}${teamMate.weaponUrl}"
                                              alt="">
                                     </div>
                                     <div class="trait">
-                                        <img src="${teamMate.traitSkillUrl}"
+                                        <img src="${httpServer}${teamMate.traitSkillUrl}"
                                              alt="">
                                     </div>
                                     <div class="trait">
-                                        <img src="${teamMate.skillUrl}"
+                                        <img src="${httpServer}${teamMate.skillUrl}"
                                              alt="">
                                     </div>
 
                                     <div class="trait">
-                                        <img src="${teamMate.traitSkillGroupUrl}"
+                                        <img src="${httpServer}${teamMate.traitSkillGroupUrl}"
                                                  alt="">
                                     </div>
                                 </div>
@@ -413,10 +413,10 @@
                                 <ul class="item_box">
                                     <#list teamMate.equips as teamMateEquip>
                                         <li class="item">
-                                            <img class="item_bg" src="${teamMateEquip.itemBgUrl}"
+                                            <img class="item_bg" src="${httpServer}${teamMateEquip.itemBgUrl}"
                                                  alt="">
                                             <img class="item_img"
-                                                 src="${teamMateEquip.itemUrl}" alt="">
+                                                 src="${httpServer}${teamMateEquip.itemUrl}" alt="">
                                         </li>
                                     </#list>
                                 </ul>

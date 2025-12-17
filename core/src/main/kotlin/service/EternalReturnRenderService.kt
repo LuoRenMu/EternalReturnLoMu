@@ -34,7 +34,6 @@ class EternalReturnRenderService {
     data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
     suspend fun getEternalReturnRender(
-        userId: String,
         nickname: String,
         matchingMode: MatchingMode,
     ): EternalReturnPlayRender {
@@ -42,6 +41,8 @@ class EternalReturnRenderService {
          * 数据收集
          */
         // val userStats = EternalReturnOpenApiClient.getUserStats(userId, 35, matchingMode)
+
+        val userId = EternalReturnOpenApiClient.getUserNumByUserNickName(nickname).user.userId
         val (profile, characters, tiers, season) = coroutineScope {
             val profileDF = ioAsync { EternalReturnDakGGApiClient.getProfile(nickname) }
             val charactersDF = ioAsync { EternalReturnDakGGApiClient.getCharacters() }
@@ -56,7 +57,6 @@ class EternalReturnRenderService {
         val playerSeasonOverview =
             playerSeasonOverviews.firstOrNull { it.matchingModeId == matchingMode.value } ?: run {
                 playerSeasonOverviews.firstOrNull()
-
             }
 
         val accountLevel = profile.player.accountLevel
@@ -70,13 +70,6 @@ class EternalReturnRenderService {
             )
         }
 
-        /**
-         * 段位收集
-         */
-        var tier: DakGGTiersResponse.EternalReturnTier = tiers.getUnRank()
-        val latestPlaySeason = profile.playerSeasons.firstOrNull() ?: run {
-            throw MessageReplyException("该玩家无任何游玩数据".toText())
-        }
 
         /**
          * 近期一起玩的人
@@ -89,7 +82,7 @@ class EternalReturnRenderService {
                     val characterById = characters.getCharacterById(duoStat.characterStats.first().key)
                     recentPlays.add(EternalReturnPlayRender.EternalReturnPlayerRecentPlay().apply {
                         imageWrapperUrl = ImageResourcesType.getCharacterPath(
-                            characterById.key.toInt(), characterById.skins.first().id,
+                            characterById.id.toInt(), characterById.skins.first().id,
                             DakGGCharacterImgType.CharProfile
                         )
                         this.plays = duoStat.play
@@ -101,28 +94,45 @@ class EternalReturnRenderService {
                 }
             }
 
+        val eternalReturnPlayerData = EternalReturnPlayRender.EternalReturnPlayerData()
+
 
         /**
-         * 当前赛季有玩过排位
+         * 段位收集
          */
-        if (latestPlaySeason.mmr != 0) {
+        var tier: DakGGTiersResponse.EternalReturnTier = tiers.getUnRank()
+        val latestPlaySeason = profile.playerSeasons.firstOrNull() ?: run {
+            throw MessageReplyException("该玩家无任何游玩数据".toText())
+        }
+
+
+        /**
+         * 指定的就是排位
+         */
+        if (matchingMode == MatchingMode.Rank) {
             tier = tiers.getTierById(latestPlaySeason.tierId)
         }
 
-        /**
-         * 左边栏游玩数据显示
-         */
-        val eternalReturnPlayerData = EternalReturnPlayRender.EternalReturnPlayerData()
-        eternalReturnPlayerData.tierImageUrl = ImageResourcesType.TierRound.getGeneralPath(tier.id.toString())
-        eternalReturnPlayerData.rpName = tier.name
 
         /**
-         * 数据展示
+         * 左边栏段位显示
+         */
+        eternalReturnPlayerData.tierImageUrl = ImageResourcesType.TierRound.getGeneralPath(tier.id.toString())
+        if (matchingMode == MatchingMode.Rank){
+            eternalReturnPlayerData.rpName = tier.name
+            eternalReturnPlayerData.rp = if (latestPlaySeason.mmr == 0) "段位鉴定中." else latestPlaySeason.mmr.toString()
+            eternalReturnPlayerData.tierImageUrl = ImageResourcesType.TierRound.getGeneralPath(tier.id.toString())
+        }else{
+            eternalReturnPlayerData.rpName = "非排位数据"
+            eternalReturnPlayerData.rp =  "无"
+        }
+
+
+        /**
+         * 左边栏数据展示
          */
         if (playerSeasonOverview !== null) {
             val playDouble = playerSeasonOverview.play.toDouble()
-            eternalReturnPlayerData.rp = playerSeasonOverview.mmr.toString()
-            eternalReturnPlayerData.tierImageUrl = ImageResourcesType.TierRound.getGeneralPath(tier.id.toString())
             eternalReturnPlayerData.play = playerSeasonOverview.play
             eternalReturnPlayerData.avgTk = String.format("%.2f", playerSeasonOverview.teamKill / playDouble)
             eternalReturnPlayerData.avgKill = String.format("%.2f", playerSeasonOverview.playerKill / playDouble)
@@ -137,7 +147,7 @@ class EternalReturnRenderService {
         }
 
         /**
-         * 分数波动
+         * 左边栏分数波动
          */
         var playerMMRStats: EternalReturnPlayRender.EternalReturnPlayerMMRStats? = null
         profile.playerSeasonOverviews.firstOrNull()?.let { overview ->
@@ -152,7 +162,7 @@ class EternalReturnRenderService {
         }
 
         /**
-         * 常用角色
+         * 左边栏常用角色
          */
 
         val characterUseStats = mutableListOf<EternalReturnPlayRender.EternalReturnCharacterUseStats>()
@@ -163,7 +173,7 @@ class EternalReturnRenderService {
                     EternalReturnPlayRender.EternalReturnCharacterUseStats(
                         characterName = characterById.name,
                         imgUrl = ImageResourcesType.getCharacterPath(
-                            characterById.key.toInt(), characterById.skins.first().id,
+                            characterById.id.toInt(), characterById.skins.first().id,
                             DakGGCharacterImgType.CharProfile
                         ),
                         winRate = "${
@@ -192,8 +202,9 @@ class EternalReturnRenderService {
             data = eternalReturnPlayerData,
             matches = gamesResponse.userGames.map { gameConvertMatcher(it, characters) },
             recentPlayers = recentPlays,
-            characterUseStats = mutableListOf(),
+            characterUseStats = characterUseStats,
             season = season.name,
+            mode = matchingMode.modeName
         )
     }
 

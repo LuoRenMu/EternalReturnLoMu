@@ -182,7 +182,7 @@ object RequestManager {
             }
         }
         if (response.status.value in 200..207) {
-            log.debug { "call success ${api.baseUrl}${api.url} => ${if (api !is ResourceApi) runBlocking { response.bodyAsText() } else ""}}" }
+            log.debug { "call success ${api.baseUrl}${api.url} => ${response.status.value}" }
             if (api.method == HttpMethod.Get) {
                 cacheMap[api.cacheTime]!!.put(api.url, response)
             }
