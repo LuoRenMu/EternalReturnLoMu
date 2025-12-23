@@ -5,6 +5,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
 /**
  *
@@ -19,8 +20,11 @@ sealed interface Api {
     val body: MutableMap<String, String>
     val cacheTime: CacheTime
 
-    companion object{
+    companion object {
         fun <T> CoroutineScope.ioAsync(block: suspend CoroutineScope.() -> T) =
             async(Dispatchers.IO, block = block)
+
+        fun CoroutineScope.ioLaunch(block: suspend CoroutineScope.() -> Unit) =
+            launch(Dispatchers.IO, block = block)
     }
 }

@@ -27,8 +27,7 @@ object PathUtils {
      * 传入aa/bb时生产 E:\code\Kotlin Code\LoMu-QQBot\build\classes\kotlin\main\resources\aa\bb <- 会创建目录 aa
      */
 
-
-    fun pathResolve(basePath1: Path, vararg paths: String): Path {
+    fun pathResolve(basePath1: Path = currentDirectory, vararg paths: String): Path {
         var basePath = basePath1
         for (path in paths) {
             val normalizedPath = path.replace(Regex("[\\\\/]"), "/").removePrefix("/")

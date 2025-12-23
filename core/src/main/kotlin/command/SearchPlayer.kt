@@ -5,17 +5,19 @@ import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.render.FreemarkerRenderer
-import cn.luorenmu.request.api.Api.Companion.ioAsync
+import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.EternalReturnOpenApiClient
 import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.service.EternalReturnRenderService
 import cn.luorenmu.service.ResourcesDownloadService
+import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import love.forte.simbot.message.toText
 import org.koin.java.KoinJavaComponent.inject
+import java.util.concurrent.TimeUnit
 
 /**
  *
@@ -32,12 +34,28 @@ class SearchPlayer : CommandEvent {
         EternalReturnRenderService::class.java
     )
 
+
+    private val cache = Caffeine.newBuilder()
+        .maximumSize(500)
+        .expireAfterWrite(5, TimeUnit.MINUTES)
+        .build<String, String>()
+
+
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         if (command.isEmpty() || command["nickname"] == null) {
             return "请使用命令格式/search (!名称)".toText()
         }
-
         val nickname = command["nickname"]!!
+
+
+        if (cache.getIfPresent(nickname) == null) {
+            synchronized(this) {
+                if (cache.getIfPresent(nickname) != null) {
+                    return OfflineImage.fileOfflineImage(cache.getIfPresent(nickname).toString())
+                }
+            }
+        }
+
         val mode = MatchingMode.convert(command["mode"]?.toInt())
         preheatRequest(nickname)
         val outputPath = PathUtils.resourcesPathResolve("render", "player", "$nickname.png")
@@ -48,13 +66,14 @@ class SearchPlayer : CommandEvent {
             )
         BrowserPool.getBrowser()
             .screenshotContentSelector(html, outputPath, "#content-container")
+        cache.put(nickname, outputPath.toString())
         return OfflineImage.fileOfflineImage(outputPath.toString())
     }
 
     private suspend fun preheatRequest(nickname: String) {
         coroutineScope {
             val user = EternalReturnOpenApiClient.getUserNumByUserNickName(nickname)
-            ioAsync {
+            ioLaunch {
                 val dataCurrentSeason = EternalReturnOpenApiClient.getDataCurrentSeason()
                 EternalReturnOpenApiClient.getUserStats(
                     user.user.userId,
@@ -63,19 +82,18 @@ class SearchPlayer : CommandEvent {
                 )
                 log.debug { "getUserStats 预备请求数据已完成" }
             }
-            ioAsync {
+            ioLaunch {
                 val games = EternalReturnOpenApiClient.getGamesByUserNum(
                     user.user.userId
                 )
                 resourcesDownloadService.gameDataDownload(games.userGames)
                 log.debug { "gameDataDownload 预备请求数据已完成" }
             }
-            ioAsync {
-
+            ioLaunch {
                 resourcesDownloadService.downloadProfileData(nickname)
                 log.debug { "downloadProfileData 预备请求数据已完成" }
             }
-            ioAsync {
+            ioLaunch {
                 EternalReturnOpenApiClient.getGamesByUserNum(
                     user.user.userId
                 )

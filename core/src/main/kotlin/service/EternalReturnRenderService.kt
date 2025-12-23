@@ -18,7 +18,7 @@ import cn.luorenmu.service.entity.EternalReturnEquip
 import cn.luorenmu.service.entity.EternalReturnOldName
 import cn.luorenmu.service.entity.EternalReturnPlayRender
 import cn.luorenmu.service.entity.TierStatistics
-import kotlinx.coroutines.*
+import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.toText
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.stream.Collectors
@@ -31,7 +31,7 @@ import java.util.stream.Collectors
 class EternalReturnRenderService {
 
 
-    data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+    data class Quint<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
 
     suspend fun getEternalReturnRender(
         nickname: String,
@@ -43,17 +43,16 @@ class EternalReturnRenderService {
         // val userStats = EternalReturnOpenApiClient.getUserStats(userId, 35, matchingMode)
 
         val userId = EternalReturnOpenApiClient.getUserNumByUserNickName(nickname).user.userId
-        val (profile, characters, tiers, season) = coroutineScope {
+        val (profile, characters, tiers, season, gamesResponse) = coroutineScope {
             val profileDF = ioAsync { EternalReturnDakGGApiClient.getProfile(nickname) }
             val charactersDF = ioAsync { EternalReturnDakGGApiClient.getCharacters() }
             val tierDF = ioAsync { EternalReturnDakGGApiClient.getTiers() }
             val seasonDF = ioAsync { EternalReturnDakGGApiClient.getDataCurrentSeason() }
-            Quad(profileDF.await(), charactersDF.await(), tierDF.await(), seasonDF.await())
+            val gamesDF = ioAsync { EternalReturnOpenApiClient.getGamesByUserNum(userId) }
+            Quint(profileDF.await(), charactersDF.await(), tierDF.await(), seasonDF.await(), gamesDF.await())
         }
 
         val playerSeasonOverviews = profile.playerSeasonOverviews
-
-        val gamesResponse = EternalReturnOpenApiClient.getGamesByUserNum(userId)
         val playerSeasonOverview =
             playerSeasonOverviews.firstOrNull { it.matchingModeId == matchingMode.value } ?: run {
                 playerSeasonOverviews.firstOrNull()
@@ -118,13 +117,14 @@ class EternalReturnRenderService {
          * 左边栏段位显示
          */
         eternalReturnPlayerData.tierImageUrl = ImageResourcesType.TierRound.getGeneralPath(tier.id.toString())
-        if (matchingMode == MatchingMode.Rank){
+        if (matchingMode == MatchingMode.Rank) {
             eternalReturnPlayerData.rpName = tier.name
-            eternalReturnPlayerData.rp = if (latestPlaySeason.mmr == 0) "段位鉴定中." else latestPlaySeason.mmr.toString()
+            eternalReturnPlayerData.rp =
+                if (latestPlaySeason.mmr == 0) "段位鉴定中." else latestPlaySeason.mmr.toString()
             eternalReturnPlayerData.tierImageUrl = ImageResourcesType.TierRound.getGeneralPath(tier.id.toString())
-        }else{
+        } else {
             eternalReturnPlayerData.rpName = "非排位数据"
-            eternalReturnPlayerData.rp =  "无"
+            eternalReturnPlayerData.rp = "无"
         }
 
 
