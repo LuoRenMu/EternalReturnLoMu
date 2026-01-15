@@ -6,6 +6,7 @@ import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.ReflectionUtil
 import cn.luorenmu.currentAdapter
+import cn.luorenmu.exception.MessageReplyException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import love.forte.simbot.message.Message
 
@@ -23,7 +24,7 @@ class CommandRouter {
          * KEY IS ALIAS
          * VALUE IS CommandInfo
          */
-        private val COMMANDS by lazy {
+        public val COMMANDS by lazy {
             val c = ReflectionUtil.getSubTypesOf(this::class.java.packageName, CommandEvent::class.java)
             val result = mutableMapOf<String, CommandInfo>()
             for (klass in c) {
@@ -42,10 +43,15 @@ class CommandRouter {
     }
 
     suspend fun call(messageSender: MessageSender): Message? {
-        val result = commandFind(messageSender.plainText)?.let {
-            it.eventObj.listen(messageSender, it.commandParse)
+        try{
+            val result = commandFind(messageSender.plainText)?.let {
+                it.eventObj.listen(messageSender, it.commandParse)
+            }
+            return result
+        }catch (e: MessageReplyException){
+            return e.returnMsg
         }
-        return result
+
     }
 
     fun commandFind(plainText: String): CommandFindResult? {

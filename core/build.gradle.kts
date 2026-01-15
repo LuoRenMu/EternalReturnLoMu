@@ -17,6 +17,7 @@ dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.koin.ktor)
+    compileOnly(libs.simbot.component.onebot)
     implementation("com.microsoft.playwright:playwright:1.42.0")
     implementation("io.github.oshai:kotlin-logging-jvm:6.0.3")
     implementation("ch.qos.logback:logback-classic:1.4.11")

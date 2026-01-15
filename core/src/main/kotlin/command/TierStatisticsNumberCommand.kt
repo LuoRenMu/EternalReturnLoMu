@@ -5,8 +5,8 @@ import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.render.FreemarkerRenderer
-import cn.luorenmu.request.api.Api.Companion.ioAsync
-import cn.luorenmu.request.api.EternalReturnDakGGApiClient
+import cn.luorenmu.request.api.Api.Companion.ioLaunch
+import cn.luorenmu.request.api.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGServerName
 import cn.luorenmu.request.entity.module.DakGGTeamMode
 import cn.luorenmu.service.EternalReturnRenderService
@@ -16,7 +16,6 @@ import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import org.koin.java.KoinJavaComponent.inject
-import java.util.concurrent.TimeUnit
 
 /**
  *
@@ -45,22 +44,26 @@ class TierStatisticsNumberCommand : CommandEvent {
         return OfflineImage.fileOfflineImage(outputPath.toString())
     }
 
+    /**
+     * 提前请求好数据由底层缓存
+     */
     private suspend fun preheatRequest(serverName: DakGGServerName) {
         coroutineScope {
-            ioAsync {
-                EternalReturnDakGGApiClient.getTierDistributions(DakGGTeamMode.Squad).distributions.map { it.tierType }
+            ioLaunch {
+                EternalReturnDakGGApi.Statistics.GetTierDistribution(DakGGTeamMode.Squad)
+                    .execute()
             }
-            ioAsync {
-                val type = EternalReturnDakGGApiClient.getDataCurrentSeason().type
-                EternalReturnDakGGApiClient.getCutoffsAndLeaderboard(
+            ioLaunch {
+                val type = EternalReturnDakGGApi.Data.GetCurrentSeason.execute().type
+                EternalReturnDakGGApi.Leaderboard.GetLeaderboard(
                     1,
                     type,
                     serverName,
                     DakGGTeamMode.Squad
-                ).cutoffs.map { it.tierType }
+                ).execute().cutoffs.forEach { it.tierType }
             }
 
-            val tiers = EternalReturnDakGGApiClient.getTiers()
+            val tiers = EternalReturnDakGGApi.Data.GetTiers.execute()
             resourcesDownloadService.downloadTiers(tiers)
         }
     }

@@ -27,7 +27,7 @@ class OldNameCommand : CommandEvent {
     override suspend fun listen(
         sender: MessageSender,
         command: Map<String, String>,
-    ): Message? {
+    ): Message {
         val nickname = command["nickname"] ?: run {
             return "请输入名称".toText()
         }

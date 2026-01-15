@@ -10,6 +10,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import love.forte.simbot.application.Application
 import love.forte.simbot.application.listeners
+import love.forte.simbot.common.id.IntID.Companion.ID
 import love.forte.simbot.component.onebot.v11.core.bot.OneBotBotConfiguration
 import love.forte.simbot.component.onebot.v11.core.bot.firstOneBotBotManager
 import love.forte.simbot.component.onebot.v11.core.useOneBot11
@@ -58,7 +59,6 @@ suspend fun Application.configure() {
     )
     listeners {
         process<ChatGroupMessageEvent> { event ->
-
             val reply = commandRouter.call(
                 MessageSender(
                     groupOpenId = event.id,

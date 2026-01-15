@@ -3,9 +3,10 @@ package cn.luorenmu.request.api
 import cn.luorenmu.common.util.toPath
 import cn.luorenmu.request.api.entity.module.CacheTime
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
-import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharacterImgType
+import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.entity.module.DakGGServerName
 import cn.luorenmu.request.entity.module.DakGGTeamMode
+import io.ktor.client.call.*
 import io.ktor.http.*
 import java.net.URLEncoder
 import java.nio.file.Path
@@ -19,89 +20,147 @@ import java.nio.file.Path
 /**
  * 部分数据无法通过官方Api获取或官方Api更新不及时的紧急替换
  */
-sealed class EternalReturnDakGGApi(
+sealed class EternalReturnDakGGApi<T>(
     override var url: String,
-    override var method: HttpMethod = HttpMethod.Companion.Get,
+    override var method: HttpMethod = HttpMethod.Get,
     override val headers: MutableMap<String, String> = mutableMapOf(),
     override val body: MutableMap<String, String> = mutableMapOf(),
     override val cacheTime: CacheTime = CacheTime.NULL,
 ) : PakeApi(url, method, headers, body, cacheTime) {
     override var baseUrl: String = "https://er.dakgg.io/api"
+    abstract suspend fun execute(): T
 
 
-    sealed class Data(
+    sealed class Data<T>(
         url: String,
-        method: HttpMethod = HttpMethod.Companion.Get,
+        method: HttpMethod = HttpMethod.Get,
         headers: MutableMap<String, String> = mutableMapOf(),
         body: MutableMap<String, String> = mutableMapOf(),
         cacheTime: CacheTime = CacheTime.ONE_WEEK,
-    ) : EternalReturnDakGGApi(url, method, headers, body, cacheTime) {
+    ) : EternalReturnDakGGApi<T>(url, method, headers, body, cacheTime) {
 
-        object GetTiers : Data("/v1/data/tiers?hl=zh_cn")
-        object GetGameDataBySeason : Data("/v1/data/seasons?hl=zh_CN")
-        object GetCurrentSeason : Data("/v0/current-season?hl=zh_CN")
+        object GetTiers : Data<DakGGTiersResponse>("/v1/data/tiers?hl=zh_cn") {
+            override suspend fun execute(): DakGGTiersResponse {
+                return call().body()
+            }
+        }
 
-        object GetCharacters : Data("/v1/data/characters?hl=zh_CN")
+        object GetGameDataBySeason : Data<DakGGSeasonResponse>("/v1/data/seasons?hl=zh_CN") {
+            override suspend fun execute(): DakGGSeasonResponse {
+                return call().body()
+            }
+        }
 
-        object GetItems : Data("/v1/data/items?hl=zh-cn")
+        object GetCurrentSeason : Data<DakGGCurrentSeasonResponse>(
+            "/v0/current-season?hl=zh_CN"
+        ) {
+            override suspend fun execute(): DakGGCurrentSeasonResponse =
+                call().body()
+        }
 
-        object GetWeapons : Data("/v1/data/masteries?hl=zh_cn")
+        object GetCharacters : Data<DakGGCharactersResponse>(
+            "/v1/data/characters?hl=zh_CN"
+        ) {
+            override suspend fun execute(): DakGGCharactersResponse =
+                call().body()
+        }
 
-        object GetTraitSkills : Data(
+        object GetItems : Data<DakGGItemsResponse>(
+            "/v1/data/items?hl=zh-cn"
+        ) {
+            override suspend fun execute(): DakGGItemsResponse =
+                call().body()
+        }
+
+        object GetWeapons : Data<DakGGWeaponResponse>(
+            "/v1/data/masteries?hl=zh_cn"
+        ) {
+            override suspend fun execute(): DakGGWeaponResponse =
+                call().body()
+        }
+
+        object GetTraitSkills : Data<DakGGTraitSkillsResponse>(
             "/v1/data/trait-skills?hl=zh_cn"
-        )
+        ) {
+            override suspend fun execute(): DakGGTraitSkillsResponse =
+                call().body()
+        }
 
-        object GetTacticalSkills : Data("/v1/data/tactical-skills?hl=zh_cn")
+        object GetTacticalSkills : Data<DakGGTacticalSkillResponse>(
+            "/v1/data/tactical-skills?hl=zh_cn"
+        ) {
+            override suspend fun execute(): DakGGTacticalSkillResponse =
+                call().body()
+        }
     }
 
-    sealed class User(
+    sealed class User<T>(
         url: String,
-        method: HttpMethod = HttpMethod.Companion.Get,
+        method: HttpMethod = HttpMethod.Get,
         headers: MutableMap<String, String> = mutableMapOf(),
         body: MutableMap<String, String> = mutableMapOf(),
         cacheTime: CacheTime = CacheTime.FIVE_MINUTES,
-    ) : EternalReturnDakGGApi(url, method, headers, body, cacheTime) {
+    ) : EternalReturnDakGGApi<T>(url, method, headers, body, cacheTime) {
         /**
          * 获取用户信息、不传入season默认当前赛季
          */
         class GetProfile(nickname: String) :
-            User("/v1/players/${URLEncoder.encode(nickname, "UTF-8")}/profile")
+            User<DakGGProfileResponse>(
+                "/v1/players/${URLEncoder.encode(nickname, "UTF-8")}/profile"
+            ) {
+            override suspend fun execute(): DakGGProfileResponse =
+                call().body()
+        }
     }
 
 
-    sealed class Leaderboard(
+    sealed class Leaderboard<T>(
         url: String,
-        method: HttpMethod = HttpMethod.Companion.Get,
+        method: HttpMethod = HttpMethod.Get,
         headers: MutableMap<String, String> = mutableMapOf(),
         body: MutableMap<String, String> = mutableMapOf(),
         cacheTime: CacheTime = CacheTime.ONE_HOUR,
-    ) : EternalReturnDakGGApi(url, method, headers, body, cacheTime) {
-        class GetLeaderboard(page: Int, seasonType: String, serverName: DakGGServerName, teamMode: DakGGTeamMode) :
-            Leaderboard(
-                "/v0/leaderboard?page=${page}&seasonKey=${seasonType}&serverName=${serverName.value}&teamMode=${teamMode.value}&hl=zh_CN"
-            )
+    ) : EternalReturnDakGGApi<T>(url, method, headers, body, cacheTime) {
+
+        class GetLeaderboard(
+            page: Int,
+            seasonType: String,
+            serverName: DakGGServerName,
+            teamMode: DakGGTeamMode,
+        ) : Leaderboard<DakGGLeaderboardResponse>(
+            "/v0/leaderboard?page=$page" +
+                    "&seasonKey=$seasonType" +
+                    "&serverName=${serverName.value}" +
+                    "&teamMode=${teamMode.value}&hl=zh_CN"
+        ) {
+            override suspend fun execute(): DakGGLeaderboardResponse =
+                call().body()
+        }
     }
 
 
-    sealed class Statistics(
+    sealed class Statistics<T>(
         url: String,
-        method: HttpMethod = HttpMethod.Companion.Get,
+        method: HttpMethod = HttpMethod.Get,
         headers: MutableMap<String, String> = mutableMapOf(),
         body: MutableMap<String, String> = mutableMapOf(),
         cacheTime: CacheTime = CacheTime.ONE_HOUR,
-    ) : EternalReturnDakGGApi(url, method, headers, body, cacheTime) {
-        /**
-         * 段位统计
-         */
-        class GetTierDistribution(teamMode: DakGGTeamMode) : Statistics(
+    ) : EternalReturnDakGGApi<T>(url, method, headers, body, cacheTime) {
+
+        class GetTierDistribution(
+            teamMode: DakGGTeamMode,
+        ) : Statistics<TierDistributionsResponse>(
             "/v0/statistics/tier-distribution?teamMode=${teamMode.value}&hl=zh_CN"
-        )
+        ) {
+            override suspend fun execute(): TierDistributionsResponse =
+                call().body()
+        }
     }
 
     sealed class Image(
         url: String,
         path: Path,
-        method: HttpMethod = HttpMethod.Companion.Get,
+        method: HttpMethod = HttpMethod.Get,
         headers: MutableMap<String, String> = mutableMapOf(),
         body: MutableMap<String, String> = mutableMapOf(),
     ) : PakeResourceApi(url, path, method, headers, body) {

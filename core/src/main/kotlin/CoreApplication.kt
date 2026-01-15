@@ -91,9 +91,7 @@ object ConfigFile {
             file.writeText(
                 json.encodeToString(botConfig)
             )
-            logger.info { "=".repeat(50) }
-            logger.info { "初次运行, 请填写 config.json 文件.(first run, please fill in config.json file)" }
-            logger.info { "=".repeat(50) }
+            println("初次运行, 请填写 config.json 文件.(first run, please fill in config.json file)")
             exitProcess(0)
         }
         val json = Json.decodeFromString<BotConfig>(file.readText())

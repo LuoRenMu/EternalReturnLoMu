@@ -1,20 +1,32 @@
 package cn.luorenmu.request.api
 
 import cn.luorenmu.apiKey
+import cn.luorenmu.exception.NotFoundNickNameException
 import cn.luorenmu.request.api.entity.module.CacheTime
+import cn.luorenmu.request.api.entity.response.data.BaseGameDataResponse
+import cn.luorenmu.request.api.entity.response.data.GameDataSeasonResponse
+import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse
+import cn.luorenmu.request.api.entity.response.user.UserNickNameResponse
+import cn.luorenmu.request.api.entity.response.user.UserStatsResponse
 import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.request.entity.module.MatchingTeamMode
+import io.ktor.client.call.body
 import io.ktor.http.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import love.forte.simbot.message.toText
 import java.net.URLEncoder
+import java.time.LocalDateTime
 
 /**
  *
  * @author LoMu
  * Date 2025/10/25 15:24
  */
-sealed class EternalReturnOpenApi(
+sealed class EternalReturnOpenApi<T>(
     override var url: String,
-    override var method: HttpMethod = HttpMethod.Companion.Get,
+    override var method: HttpMethod = HttpMethod.Get,
     override val headers: MutableMap<String, String> = mutableMapOf(),
     override val body: MutableMap<String, String> = mutableMapOf(),
     override val cacheTime: CacheTime = CacheTime.NULL,
@@ -22,65 +34,136 @@ sealed class EternalReturnOpenApi(
     init {
         headers.putAll(apiKey)
     }
+
     override var baseUrl: String = "https://open-api.bser.io"
-    sealed class User(
+
+    abstract suspend fun execute(): T
+
+    sealed class User<T>(
         url: String,
-        method: HttpMethod = HttpMethod.Companion.Get,
-        headers: MutableMap<String, String> = mutableMapOf(),
-        body: MutableMap<String, String> = mutableMapOf(),
         cacheTime: CacheTime = CacheTime.FIVE_MINUTES,
-    ) : EternalReturnOpenApi(url, method, headers, body, cacheTime) {
+    ) : EternalReturnOpenApi<T>(url, cacheTime = cacheTime) {
 
-        class GetIdByNickName(nickname: String) :
-            User("/v1/user/nickname?query=${URLEncoder.encode(nickname, "UTF-8")}", HttpMethod.Companion.Get)
+        class GetIdByNickName(
+            private val nickname: String
+        ) : User<UserNickNameResponse>(
+            "/v1/user/nickname?query=${URLEncoder.encode(nickname, "UTF-8")}"
+        ) {
+            override suspend fun execute(): UserNickNameResponse {
+                val resp = call()
+                val body = resp.body<JsonObject>()
 
+                if (resp.status.value == 404 ||
+                    body.jsonObject["code"]?.jsonPrimitive?.content == "404"
+                ) {
+                    throw NotFoundNickNameException(
+                        "没有找到的用户名称 (${nickname[0]}***) 请检查名称".toText()
+                    )
+                }
 
-        class GetUserStats(userId: String, seasonId: Int, matchingMode: MatchingMode) :
-            User("/v2/user/stats/uid/${userId}/${seasonId}/${matchingMode.value}", HttpMethod.Companion.Get)
+                return resp.body()
+            }
+        }
 
-
+        class GetUserStats(
+            userId: String,
+            seasonId: Int,
+            matchingMode: MatchingMode
+        ) : User<UserStatsResponse>(
+            "/v2/user/stats/uid/$userId/$seasonId/${matchingMode.value}"
+        ) {
+            override suspend fun execute(): UserStatsResponse =
+                call().body()
+        }
     }
 
-    sealed class Game(
+    sealed class Game<T>(
         url: String,
-        method: HttpMethod = HttpMethod.Companion.Get,
-        headers: MutableMap<String, String> = mutableMapOf(),
-        body: MutableMap<String, String> = mutableMapOf(),
         cacheTime: CacheTime = CacheTime.FIVE_MINUTES,
-    ) : EternalReturnOpenApi(url, method, headers, body, cacheTime) {
-        class GetGamesByUserId(userId: String) : Game("/v1/user/games/uid/${userId}", HttpMethod.Companion.Get)
+    ) : EternalReturnOpenApi<T>(url, cacheTime = cacheTime) {
 
-        class GetGameByGameId(gameId: Long) : Game("/v1/games/${gameId}", HttpMethod.Companion.Get)
+        class GetGamesByUserId(
+            userId: String
+        ) : Game<BattleUserGamesResponse>(
+            "/v1/user/games/uid/$userId"
+        ) {
+            override suspend fun execute(): BattleUserGamesResponse =
+                call().body()
+        }
+
+        class GetGameByGameId(
+            gameId: Long
+        ) : Game<BattleUserGamesResponse>(
+            "/v1/games/$gameId"
+        ) {
+            override suspend fun execute(): BattleUserGamesResponse =
+                call().body()
+        }
     }
 
 
-    sealed class Data(
-        url: String, method: HttpMethod = HttpMethod.Companion.Get,
-        headers: MutableMap<String, String> = mutableMapOf(),
-        body: MutableMap<String, String> = mutableMapOf(),
+
+    sealed class Data<T>(
+        url: String,
         cacheTime: CacheTime = CacheTime.ONE_WEEK,
-    ) : EternalReturnOpenApi(url, method, headers, body, cacheTime) {
+    ) : EternalReturnOpenApi<T>(url, cacheTime = cacheTime) {
 
-        /**
-         * Meta Type, use 'hash' to find all types
-         */
-        object GetGameDataByHash : Data("/v2/data/hash", HttpMethod.Companion.Get)
+        object GetGameDataByHash :
+            Data<BaseGameDataResponse<JsonObject>>(
+                "/v2/data/hash"
+            ) {
+            override suspend fun execute(): BaseGameDataResponse<JsonObject> =
+                call().body()
+        }
 
         object GetGameDataBySeason :
-            Data("/v1/data/Season", HttpMethod.Companion.Get)
+            Data<GameDataSeasonResponse>(
+                "/v1/data/Season"
+            ) {
+            override suspend fun execute(): GameDataSeasonResponse {
+                val resp = call()
+                val seasons =
+                    resp.body<BaseGameDataResponse<MutableList<GameDataSeasonResponse>>>()
 
-        class GetGameDataByMetaType(metaType: String) : Data("/v2/data/${metaType}", HttpMethod.Companion.Get)
+                val season = seasons.data.first { it.isCurrent == 1 }
+
+                // 官方 API 落后 → DAK.GG 补偿
+                if (season.seasonEnd.isBefore(LocalDateTime.now())) {
+                    val dakGGSeason =
+                        EternalReturnDakGGApi.Data.GetCurrentSeason.execute()
+
+                    if (dakGGSeason.id != season.seasonID) {
+                        return dakGGSeason.convert()
+                    }
+                }
+                return season
+            }
+        }
+
+        class GetGameDataByMetaType(
+            metaType: String
+        ) : Data<BaseGameDataResponse<JsonObject>>(
+            "/v2/data/$metaType"
+        ) {
+            override suspend fun execute(): BaseGameDataResponse<JsonObject> =
+                call().body()
+        }
     }
 
-    sealed class Rank(
-        url: String, method: HttpMethod = HttpMethod.Companion.Get,
-        headers: MutableMap<String, String> = mutableMapOf(),
-        body: MutableMap<String, String> = mutableMapOf(),
+
+    sealed class Rank<T>(
+        url: String,
         cacheTime: CacheTime = CacheTime.ONE_HOUR,
-    ) : EternalReturnOpenApi(url, method, headers, body, cacheTime) {
+    ) : EternalReturnOpenApi<T>(url, cacheTime = cacheTime) {
 
-
-        class GetGlobalRank(seasonId: Int, matchingTeamMode: MatchingTeamMode) :
-            Rank("/v1/rank/top/${seasonId}/${matchingTeamMode.value}", HttpMethod.Companion.Get)
+        class GetGlobalRank(
+            seasonId: Int,
+            matchingTeamMode: MatchingTeamMode
+        ) : Rank<JsonObject>(
+            "/v1/rank/top/$seasonId/${matchingTeamMode.value}"
+        ) {
+            override suspend fun execute(): JsonObject =
+                call().body()
+        }
     }
 }

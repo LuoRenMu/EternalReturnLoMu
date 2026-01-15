@@ -8,5 +8,5 @@ __Search__
 __Rank Search__
 ![search1.png](docs/images/search1.png)   
 
-__Tier Distribution Or Eternal Score__
+__Tier Distribution And Eternal Score__
 ![tier.png](docs/images/tier.png)

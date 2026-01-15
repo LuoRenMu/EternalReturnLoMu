@@ -23,39 +23,9 @@ import java.time.LocalDateTime
  * Date 2025/10/25 19:07
  */
 object EternalReturnOpenApiClient {
-    private val log = KotlinLogging.logger { }
-    suspend fun getUserNumByUserNickName(username: String): UserNickNameResponse {
-        val api = EternalReturnOpenApi.User.GetIdByNickName(username)
-        val resp = RequestManager.call(api)
-        val body = resp.body<JsonObject>()
-        if (resp.status.value == 404 || body.jsonObject["code"]!!.jsonPrimitive.content == "404") {
-            throw NotFoundNickNameException("没有找到的用户名称  (${username[0]}***)  请检查名称".toText())
-        }
-        val obj = resp.body<UserNickNameResponse>()
-        return obj
-    }
 
-    suspend fun getGamesByUserNum(userNum: String): BattleUserGamesResponse {
-        val resp =
-            RequestManager.call(EternalReturnOpenApi.Game.GetGamesByUserId(userNum))
-        return resp.body<BattleUserGamesResponse>()
-    }
 
-    suspend fun getDataCurrentSeason(): GameDataSeasonResponse {
-        val resp =
-            RequestManager.call(EternalReturnOpenApi.Data.GetGameDataBySeason)
-        val seasons = resp.body<BaseGameDataResponse<MutableList<GameDataSeasonResponse>>>()
-        val season = seasons.data.first { it.isCurrent == 1 }
-        // 官方API存在数据落后性，从DAK.GG中获取
-        if (season.seasonEnd.isBefore(LocalDateTime.now())) {
-            val dakGGCurrentSeason = EternalReturnDakGGApiClient.getDataCurrentSeason()
-            if (dakGGCurrentSeason.id == season.seasonID) {
-                return season
-            }
-            return dakGGCurrentSeason.convert()
-        }
-        return season
-    }
+
 
     suspend fun getUserStats(userNum: String, seasonId: Int, matchingMode: MatchingMode): UserStatsResponse {
         val api = EternalReturnOpenApi.User.GetUserStats(userNum, seasonId, matchingMode)
@@ -64,21 +34,6 @@ object EternalReturnOpenApiClient {
         return resp.body<UserStatsResponse>()
     }
 
-
-    suspend fun getGameByGameId(gameId: Long): BattleUserGamesResponse {
-        val api = EternalReturnOpenApi.Game.GetGameByGameId(gameId)
-
-        val resp =
-            RequestManager.call(api)
-        return resp.body<BattleUserGamesResponse>()
-    }
-
-    suspend fun getGlobalRank(seasonId: Int, matchingTeamMode: MatchingTeamMode) {
-        val api = EternalReturnOpenApi.Rank.GetGlobalRank(seasonId, matchingTeamMode)
-        val resp =
-            RequestManager.call(api)
-        TODO("return global rank obj")
-    }
 
 
 }

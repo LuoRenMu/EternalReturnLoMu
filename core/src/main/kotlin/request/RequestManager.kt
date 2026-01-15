@@ -56,7 +56,18 @@ object RequestManager {
         }
         map
     }
-
+    public val api  = HttpClient(CIO){
+        engine {
+            maxConnectionsCount = 50
+            endpoint {
+                maxConnectionsPerRoute = 100
+                pipelineMaxSize = 20
+                keepAliveTime = 5000
+                connectTimeout = 10_000
+                connectAttempts = 3
+            }
+        }
+    }
     private val client = HttpClient(CIO) {
         engine {
             maxConnectionsCount = 1000

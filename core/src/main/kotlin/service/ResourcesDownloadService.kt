@@ -1,8 +1,8 @@
 package cn.luorenmu.service
 
 import cn.luorenmu.request.api.Api.Companion.ioAsync
+import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.EternalReturnDakGGApi
-import cn.luorenmu.request.api.EternalReturnDakGGApiClient
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
@@ -36,15 +36,15 @@ class ResourcesDownloadService {
     suspend fun downloadProfileData(nickname: String) {
         coroutineScope {
             val profileDF = ioAsync {
-                EternalReturnDakGGApiClient.getProfile(nickname)
+                EternalReturnDakGGApi.User.GetProfile(nickname).execute()
             }
             val charactersDF = ioAsync {
-                EternalReturnDakGGApiClient.getCharacters()
+                EternalReturnDakGGApi.Data.GetCharacters.execute()
             }
             val (profile, charactersResponse) = profileDF.await() to charactersDF.await()
             val characters = profile.playerSeasonOverviews.firstOrNull()?.characterStats
             characters?.forEach { character ->
-                ioAsync {
+                ioLaunch {
                     val characterById = charactersResponse.getCharacterById(character.key)
 
                     /**
@@ -94,7 +94,7 @@ class ResourcesDownloadService {
      */
     suspend fun downloadTraitSkillImage(traitSkillId: Long, traitSkills: DakGGTraitSkillsResponse) {
         coroutineScope {
-            ioAsync {
+            ioLaunch {
                 val traitSkill = traitSkills.traitSkills.first { it.id == traitSkillId }
                 val traitSkillGroup = traitSkills.traitSkillGroups.firstOrNull { it.key == traitSkill.group }
                 traitSkillGroup?.let {
@@ -127,7 +127,7 @@ class ResourcesDownloadService {
         coroutineScope {
             val characterSkinById = character.getCharacterSkinById(skinCode)
             DakGGCharacterImgType.entries.forEach {
-                ioAsync {
+                ioLaunch {
                     EternalReturnDakGGApi.Image.DakGGImageUrlCharacter(
                         characterSkinById.imageUrl,
                         character.id.toInt(),
@@ -143,14 +143,14 @@ class ResourcesDownloadService {
         coroutineScope {
             for (tier in tiers.tiers.distinctBy { it.id }) {
                 val tierType = tier.id
-                ioAsync {
+                ioLaunch {
                     EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                         url = tier.imageUrl.replace("assets/", "").replace("rank", "tier"),
                         ImageResourcesType.TierFull,
                         tierType.toString()
                     ).callStream()
                 }
-                ioAsync {
+                ioLaunch {
                     EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                         tier.iconUrl,
                         ImageResourcesType.TierRound,
@@ -162,12 +162,12 @@ class ResourcesDownloadService {
     }
 
     suspend fun gameDataDownload(games: MutableList<UserGame>) {
-        val characterResponse = EternalReturnDakGGApiClient.getCharacters()
-        val weaponResponse = EternalReturnDakGGApiClient.getWeapons()
-        val traitSkillResponse = EternalReturnDakGGApiClient.getTraitSkills()
-        val itemsResponse = EternalReturnDakGGApiClient.getItems()
-        val tacticalSkillResponse = EternalReturnDakGGApiClient.getTacticalSkills()
-        val tiers = EternalReturnDakGGApiClient.getTiers()
+        val characterResponse = EternalReturnDakGGApi.Data.GetCharacters.execute()
+        val weaponResponse = EternalReturnDakGGApi.Data.GetWeapons.execute()
+        val traitSkillResponse = EternalReturnDakGGApi.Data.GetTraitSkills.execute()
+        val itemsResponse = EternalReturnDakGGApi.Data.GetItems.execute()
+        val tacticalSkillResponse = EternalReturnDakGGApi.Data.GetTacticalSkills.execute()
+        val tiers = EternalReturnDakGGApi.Data.GetTiers.execute()
         log.debug { "gameDataDownload 数据已收集完毕" }
 
         log.debug { "gameDataDownload 开始下载天赋" }

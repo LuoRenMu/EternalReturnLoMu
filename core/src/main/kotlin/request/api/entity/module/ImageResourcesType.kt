@@ -1,6 +1,6 @@
 package cn.luorenmu.request.api.entity.module
 
-import cn.luorenmu.request.api.EternalReturnDakGGApiClient
+import cn.luorenmu.request.api.EternalReturnDakGGApi
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharacterImgType
 import kotlinx.coroutines.runBlocking
 
@@ -69,7 +69,7 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
     fun getGeneralPath(name: String): String {
         var type = name
         if (this == TraitSkillGroup && traitSkillIdRegex.matches(name)) {
-            val traitSkill = runBlocking { EternalReturnDakGGApiClient.getTraitSkills() }
+            val traitSkill = runBlocking { EternalReturnDakGGApi.Data.GetTraitSkills.execute() }
             type = traitSkill.traitSkills.first { it.id == name.toLong() }.group
         }
         return "/resources/images${this.path}$type${this.fileType}"

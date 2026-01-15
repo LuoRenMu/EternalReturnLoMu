@@ -2,8 +2,9 @@ package cn.luorenmu.service
 
 import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.request.api.Api.Companion.ioAsync
-import cn.luorenmu.request.api.EternalReturnDakGGApiClient
-import cn.luorenmu.request.api.EternalReturnOpenApiClient
+import cn.luorenmu.request.api.Api.Companion.ioLaunch
+import cn.luorenmu.request.api.EternalReturnDakGGApi
+import cn.luorenmu.request.api.EternalReturnOpenApi
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharacterImgType
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharactersResponse
@@ -42,13 +43,13 @@ class EternalReturnRenderService {
          */
         // val userStats = EternalReturnOpenApiClient.getUserStats(userId, 35, matchingMode)
 
-        val userId = EternalReturnOpenApiClient.getUserNumByUserNickName(nickname).user.userId
+        val userId = EternalReturnOpenApi.User.GetIdByNickName(nickname).execute().user.userId
         val (profile, characters, tiers, season, gamesResponse) = coroutineScope {
-            val profileDF = ioAsync { EternalReturnDakGGApiClient.getProfile(nickname) }
-            val charactersDF = ioAsync { EternalReturnDakGGApiClient.getCharacters() }
-            val tierDF = ioAsync { EternalReturnDakGGApiClient.getTiers() }
-            val seasonDF = ioAsync { EternalReturnDakGGApiClient.getDataCurrentSeason() }
-            val gamesDF = ioAsync { EternalReturnOpenApiClient.getGamesByUserNum(userId) }
+            val profileDF = ioAsync { EternalReturnDakGGApi.User.GetProfile(userId).execute() }
+            val charactersDF = ioAsync { EternalReturnDakGGApi.Data.GetCharacters.execute() }
+            val tierDF = ioAsync { EternalReturnDakGGApi.Data.GetTiers.execute() }
+            val seasonDF = ioAsync { EternalReturnDakGGApi.Data.GetCurrentSeason.execute() }
+            val gamesDF = ioAsync { EternalReturnOpenApi.Game.GetGamesByUserId(userId).execute() }
             Quint(profileDF.await(), charactersDF.await(), tierDF.await(), seasonDF.await(), gamesDF.await())
         }
 
@@ -271,13 +272,13 @@ class EternalReturnRenderService {
     suspend fun getCutoffsAndTierNumber(serverName: DakGGServerName): TierStatistics {
         val (leaderboard, td, season) = coroutineScope {
             val leaderboardDeferred = ioAsync {
-                val type = EternalReturnDakGGApiClient.getDataCurrentSeason().type
-                EternalReturnDakGGApiClient.getCutoffsAndLeaderboard(1, type, serverName, DakGGTeamMode.Squad)
+                val type = EternalReturnDakGGApi.Data.GetCurrentSeason.execute().type
+                EternalReturnDakGGApi.Leaderboard.GetLeaderboard(1, type, serverName, DakGGTeamMode.Squad).execute()
             }
             val tierDistributionDeferred = ioAsync {
-                EternalReturnDakGGApiClient.getTierDistributions(DakGGTeamMode.Squad)
+                EternalReturnDakGGApi.Statistics.GetTierDistribution(DakGGTeamMode.Squad).execute()
             }
-            val seasonDF = ioAsync { EternalReturnDakGGApiClient.getDataCurrentSeason() }
+            val seasonDF = ioAsync { EternalReturnDakGGApi.Data.GetCurrentSeason.execute() }
             Triple(leaderboardDeferred.await(), tierDistributionDeferred.await(), seasonDF.await())
         }
 
@@ -347,10 +348,10 @@ class EternalReturnRenderService {
     suspend fun oldName(nickname: String): EternalReturnOldName {
         val (userResponse, dataCurrentSeason) = coroutineScope {
             val userResponseDF = ioAsync {
-                EternalReturnOpenApiClient.getUserNumByUserNickName(nickname)
+                EternalReturnOpenApi.User.GetIdByNickName(nickname).execute()
             }
             val dataCurrentSeasonDF = ioAsync {
-                EternalReturnOpenApiClient.getDataCurrentSeason()
+                EternalReturnOpenApi.Data.GetGameDataBySeason.execute()
             }
             userResponseDF.await() to dataCurrentSeasonDF.await()
         }
@@ -359,9 +360,13 @@ class EternalReturnRenderService {
         val userStatsResponses = coroutineScope {
             val list = CopyOnWriteArrayList<UserStatsResponse>()
             for (i in 1..<seasonID) {
-                ioAsync {
+                ioLaunch {
                     // TODO 缓存来自底层 在没有缓存的情况下会同时发送大量请求
-                    val resp = EternalReturnOpenApiClient.getUserStats(userId, i, MatchingMode.Rank)
+                    val resp = EternalReturnOpenApi.User.GetUserStats(
+                        userId,
+                        i,
+                        MatchingMode.Rank
+                    ).execute()
                     list.add(resp)
                 }
             }
