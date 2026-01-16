@@ -27,7 +27,7 @@ abstract class PakeApi(
         return "Api(baseUrl='$baseUrl', url='$url', method=$method, headers=$headers, body=$body)"
     }
 
-    suspend fun call(): HttpResponse {
+    protected suspend fun call(): HttpResponse {
         return RequestManager.call(this)
     }
 
