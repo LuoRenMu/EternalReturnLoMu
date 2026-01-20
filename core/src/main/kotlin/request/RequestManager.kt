@@ -24,8 +24,9 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.network.sockets.SocketTimeoutException
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -56,7 +57,7 @@ object RequestManager {
         }
         map
     }
-    public val api  = HttpClient(CIO){
+    public val api = HttpClient(CIO) {
         engine {
             maxConnectionsCount = 50
             endpoint {
@@ -84,7 +85,7 @@ object RequestManager {
             maxRetries = 5
             retryOnServerErrors(maxRetries = 3)
 
-            retryOnExceptionIf { request, cause ->
+            retryOnExceptionIf { _, cause ->
                 when (cause) {
                     is SocketTimeoutException,
                     is ConnectTimeoutException,
@@ -178,7 +179,7 @@ object RequestManager {
                 }
             }
         }
-        if (api is EternalReturnOpenApi) {
+        if (api is EternalReturnOpenApi<*>) {
             val jsonObject = response.body<JsonObject>().jsonObject
             jsonObject["message"]?.jsonPrimitive?.content?.let {
                 if (it == "Too Many Requests") {
@@ -216,8 +217,10 @@ object RequestManager {
             val response = call(api)
 
             val readBytes = response.readBytes()
-            FileOutputStream(file).use { output ->
-                output.write(readBytes)
+            withContext(Dispatchers.IO) {
+                FileOutputStream(file).use { output ->
+                    output.write(readBytes)
+                }
             }
         } catch (e: Exception) {
             log.error(e) { "Failed to download file: $path from ${api.baseUrl}${api.url} => $e" }

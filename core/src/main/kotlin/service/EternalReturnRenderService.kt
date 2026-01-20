@@ -21,6 +21,8 @@ import cn.luorenmu.service.entity.EternalReturnPlayRender
 import cn.luorenmu.service.entity.TierStatistics
 import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.toText
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.stream.Collectors
 
@@ -209,11 +211,13 @@ class EternalReturnRenderService {
         )
     }
 
+    public val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     private fun gameConvertMatcher(
         game: UserGame,
         characters: DakGGCharactersResponse,
     ): EternalReturnPlayRender.EternalReturnPlayerMatchData {
         val killAndAssist = game.playerKill + game.playerAssistant
+        val date = ZonedDateTime.parse(game.startDtm, dateFormatter).plusDays(-1)
         return EternalReturnPlayRender.EternalReturnPlayerMatchData(
             rp = game.mmrAfter,
             rpChange = game.mmrGain,
@@ -238,6 +242,8 @@ class EternalReturnRenderService {
                 game.skinCode,
                 DakGGCharacterImgType.CharProfile
             ),
+            dateHour = "${date.hour}:${date.minute}:${date.second}",
+            dateMonth = "${date.monthValue}月${date.dayOfMonth}日",
             assist = game.playerAssistant,
             gameId = game.gameId.toString(),
             dmg = game.damageToPlayer,
