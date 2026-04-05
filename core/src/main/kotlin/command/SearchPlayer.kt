@@ -58,6 +58,7 @@ class SearchPlayer : CommandEvent {
 
         val mode = MatchingMode.convert(command["mode"])
         preheatRequest(nickname)
+
         val outputPath = PathUtils.resourcesPathResolve("render", "player", "$nickname.png")
         val renderPath = PathUtils.resourcesPathResolve("render", "player","tmp", "${UUID.randomUUID()}.html")
         val html =

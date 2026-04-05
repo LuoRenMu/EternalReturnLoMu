@@ -6,7 +6,6 @@ import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.EternalReturnDakGGApi
 import cn.luorenmu.request.api.EternalReturnOpenApi
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
-import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharacterImgType
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharactersResponse
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGTiersResponse
@@ -67,10 +66,9 @@ class EternalReturnRenderService {
                 ?: playerSeasonOverviews.firstOrNull { it.characterStats.isNotEmpty() }?.characterStats?.first()
             val skinState = characterState?.skinStats?.first()
             return@run if (characterState != null && skinState != null) {
-                ImageResourcesType.getCharacterPath(
+                ImageResourcesType.CharacterResult.getCharacterPath(
                     characterState.key.toInt(),
-                    skinState.key,
-                    DakGGCharacterImgType.CharResult
+                    skinState.key
                 )
             } else {
                 "/static/images/character-null.png"
@@ -89,9 +87,8 @@ class EternalReturnRenderService {
                 seasonOverview.duoStats.take(8).forEach { duoStat ->
                     val characterById = characters.getCharacterById(duoStat.characterStats.first().key)
                     recentPlays.add(EternalReturnPlayRender.EternalReturnPlayerRecentPlay().apply {
-                        imageWrapperUrl = ImageResourcesType.getCharacterPath(
-                            characterById.id.toInt(), characterById.skins.first().id,
-                            DakGGCharacterImgType.CharProfile
+                        imageWrapperUrl = ImageResourcesType.CharacterProfile.getCharacterPath(
+                            characterById.id.toInt(), characterById.skins.first().id
                         )
                         this.plays = duoStat.play
                         val playDouble = this.plays.toDouble()
@@ -181,9 +178,8 @@ class EternalReturnRenderService {
                 characterUseStats.add(
                     EternalReturnPlayRender.EternalReturnCharacterUseStats(
                         characterName = characterById.name,
-                        imgUrl = ImageResourcesType.getCharacterPath(
-                            characterById.id.toInt(), characterById.skins.first().id,
-                            DakGGCharacterImgType.CharProfile
+                        imgUrl = ImageResourcesType.CharacterProfile.getCharacterPath(
+                            characterById.id.toInt(), characterById.skins.first().id
                         ),
                         winRate = "${
                             String.format(
@@ -244,10 +240,9 @@ class EternalReturnRenderService {
             else ImageResourcesType.TraitSkillGroup.getGeneralPath(
                 game.traitSecondSub.first().toString()
             ),
-            characterAvatarUrl = ImageResourcesType.getCharacterPath(
+            characterAvatarUrl = ImageResourcesType.CharacterProfile.getCharacterPath(
                 game.characterNum.toInt(),
-                game.skinCode,
-                DakGGCharacterImgType.CharProfile
+                game.skinCode
             ),
             dateHour = "${date.hour}:${date.minute}:${date.second}",
             dateMonth = "${date.monthValue}月${date.dayOfMonth}日",

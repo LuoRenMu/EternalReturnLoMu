@@ -14,7 +14,7 @@ import java.nio.file.Path
 abstract class PakeResourceApi(
     override var url: String,
     override val path: Path,
-    override var method: HttpMethod = HttpMethod.Companion.Get,
+    override var method: HttpMethod = HttpMethod.Get,
     override val headers: MutableMap<String, String> = mutableMapOf(),
     override val body: MutableMap<String, String> = mutableMapOf(),
 ) : ResourceApi, Api {

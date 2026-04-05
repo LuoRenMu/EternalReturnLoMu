@@ -1,6 +1,7 @@
 package cn.luorenmu.request
 
 import cn.luorenmu.common.util.PathUtils
+import cn.luorenmu.common.util.ResourceCheckUtil
 import cn.luorenmu.common.util.StringLockUtil.withKeyLock
 import cn.luorenmu.exception.ForbiddenException
 import cn.luorenmu.request.api.Api
@@ -13,10 +14,7 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.ProxyBuilder
-import io.ktor.client.engine.ProxyType
 import io.ktor.client.engine.cio.*
-import io.ktor.client.engine.http
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.cache.*
@@ -35,7 +33,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.FileOutputStream
-import java.net.Proxy
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.random.Random
@@ -61,6 +58,7 @@ object RequestManager {
         }
         map
     }
+
     // SIMBOT Request require
     public val api = HttpClient(CIO) {
         engine {
@@ -217,10 +215,11 @@ object RequestManager {
     }
 
     suspend fun callStream(api: PakeResourceApi, path: Path) {
-        val file = path.toFile()
-        if (file.exists() && file.length() > 0) {
+        // only first check io
+        if (ResourceCheckUtil.checkResource(path)) {
             return
         }
+        val file = path.toFile()
         try {
             file.parentFile?.let { parent ->
                 if (!parent.exists()) {
@@ -239,6 +238,7 @@ object RequestManager {
             log.error(e) { "Failed to download file: $path from ${api.baseUrl}${api.url} => $e" }
             if (file.exists() && file.length() == 0L) {
                 file.delete()
+                ResourceCheckUtil.removeResource(path)
             }
             throw e
         }

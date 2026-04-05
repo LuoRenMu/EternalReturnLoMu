@@ -23,7 +23,7 @@ class ResourcesDownloadService {
      */
     suspend fun downloadItemImage(item: DakGGItemsResponse.Item) {
         coroutineScope {
-            ioAsync {
+            ioLaunch {
                 EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                     item.imageUrl,
                     ImageResourcesType.Item,
@@ -64,7 +64,7 @@ class ResourcesDownloadService {
      */
     suspend fun downloadWeaponImage(weapon: DakGGWeaponResponse.Weapon) {
         coroutineScope {
-            ioAsync {
+            ioLaunch {
                 EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                     weapon.iconUrl,
                     ImageResourcesType.Weapon,
@@ -196,7 +196,7 @@ class ResourcesDownloadService {
         }
 
         log.debug { "gameDataDownload 开始下载装备" }
-        val equipmentIds = games.map { it.equipment.values }.flatten().map { it.toLong() }
+        val equipmentIds = games.flatMap { it.equipment.values }.map { it.toLong() }
         for (equipmentId in equipmentIds) {
             downloadItemImage(itemsResponse.getItemById(equipmentId))
         }

@@ -1,7 +1,6 @@
 package cn.luorenmu.request.api.entity.module
 
 import cn.luorenmu.request.api.EternalReturnDakGGApi
-import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharacterImgType
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -26,9 +25,14 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
     TierRound("/tier/round/", ".png"),
 
     /**
-     * ID-SKIN_ID
+     * ID-SKIN_ID (CharProfile)
      */
-    Character("/character/", ".png"),
+    CharacterProfile("/character/profile/", ".png"),
+
+    /**
+     * ID-SKIN_ID (CharResult)
+     */
+    CharacterResult("/character/result/", ".png"),
 
     /**
      * ID
@@ -52,6 +56,7 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
 
     /**
      * NULL
+     * 未知图标占位符 (小威)
      */
     TraitSkillGroupPlaceholder("/trait/group/wilson", ".png"),
 
@@ -75,17 +80,7 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
         return "/resources/images${this.path}$type${this.fileType}"
     }
 
-    companion object {
-
-        const val TRAIT_SKILL_GROUP_PLACEHOLDER_WILSON_URL =
-            "//cdn.dak.gg/er/images/common/img-placeholder-wilson-round.png"
-
-        fun getCharacterPath(
-            characterId: Int,
-            skinId: Long,
-            imageType: DakGGCharacterImgType,
-        ): String {
-            return "/resources/images${Character.path}${characterId}/${imageType.value}/${skinId}${Character.fileType}"
-        }
+    fun getCharacterPath(characterId: Int, skinId: Long): String {
+        return "/resources/images${this.path}${characterId}/${skinId}${this.fileType}"
     }
 }

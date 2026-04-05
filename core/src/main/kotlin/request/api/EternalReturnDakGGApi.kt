@@ -197,7 +197,10 @@ sealed class EternalReturnDakGGApi<T>(
         ) :
             Image(
                 url.replace(DakGGCharacterImgType.regex(), imageType.value),
-                path = ImageResourcesType.getCharacterPath(characterId, skinId, imageType).toPath()
+                path = when (imageType) {
+                    DakGGCharacterImgType.CharProfile -> ImageResourcesType.CharacterProfile.getCharacterPath(characterId, skinId)
+                    DakGGCharacterImgType.CharResult -> ImageResourcesType.CharacterResult.getCharacterPath(characterId, skinId)
+                }.toPath()
             )
 
         class DakGGImageUrlItemBg(
