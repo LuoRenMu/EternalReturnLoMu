@@ -1,5 +1,6 @@
 package cn.luorenmu.common.util
 
+import cn.luorenmu.ConfigFile
 import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Page
@@ -16,11 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger
  * Date 2025/10/25 17:40
  */
 object BrowserPool {
-    private const val POOL = 1
+    private val POOL = ConfigFile.config.browser.pool
     private val webPageScreenshots = run {
         val item = CopyOnWriteArrayList<WebPageScreenshot>()
         (1..POOL).forEach { i ->
-            item.add(WebPageScreenshot(false))
+            item.add(WebPageScreenshot(ConfigFile.config.browser.headless))
         }
         item
     }
@@ -68,7 +69,7 @@ object BrowserPool {
             pageConsumer: (page: Page, box: BoundingBox) -> Unit,
         ) {
             synchronized(this) {
-                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(15000.0))
+                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(60000.0))
                 val locator = page.locator(selector)
                 val boundingBox = locator.boundingBox()
                 pageConsumer(page, boundingBox)
@@ -83,7 +84,7 @@ object BrowserPool {
             pageConsumer: (page: Page) -> Unit = {},
         ) {
             synchronized(this) {
-                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(15000.0))
+                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(60000.0))
                 val locator = page.locator(selector)
                 val boundingBox = locator.boundingBox()
                 pageConsumer(page)
@@ -119,7 +120,7 @@ object BrowserPool {
             pageConsumer: (page: Page) -> Unit = {},
         ) {
             synchronized(this) {
-                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(15000.0))
+                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(60000.0))
                 pageConsumer(page)
                 page.screenshot(
                     Page.ScreenshotOptions().setPath(output)

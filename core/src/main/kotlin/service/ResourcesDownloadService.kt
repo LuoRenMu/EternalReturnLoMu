@@ -79,7 +79,7 @@ class ResourcesDownloadService {
      */
     suspend fun downloadTacticalSkillImage(tacticalSkill: DakGGTacticalSkillResponse.TacticalSkill) {
         coroutineScope {
-            ioAsync {
+            ioLaunch {
                 EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                     tacticalSkill.imageUrl,
                     ImageResourcesType.TacticalSkill,
@@ -210,7 +210,7 @@ class ResourcesDownloadService {
 
         log.debug { "gameDataDownload 开始下载装备背景图片" }
 
-        for (id in games.map { game -> game.equipmentGrade.values }.flatten().toList()) {
+        for (id in games.flatMap { game -> game.equipmentGrade.values }.toList()) {
             downloadItemBgImage(id)
         }
         log.debug { "gameDataDownload 全部已完成" }
@@ -218,7 +218,7 @@ class ResourcesDownloadService {
 
     suspend fun downloadItemBgImage(id: Int) {
         coroutineScope {
-            ioAsync {
+            ioLaunch {
                 EternalReturnDakGGApi.Image.DakGGImageUrlItemBg(
                     id.toString()
                 ).callStream()

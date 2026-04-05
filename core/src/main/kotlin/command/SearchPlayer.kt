@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
  * Date 2025/10/24 14:06
  */
 
-@BotCommand("search", "search", "<nickname> <mode>")
+@BotCommand("查询玩家战绩", "search", "<nickname> <mode>", description = "查询玩家战绩 示例:\n /search LoMu \n /search LoMu 匹配\n /search LoMu 排位 ")
 class SearchPlayer : CommandEvent {
 
     private val log = KotlinLogging.logger {}
@@ -55,7 +55,8 @@ class SearchPlayer : CommandEvent {
             }
         }
 
-        val mode = MatchingMode.convert(command["mode"]?.toInt() ?: 3)
+
+        val mode = MatchingMode.convert(command["mode"])
         preheatRequest(nickname)
         val outputPath = PathUtils.resourcesPathResolve("render", "player", "$nickname.png")
         val renderPath = PathUtils.resourcesPathResolve("render", "player","tmp", "${UUID.randomUUID()}.html")
@@ -81,7 +82,7 @@ class SearchPlayer : CommandEvent {
                     dataCurrentSeason.seasonID,
                     MatchingMode.Rank
                 ).execute()
-                log.debug { "getUserStats 预备请求数据已完成" }
+                log.debug { "getUser 预备请求数据已完成" }
             }
             ioLaunch {
                 val games = EternalReturnOpenApi.Game.GetGamesByUserId(

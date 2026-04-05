@@ -13,12 +13,19 @@ import love.forte.simbot.message.toText
  * Date 2025/12/25 11:20
  */
 
-@BotCommand(id = "help", alias = "help", value = "")
+@BotCommand(name = "help", alias = "帮助", value = "",description = "帮助")
 class HelpCommand: CommandEvent{
     override suspend fun listen(
         sender: MessageSender,
         command: Map<String, String>,
     ): Message? {
+        val append = StringBuilder().append("命令列表:").append("\n")
+        COMMANDS.values.filter { it.command.name != "help" }.forEach {
+            val help = it.command.description
+            val name = it.command.name
+            append.append("名称: $name").append("\n")
+                .append("描述: $help").append("\n")
+        }
         return null
     }
 

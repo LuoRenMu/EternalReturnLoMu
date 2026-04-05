@@ -11,8 +11,9 @@ import cn.luorenmu.Adapter
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.CLASS)
 annotation class BotCommand(
-    val id: String,
+    val name: String,
     val alias: String,
     val value: String,
-    val adapter: Array<Adapter> = [Adapter.ONE_BOT, Adapter.QG_BOT]
+    val adapter: Array<Adapter> = [Adapter.ONE_BOT, Adapter.QG_BOT],
+    val description: String = ""
 )

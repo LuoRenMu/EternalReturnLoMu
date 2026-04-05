@@ -43,11 +43,11 @@ class EternalReturnRenderService {
         /**
          * 数据收集
          */
-        // val userStats = EternalReturnOpenApiClient.getUserStats(userId, 35, matchingMode)
+        // val user = EternalReturnOpenApiClient.getUser(userId, 35, matchingMode)
 
         val userId = EternalReturnOpenApi.User.GetIdByNickName(nickname).execute().user.userId
         val (profile, characters, tiers, season, gamesResponse) = coroutineScope {
-            val profileDF = ioAsync { EternalReturnDakGGApi.User.GetProfile(userId).execute() }
+            val profileDF = ioAsync { EternalReturnDakGGApi.User.GetProfile(nickname).execute() }
             val charactersDF = ioAsync { EternalReturnDakGGApi.Data.GetCharacters.execute() }
             val tierDF = ioAsync { EternalReturnDakGGApi.Data.GetTiers.execute() }
             val seasonDF = ioAsync { EternalReturnDakGGApi.Data.GetCurrentSeason.execute() }
@@ -62,14 +62,20 @@ class EternalReturnRenderService {
             }
 
         val accountLevel = profile.player.accountLevel
-        val profileImageUrl = playerSeasonOverview?.run {
-            val characterState = playerSeasonOverview.characterStats.first()
-            val skinState = characterState.skinStats!!.first()
-            ImageResourcesType.getCharacterPath(
-                characterState.key.toInt(),
-                skinState.key,
-                DakGGCharacterImgType.CharResult
-            )
+        val profileImageUrl = run {
+            val characterState = playerSeasonOverview?.characterStats?.first()
+                ?: playerSeasonOverviews.firstOrNull { it.characterStats.isNotEmpty() }?.characterStats?.first()
+            val skinState = characterState?.skinStats?.first()
+            return@run if (characterState != null && skinState != null) {
+                ImageResourcesType.getCharacterPath(
+                    characterState.key.toInt(),
+                    skinState.key,
+                    DakGGCharacterImgType.CharResult
+                )
+            } else {
+                "/static/images/character-null.png"
+            }
+
         }
 
 
@@ -89,7 +95,7 @@ class EternalReturnRenderService {
                         )
                         this.plays = duoStat.play
                         val playDouble = this.plays.toDouble()
-                        this.nickname = duoStat.nickname
+                        this.nickname = nicknameHide(duoStat.nickname)
                         this.winRate = "${String.format("%.1f", (duoStat.win / playDouble) * 100)}%"
                         this.avgRank = "#${String.format("%.1f", duoStat.place / playDouble)}"
                     })
@@ -206,12 +212,13 @@ class EternalReturnRenderService {
             matches = gamesResponse.userGames.map { gameConvertMatcher(it, characters) },
             recentPlayers = recentPlays,
             characterUseStats = characterUseStats,
+            // 待修改
             season = season.name,
             mode = matchingMode.modeName
         )
     }
 
-    public val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+    val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     private fun gameConvertMatcher(
         game: UserGame,
         characters: DakGGCharactersResponse,
@@ -381,7 +388,7 @@ class EternalReturnRenderService {
 
         val oldNames = mutableSetOf<String>()
         for (response in userStatsResponses) {
-            response.userStats.firstOrNull()?.nickname?.let { oldName ->
+            response.user.firstOrNull()?.nickname?.let { oldName ->
                 if (!oldName.equals(nickname, true)) {
                     oldNames.add(oldName)
                 }

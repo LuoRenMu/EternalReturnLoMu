@@ -13,7 +13,10 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.engine.ProxyBuilder
+import io.ktor.client.engine.ProxyType
 import io.ktor.client.engine.cio.*
+import io.ktor.client.engine.http
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.cache.*
@@ -32,6 +35,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.FileOutputStream
+import java.net.Proxy
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.random.Random
@@ -57,6 +61,7 @@ object RequestManager {
         }
         map
     }
+    // SIMBOT Request require
     public val api = HttpClient(CIO) {
         engine {
             maxConnectionsCount = 50
@@ -64,9 +69,14 @@ object RequestManager {
                 maxConnectionsPerRoute = 100
                 pipelineMaxSize = 20
                 keepAliveTime = 5000
-                connectTimeout = 10_000
+                connectTimeout = 50_000
                 connectAttempts = 3
             }
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 60000
+            connectTimeoutMillis = 60000
+            socketTimeoutMillis = 60000
         }
     }
     private val client = HttpClient(CIO) {
@@ -76,12 +86,18 @@ object RequestManager {
                 maxConnectionsPerRoute = 100
                 pipelineMaxSize = 20
                 keepAliveTime = 5000
-                connectTimeout = 10_000
+                connectTimeout = 60_000
                 connectAttempts = 3
             }
-
+            requestTimeout = 60000
         }
-        install(HttpRequestRetry.Plugin) {
+
+        install(HttpTimeout) {
+            requestTimeoutMillis = 60000
+            connectTimeoutMillis = 60000
+            socketTimeoutMillis = 60000
+        }
+        install(HttpRequestRetry) {
             maxRetries = 5
             retryOnServerErrors(maxRetries = 3)
 
@@ -109,9 +125,6 @@ object RequestManager {
                 file.mkdirs()
             }
             publicStorage(FileStorage(file))
-        }
-        install(HttpTimeout.Plugin) {
-            requestTimeoutMillis = 10000
         }
         install(ContentNegotiation) {
             json(Json {

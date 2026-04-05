@@ -2,6 +2,7 @@ package cn.luorenmu.onebot
 
 import cn.luorenmu.Adapter
 import cn.luorenmu.ConfigFile
+import cn.luorenmu.ConfigFile.config
 import cn.luorenmu.command.CommandRouter
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.moduleCore
@@ -30,14 +31,11 @@ import kotlin.system.exitProcess
  */
 
 private val commandRouter = CommandRouter()
-private lateinit var config: ConfigFile.BotConfig
 suspend fun main() {
-    config = ConfigFile.initConfig {
-        other = mapOf(
+    config.other = mapOf(
             "one_bot_http" to "http://127.0.0.1:3000",
             "one_bot_ws" to "ws://127.0.0.1:3001"
         )
-    }
 
     val app = launchSimpleApplication {
         useOneBot11()

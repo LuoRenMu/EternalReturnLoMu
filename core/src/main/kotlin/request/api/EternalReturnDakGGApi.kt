@@ -6,6 +6,7 @@ import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.entity.module.DakGGServerName
 import cn.luorenmu.request.entity.module.DakGGTeamMode
+import cn.luorenmu.request.entity.module.MatchingMode
 import io.ktor.client.call.*
 import io.ktor.http.*
 import java.net.URLEncoder
@@ -113,6 +114,24 @@ sealed class EternalReturnDakGGApi<T>(
         }
     }
 
+
+    sealed class Game<T>(
+        url: String,
+        method: HttpMethod = HttpMethod.Get,
+        headers: MutableMap<String, String> = mutableMapOf(),
+        body: MutableMap<String, String> = mutableMapOf(),
+        cacheTime: CacheTime = CacheTime.FIVE_MINUTES,
+    ) : EternalReturnDakGGApi<T>(url, method, headers, body, cacheTime) {
+        class GetGame(nickname: String, seasonType: String, matchingMode: MatchingMode = MatchingMode.All, teamMode: DakGGTeamMode = DakGGTeamMode.All, page: Int = 1) :
+            Game<DakGGMatchesResponse>(
+                "/v1/players/${URLEncoder.encode(nickname, "UTF-8")}/matches?season=${seasonType}&matchingMode=${matchingMode.dakGGMode}&teamMode=${teamMode.value}&page=${page}"
+            ) {
+            override suspend fun execute(): DakGGMatchesResponse {
+               return call().body()
+            }
+
+        }
+    }
 
     sealed class Leaderboard<T>(
         url: String,

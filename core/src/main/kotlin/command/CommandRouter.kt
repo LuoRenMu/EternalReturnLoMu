@@ -7,8 +7,12 @@ import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.ReflectionUtil
 import cn.luorenmu.currentAdapter
 import cn.luorenmu.exception.MessageReplyException
+import com.microsoft.playwright.TimeoutError
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.utils.io.printStack
 import love.forte.simbot.message.Message
+import love.forte.simbot.message.toText
 
 
 /**
@@ -24,7 +28,7 @@ class CommandRouter {
          * KEY IS ALIAS
          * VALUE IS CommandInfo
          */
-        public val COMMANDS by lazy {
+        val COMMANDS by lazy {
             val c = ReflectionUtil.getSubTypesOf(this::class.java.packageName, CommandEvent::class.java)
             val result = mutableMapOf<String, CommandInfo>()
             for (klass in c) {
@@ -50,6 +54,13 @@ class CommandRouter {
             return result
         }catch (e: MessageReplyException){
             return e.returnMsg
+        }catch (_: TimeoutError){
+            return "任务超时".toText()
+        }catch (_: HttpRequestTimeoutException){
+            return "已尽力向目标发送请求，但仍然无法到达 这绝对不是'LoMu'的问题".toText()
+        }catch (e: Exception){
+            log.error { e.printStack() }
+            return "内部处理发生未知错误,无法正常处理".toText()
         }
 
     }

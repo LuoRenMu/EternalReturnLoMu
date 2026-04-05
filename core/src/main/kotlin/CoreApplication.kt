@@ -76,9 +76,8 @@ fun Application.configureRouting() {
 
 
 object ConfigFile {
-    lateinit var config: BotConfig
-
-    fun initConfig(change: BotConfig.() -> Unit): BotConfig {
+    val config: BotConfig = initConfig()
+    fun initConfig(): BotConfig {
         val file = PathUtils.pathResolve(paths = arrayOf("config.json")).toFile()
         if (!file.exists()) {
             file.createNewFile()
@@ -87,7 +86,6 @@ object ConfigFile {
                 encodeDefaults = true
             }
             val botConfig = BotConfig()
-            change(botConfig)
             file.writeText(
                 json.encodeToString(botConfig)
             )
@@ -95,8 +93,7 @@ object ConfigFile {
             exitProcess(0)
         }
         val json = Json.decodeFromString<BotConfig>(file.readText())
-        config = json
-        return config
+        return json
     }
 
 

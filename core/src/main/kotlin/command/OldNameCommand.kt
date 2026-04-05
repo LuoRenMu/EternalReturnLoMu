@@ -17,7 +17,7 @@ import org.koin.java.KoinJavaComponent.inject
  * @author LoMu
  * Date 2025/11/29 15:34
  */
-@BotCommand(id = "oldName", alias = "曾用名", value = "<nickname>", adapter = [Adapter.ONE_BOT])
+@BotCommand(name = "曾用名", alias = "曾用名", value = "<nickname>", adapter = [Adapter.ONE_BOT], description = "查询曾用名,消耗大量请求资源.需等待较长时间")
 class OldNameCommand : CommandEvent {
     private val eternalReturnRenderService: EternalReturnRenderService by inject(
         EternalReturnRenderService::class.java

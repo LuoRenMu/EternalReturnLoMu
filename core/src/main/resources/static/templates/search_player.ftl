@@ -11,7 +11,7 @@
 <body>
 <div id="content-container">
     <div id="header">
-        <div id="banner_user_info">
+        <div id="banner_user_info" style="background-size: contain; background-position: center; background-image: url('${httpServer}/static/images/bg-landing-search-v10.jpg')">
             <div class="profile-image-wrapper">
                 <#if profileImageUrl??>
                     <img src="${httpServer}${profileImageUrl}" alt=""/>
@@ -148,7 +148,6 @@
                         <thead>
                         <tr>
                             <th class="character">角色</th>
-                            <th class="win-rate">胜率</th>
                             <th class="get-rp">RP</th>
                             <th class="avg-rank">平均排名</th>
                             <th class="avg-dmg">平均伤害</th>
@@ -162,10 +161,9 @@
                                                 src="${httpServer}${character.imgUrl}"
                                                 alt=""></div>
                                     <div class="info">${character.characterName}
-                                        <div class="plays">${character.characterPlay} 游戏</div>
+                                        <div class="plays">${character.characterPlay} 游戏(${character.winRate})</div>
                                     </div>
                                 </td>
-                                <td class="win-rate">${character.winRate}</td>
                                 <td class="get-rp">
                                     <#if character.getRP gte 0>
                                         <svg xmlns="http://www.w3.org/2000/svg" width="8" height="5" viewBox="0 0 8 5"

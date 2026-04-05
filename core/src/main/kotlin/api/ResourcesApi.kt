@@ -13,4 +13,5 @@ fun Route.resourcesRouting() {
     staticFiles("/resources", PathUtils.resourcesPathResolve().toFile())
     staticResources("/static/css", "static/templates/css")
     staticResources("/static/js", "static/templates/js")
+    staticResources("/static/images", "static/images")
 }

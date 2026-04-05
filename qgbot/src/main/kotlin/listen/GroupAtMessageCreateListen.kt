@@ -30,7 +30,7 @@ class GroupAtMessageCreateListen : EventHandle {
             )
         )
 
-        reply?.let { atEvent.reply(it) } ?: atEvent.reply("命令错误")
+        reply?.let { atEvent.reply(it) }
     }
 
 }

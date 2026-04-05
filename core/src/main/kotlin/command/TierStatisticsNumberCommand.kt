@@ -16,13 +16,14 @@ import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import org.koin.java.KoinJavaComponent.inject
+import java.util.UUID
 
 /**
  *
  * @author LoMu
  * Date 2025/11/1 00:39
  */
-@BotCommand("tier", "段位统计", "<server>")
+@BotCommand("永恒/半身分段", "段位统计", "<server>")
 class TierStatisticsNumberCommand : CommandEvent {
     private val log = KotlinLogging.logger {}
     private val resourcesDownloadService: ResourcesDownloadService by inject(ResourcesDownloadService::class.java)
@@ -36,8 +37,11 @@ class TierStatisticsNumberCommand : CommandEvent {
         preheatRequest(serverName)
         val cutoffsAndTierNumber = eternalReturnRenderService.getCutoffsAndTierNumber(serverName)
         val outputPath = PathUtils.resourcesPathResolve("render", "tier", "tierStatisticsNumber.png")
-        BrowserPool.getBrowser().screenshotContentSelector(
-            FreemarkerRenderer.render("tier_statistics_number.ftl", cutoffsAndTierNumber),
+        val renderPath = PathUtils.resourcesPathResolve("render", "tier.html")
+        val html = FreemarkerRenderer.render("tier_statistics_number.ftl", cutoffsAndTierNumber)
+        renderPath.toFile().writeText(html)
+        BrowserPool.getBrowser().screenshotSelector(
+            renderPath.toString(),
             outputPath,
             "#app"
         )

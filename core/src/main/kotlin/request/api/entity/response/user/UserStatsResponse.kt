@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
 data class UserStatsResponse(
     val code: Int,
     val message: String,
-    val userStats: List<UserStats> = listOf(),
+    val user: List<UserStats> = listOf(),
 ) {
     @Serializable
     data class UserStats(
