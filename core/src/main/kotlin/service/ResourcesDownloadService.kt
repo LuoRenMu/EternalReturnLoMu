@@ -2,7 +2,7 @@ package cn.luorenmu.service
 
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
-import cn.luorenmu.request.api.EternalReturnDakGGApi
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
@@ -162,12 +162,29 @@ class ResourcesDownloadService {
     }
 
     suspend fun gameDataDownload(games: MutableList<UserGame>) {
-        val characterResponse = EternalReturnDakGGApi.Data.GetCharacters.execute()
-        val weaponResponse = EternalReturnDakGGApi.Data.GetWeapons.execute()
-        val traitSkillResponse = EternalReturnDakGGApi.Data.GetTraitSkills.execute()
-        val itemsResponse = EternalReturnDakGGApi.Data.GetItems.execute()
-        val tacticalSkillResponse = EternalReturnDakGGApi.Data.GetTacticalSkills.execute()
-        val tiers = EternalReturnDakGGApi.Data.GetTiers.execute()
+        lateinit var characterResponse: DakGGCharactersResponse
+        lateinit var weaponResponse: DakGGWeaponResponse
+        lateinit var traitSkillResponse: DakGGTraitSkillsResponse
+        lateinit var itemsResponse: DakGGItemsResponse
+        lateinit var tacticalSkillResponse: DakGGTacticalSkillResponse
+        lateinit var tiers: DakGGTiersResponse
+
+        coroutineScope {
+            val characterResponseDF = ioAsync { EternalReturnDakGGApi.Data.GetCharacters.execute() }
+            val weaponResponseDF = ioAsync { EternalReturnDakGGApi.Data.GetWeapons.execute() }
+            val traitSkillResponseDF = ioAsync { EternalReturnDakGGApi.Data.GetTraitSkills.execute() }
+            val itemsResponseDF = ioAsync { EternalReturnDakGGApi.Data.GetItems.execute() }
+            val tacticalSkillResponseDF = ioAsync { EternalReturnDakGGApi.Data.GetTacticalSkills.execute() }
+            val tiersDF = ioAsync { EternalReturnDakGGApi.Data.GetTiers.execute() }
+
+            characterResponse = characterResponseDF.await()
+            weaponResponse = weaponResponseDF.await()
+            traitSkillResponse = traitSkillResponseDF.await()
+            itemsResponse = itemsResponseDF.await()
+            tacticalSkillResponse = tacticalSkillResponseDF.await()
+            tiers = tiersDF.await()
+        }
+                
         log.debug { "gameDataDownload 数据已收集完毕" }
 
         log.debug { "gameDataDownload 开始下载天赋" }

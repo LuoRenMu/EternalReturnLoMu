@@ -6,7 +6,7 @@ import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.render.FreemarkerRenderer
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
-import cn.luorenmu.request.api.EternalReturnDakGGApi
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGServerName
 import cn.luorenmu.request.entity.module.DakGGTeamMode
 import cn.luorenmu.service.EternalReturnRenderService
@@ -16,7 +16,6 @@ import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import org.koin.java.KoinJavaComponent.inject
-import java.util.UUID
 
 /**
  *

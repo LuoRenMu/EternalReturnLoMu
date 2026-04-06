@@ -5,7 +5,7 @@ import cn.luorenmu.common.util.ResourceCheckUtil
 import cn.luorenmu.common.util.StringLockUtil.withKeyLock
 import cn.luorenmu.exception.ForbiddenException
 import cn.luorenmu.request.api.Api
-import cn.luorenmu.request.api.EternalReturnOpenApi
+import cn.luorenmu.request.api.impl.EternalReturnOpenApi
 import cn.luorenmu.request.api.PakeResourceApi
 import cn.luorenmu.request.api.ResourceApi
 import cn.luorenmu.request.api.entity.module.CacheTime
@@ -48,7 +48,7 @@ object RequestManager {
     /**
      * public 用于在赛季更新时清空缓存
      */
-    public val cacheMap = run {
+    val cacheMap = run {
         val map = mutableMapOf<CacheTime, Cache<String, HttpResponse>>()
         for (time in CacheTime.entries) {
             map[time] = Caffeine.newBuilder()
@@ -60,7 +60,7 @@ object RequestManager {
     }
 
     // SIMBOT Request require
-    public val api = HttpClient(CIO) {
+    val api = HttpClient(CIO) {
         engine {
             maxConnectionsCount = 50
             endpoint {

@@ -1,6 +1,8 @@
-package cn.luorenmu.request.api
+package cn.luorenmu.request.api.impl
 
 import cn.luorenmu.common.util.toPath
+import cn.luorenmu.request.api.PakeApi
+import cn.luorenmu.request.api.PakeResourceApi
 import cn.luorenmu.request.api.entity.module.CacheTime
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.*

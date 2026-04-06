@@ -3,8 +3,8 @@ package cn.luorenmu.service
 import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
-import cn.luorenmu.request.api.EternalReturnDakGGApi
-import cn.luorenmu.request.api.EternalReturnOpenApi
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
+import cn.luorenmu.request.api.impl.EternalReturnOpenApi
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharactersResponse
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse

@@ -16,7 +16,7 @@ import io.ktor.http.*
  */
 abstract class PakeApi(
     override var url: String,
-    override var method: HttpMethod = HttpMethod.Companion.Get,
+    override var method: HttpMethod = HttpMethod.Get,
     override val headers: MutableMap<String, String> = mutableMapOf(),
     override val body: MutableMap<String, String> = mutableMapOf(),
     override val cacheTime: CacheTime = CacheTime.NULL,

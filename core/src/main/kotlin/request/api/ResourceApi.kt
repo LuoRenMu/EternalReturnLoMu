@@ -9,4 +9,5 @@ import java.nio.file.Path
  */
 interface ResourceApi : Api {
     val path: Path
+    suspend fun callStream()
 }

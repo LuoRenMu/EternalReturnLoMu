@@ -15,12 +15,7 @@ object ResourceCheckUtil {
      * null = 不存在(不存储在map中)
      */
     private val fileMap = mutableMapOf<Path, Byte>()
-    
-    /**
-     * 检查资源文件是否存在
-     * @param resource 资源路径
-     * @return true=存在, false=不存在
-     */
+
     fun checkResource(resource: Path): Boolean {
         // 先从缓存中查找
         fileMap[resource]?.let {

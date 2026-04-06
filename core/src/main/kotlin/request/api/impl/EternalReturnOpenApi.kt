@@ -1,7 +1,8 @@
-package cn.luorenmu.request.api
+package cn.luorenmu.request.api.impl
 
 import cn.luorenmu.apiKey
 import cn.luorenmu.exception.NotFoundNickNameException
+import cn.luorenmu.request.api.PakeApi
 import cn.luorenmu.request.api.entity.module.CacheTime
 import cn.luorenmu.request.api.entity.response.data.BaseGameDataResponse
 import cn.luorenmu.request.api.entity.response.data.GameDataSeasonResponse

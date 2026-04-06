@@ -1,6 +1,6 @@
 package cn.luorenmu.request.api.entity.module
 
-import cn.luorenmu.request.api.EternalReturnDakGGApi
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -71,6 +71,11 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
      */
     val traitSkillIdRegex = "[0-9]+".toRegex()
 
+    companion object{
+        // 小威下载地址
+        const val TRAIT_SKILL_GROUP_PLACEHOLDER_WILSON_URL =
+            "//cdn.dak.gg/er/images/common/img-placeholder-wilson-round.png"
+    }
     fun getGeneralPath(name: String): String {
         var type = name
         if (this == TraitSkillGroup && traitSkillIdRegex.matches(name)) {

@@ -1,6 +1,5 @@
 package cn.luorenmu.request.api
 
-import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.request.RequestManager
 import cn.luorenmu.request.api.entity.module.CacheTime
 import io.ktor.http.*
@@ -30,7 +29,8 @@ abstract class PakeResourceApi(
     }
 
 
-    suspend fun callStream() {
+    override suspend fun callStream() {
         RequestManager.callStream(this, path)
     }
+
 }
