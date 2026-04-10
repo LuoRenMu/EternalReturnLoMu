@@ -78,10 +78,7 @@ class QGBotService {
 
         val respond: String? = when (result) {
             is EmitResult.Verified ->
-                // 如果你安装了插件 ContentNegotiation,
-                // 那么也可以直接响应对象。
-                // 这里懒得装了，所以提前序列化成JSON字符串
-                Json.Default.encodeToString(result.verified)
+                Json.encodeToString(result.verified)
 
             else -> null
         }

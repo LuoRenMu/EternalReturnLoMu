@@ -3,14 +3,12 @@ package cn.luorenmu.service
 import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
-import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
-import cn.luorenmu.request.api.impl.EternalReturnOpenApi
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
-import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharactersResponse
-import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
-import cn.luorenmu.request.api.entity.response.dakgg.DakGGTiersResponse
+import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
 import cn.luorenmu.request.api.entity.response.user.UserStatsResponse
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
+import cn.luorenmu.request.api.impl.EternalReturnOpenApi
 import cn.luorenmu.request.entity.module.DakGGServerName
 import cn.luorenmu.request.entity.module.DakGGTeamMode
 import cn.luorenmu.request.entity.module.MatchingMode
@@ -33,8 +31,6 @@ import java.util.stream.Collectors
 class EternalReturnRenderService {
 
 
-    data class Quint<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
-
     suspend fun getEternalReturnRender(
         nickname: String,
         matchingMode: MatchingMode,
@@ -43,15 +39,26 @@ class EternalReturnRenderService {
          * 数据收集
          */
         // val user = EternalReturnOpenApiClient.getUser(userId, 35, matchingMode)
-
-        val userId = EternalReturnOpenApi.User.GetIdByNickName(nickname).execute().user.userId
-        val (profile, characters, tiers, season, gamesResponse) = coroutineScope {
+        lateinit var profile: DakGGProfileResponse
+        lateinit var characters: DakGGCharactersResponse
+        lateinit var tiers: DakGGTiersResponse
+        lateinit var season: DakGGCurrentSeasonResponse
+        lateinit var gamesResponse: MutableList<UserGame>
+        coroutineScope {
             val profileDF = ioAsync { EternalReturnDakGGApi.User.GetProfile(nickname).execute() }
             val charactersDF = ioAsync { EternalReturnDakGGApi.Data.GetCharacters.execute() }
-            val tierDF = ioAsync { EternalReturnDakGGApi.Data.GetTiers.execute() }
+            val tiersDF = ioAsync { EternalReturnDakGGApi.Data.GetTiers.execute() }
             val seasonDF = ioAsync { EternalReturnDakGGApi.Data.GetCurrentSeason.execute() }
-            val gamesDF = ioAsync { EternalReturnOpenApi.Game.GetGamesByUserId(userId).execute() }
-            Quint(profileDF.await(), charactersDF.await(), tierDF.await(), seasonDF.await(), gamesDF.await())
+            val gamesDF = ioAsync {
+                EternalReturnDakGGApi.Game.GetGame(
+                    nickname
+                ).execute()
+            }
+            profile = profileDF.await()
+            characters = charactersDF.await()
+            tiers = tiersDF.await()
+            season = seasonDF.await()
+            gamesResponse = gamesDF.await().matches
         }
 
         val playerSeasonOverviews = profile.playerSeasonOverviews
@@ -66,11 +73,12 @@ class EternalReturnRenderService {
                 ?: playerSeasonOverviews.firstOrNull { it.characterStats.isNotEmpty() }?.characterStats?.first()
             val skinState = characterState?.skinStats?.first()
             return@run if (characterState != null && skinState != null) {
-                ImageResourcesType.CharacterResult.getCharacterPath(
+                ImageResourcesType.Character.getCharacterPath(
                     characterState.key.toInt(),
-                    skinState.key
+                    skinState.key, DakGGCharacterImgType.CharResult
                 )
             } else {
+                // 该图片源存于resources/static/images/character-null.png
                 "/static/images/character-null.png"
             }
 
@@ -87,8 +95,8 @@ class EternalReturnRenderService {
                 seasonOverview.duoStats.take(8).forEach { duoStat ->
                     val characterById = characters.getCharacterById(duoStat.characterStats.first().key)
                     recentPlays.add(EternalReturnPlayRender.EternalReturnPlayerRecentPlay().apply {
-                        imageWrapperUrl = ImageResourcesType.CharacterProfile.getCharacterPath(
-                            characterById.id.toInt(), characterById.skins.first().id
+                        imageWrapperUrl = ImageResourcesType.Character.getCharacterPath(
+                            characterById.id.toInt(), characterById.skins.first().id, DakGGCharacterImgType.CharProfile
                         )
                         this.plays = duoStat.play
                         val playDouble = this.plays.toDouble()
@@ -178,8 +186,8 @@ class EternalReturnRenderService {
                 characterUseStats.add(
                     EternalReturnPlayRender.EternalReturnCharacterUseStats(
                         characterName = characterById.name,
-                        imgUrl = ImageResourcesType.CharacterProfile.getCharacterPath(
-                            characterById.id.toInt(), characterById.skins.first().id
+                        imgUrl = ImageResourcesType.Character.getCharacterPath(
+                            characterById.id.toInt(), characterById.skins.first().id, DakGGCharacterImgType.CharProfile
                         ),
                         winRate = "${
                             String.format(
@@ -205,7 +213,7 @@ class EternalReturnRenderService {
             profileImageUrl = profileImageUrl,
             level = accountLevel,
             data = eternalReturnPlayerData,
-            matches = gamesResponse.userGames.map { gameConvertMatcher(it, characters) },
+            matches = gamesResponse.map { gameConvertMatcher(it, characters) },
             recentPlayers = recentPlays,
             characterUseStats = characterUseStats,
             // 待修改
@@ -220,7 +228,7 @@ class EternalReturnRenderService {
         characters: DakGGCharactersResponse,
     ): EternalReturnPlayRender.EternalReturnPlayerMatchData {
         val killAndAssist = game.playerKill + game.playerAssistant
-        val date = ZonedDateTime.parse(game.startDtm, dateFormatter).plusDays(-1)
+        val date = ZonedDateTime.parse(game.startDtm, dateFormatter).plusHours(-1)
         return EternalReturnPlayRender.EternalReturnPlayerMatchData(
             rp = game.mmrAfter,
             rpChange = game.mmrGain,
@@ -240,11 +248,16 @@ class EternalReturnRenderService {
             else ImageResourcesType.TraitSkillGroup.getGeneralPath(
                 game.traitSecondSub.first().toString()
             ),
-            characterAvatarUrl = ImageResourcesType.CharacterProfile.getCharacterPath(
+            characterAvatarUrl = ImageResourcesType.Character.getCharacterPath(
                 game.characterNum.toInt(),
-                game.skinCode
+                game.skinCode, DakGGCharacterImgType.CharProfile
             ),
-            dateHour = "${date.hour}:${date.minute}:${date.second}",
+            dateHour = "${String.format("%02d", date.hour)}:${
+                String.format(
+                    "%02d",
+                    date.minute
+                )
+            }:${String.format("%02d", date.second)}",
             dateMonth = "${date.monthValue}月${date.dayOfMonth}日",
             assist = game.playerAssistant,
             gameId = game.gameId.toString(),
@@ -258,9 +271,9 @@ class EternalReturnRenderService {
 
     private fun gameEquip(game: UserGame): MutableList<EternalReturnEquip> {
         val equipList = mutableListOf<EternalReturnEquip>()
-        for ((index, value) in game.equipment) {
+        for ((index, value) in game.equipmentReal) {
             val equip = EternalReturnEquip(
-                itemBgUrl = ImageResourcesType.ItemBg.getGeneralPath(game.equipmentGrade[index].toString()),
+                itemBgUrl = ImageResourcesType.ItemBg.getGeneralPath(game.equipmentGradeReal[index].toString()),
                 itemUrl = ImageResourcesType.Item.getGeneralPath(value.toString())
             )
             equipList.add(equip)

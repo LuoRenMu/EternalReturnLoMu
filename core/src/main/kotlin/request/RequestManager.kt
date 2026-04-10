@@ -5,10 +5,10 @@ import cn.luorenmu.common.util.ResourceCheckUtil
 import cn.luorenmu.common.util.StringLockUtil.withKeyLock
 import cn.luorenmu.exception.ForbiddenException
 import cn.luorenmu.request.api.Api
-import cn.luorenmu.request.api.impl.EternalReturnOpenApi
 import cn.luorenmu.request.api.PakeResourceApi
 import cn.luorenmu.request.api.ResourceApi
 import cn.luorenmu.request.api.entity.module.CacheTime
+import cn.luorenmu.request.api.impl.EternalReturnOpenApi
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -25,6 +25,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.network.sockets.SocketTimeoutException
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -32,7 +33,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import love.forte.simbot.message.toText
 import java.io.FileOutputStream
+import java.net.SocketException
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.random.Random
@@ -182,6 +185,9 @@ object RequestManager {
             val currentTimeMillis = System.currentTimeMillis()
             try {
                 return@withKeyLock executeRequest(api)
+            } catch (e: SocketException) {
+                log.debug { "SocketException : ${api.baseUrl}${api.url} ->${e.printStack()}" }
+                throw ForbiddenException("服务器拒绝了本次请求")
             } finally {
                 if (api is ResourceApi) {
                     log.debug { "call stream file: ${api.path} from ${api.baseUrl}${api.url}" }

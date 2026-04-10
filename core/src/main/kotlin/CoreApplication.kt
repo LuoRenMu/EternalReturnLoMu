@@ -26,7 +26,7 @@ import kotlin.system.exitProcess
  */
 class CoreApplication
 
-public val apiKey = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
+ val apiKey = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
 
 var SERVER_PORT: Int = ConfigFile.config.port
 var HTTP_SERVER_URL = "http://127.0.0.1:${SERVER_PORT}"
@@ -100,7 +100,7 @@ object ConfigFile {
     @Serializable
     data class BotConfig(
         var port: Int = 8080,
-        var apiKey: String = "必要",
+        var apiKey: String = "非必要",
         var other: Map<String, String> = mapOf(),
         var browser: BrowserConfig = BrowserConfig(),
     ) {

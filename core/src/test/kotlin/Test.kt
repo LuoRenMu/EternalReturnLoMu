@@ -1,4 +1,4 @@
-import java.util.concurrent.TimeUnit
+
 
 /**
  *
@@ -6,5 +6,5 @@ import java.util.concurrent.TimeUnit
  * Date 2025/11/20 00:03
  */
 fun main() {
-    println(TimeUnit.DAYS.toMillis(1L))
+
 }

@@ -23,6 +23,7 @@ import org.koin.java.KoinJavaComponent.inject
  * Date 2025/11/1 00:39
  */
 @BotCommand("永恒/半身分段", "段位统计", "<server>")
+
 class TierStatisticsNumberCommand : CommandEvent {
     private val log = KotlinLogging.logger {}
     private val resourcesDownloadService: ResourcesDownloadService by inject(ResourcesDownloadService::class.java)
@@ -31,7 +32,7 @@ class TierStatisticsNumberCommand : CommandEvent {
     )
 
 
-    override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message? {
+    override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         val serverName = command["server"]?.let { DakGGServerName.convert(it) } ?: DakGGServerName.Asia
         preheatRequest(serverName)
         val cutoffsAndTierNumber = eternalReturnRenderService.getCutoffsAndTierNumber(serverName)

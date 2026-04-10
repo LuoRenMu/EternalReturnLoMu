@@ -15,6 +15,14 @@
             color: #fff;
         }
 
+        h2 {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #9c9ba1
+        }
+
         body {
             margin: 0;
             background: linear-gradient(135deg, #2b2a33, #1c1b20);
@@ -125,6 +133,7 @@
 <div id="app">
     <div id="tier_box">
         <h1>${season}</h1>
+        <h2>生成时间 ${date}</h2>
         <div id="tier_cutoffs">
             <div class="tier_item">
                 <div class="tier_img">

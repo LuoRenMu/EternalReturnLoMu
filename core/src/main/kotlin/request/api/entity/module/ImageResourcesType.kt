@@ -1,5 +1,6 @@
 package cn.luorenmu.request.api.entity.module
 
+import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharacterImgType
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import kotlinx.coroutines.runBlocking
 
@@ -27,12 +28,7 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
     /**
      * ID-SKIN_ID (CharProfile)
      */
-    CharacterProfile("/character/profile/", ".png"),
-
-    /**
-     * ID-SKIN_ID (CharResult)
-     */
-    CharacterResult("/character/result/", ".png"),
+    Character("/character/", ".png"),
 
     /**
      * ID
@@ -85,7 +81,7 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
         return "/resources/images${this.path}$type${this.fileType}"
     }
 
-    fun getCharacterPath(characterId: Int, skinId: Long): String {
-        return "/resources/images${this.path}${characterId}/${skinId}${this.fileType}"
+    fun getCharacterPath(characterId: Int, skinId: Long,imgType: DakGGCharacterImgType): String {
+        return "/resources/images${this.path}${characterId}/${imgType.value}/${skinId}${this.fileType}"
     }
 }

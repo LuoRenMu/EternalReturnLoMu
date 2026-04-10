@@ -2,10 +2,10 @@ package cn.luorenmu.service
 
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
-import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
 
@@ -144,6 +144,7 @@ class ResourcesDownloadService {
             for (tier in tiers.tiers.distinctBy { it.id }) {
                 val tierType = tier.id
                 ioLaunch {
+                    // 替换为高分辨率
                     EternalReturnDakGGApi.Image.DakGGImageUrlResources(
                         url = tier.imageUrl.replace("assets/", "").replace("rank", "tier"),
                         ImageResourcesType.TierFull,
@@ -184,7 +185,7 @@ class ResourcesDownloadService {
             tacticalSkillResponse = tacticalSkillResponseDF.await()
             tiers = tiersDF.await()
         }
-                
+
         log.debug { "gameDataDownload 数据已收集完毕" }
 
         log.debug { "gameDataDownload 开始下载天赋" }
@@ -203,17 +204,17 @@ class ResourcesDownloadService {
 
 
         log.debug { "gameDataDownload 开始下载天赋" }
-        for (game in games.distinctBy { it.traitFirstCore }) {
+        for (game in games) {
             val traitSkillId = game.traitFirstCore
             val traitSecondSubId = game.traitSecondSub.firstOrNull()
             downloadTraitSkillImage(traitSkillId, traitSkillResponse)
             traitSecondSubId?.let {
-                downloadTraitSkillImage(it, traitSkillResponse)
+                downloadTraitSkillImage(traitSecondSubId, traitSkillResponse)
             }
         }
 
         log.debug { "gameDataDownload 开始下载装备" }
-        val equipmentIds = games.flatMap { it.equipment.values }.map { it.toLong() }
+        val equipmentIds = games.flatMap { it.equipmentReal.values }.map { it.toLong() }
         for (equipmentId in equipmentIds) {
             downloadItemImage(itemsResponse.getItemById(equipmentId))
         }
@@ -226,8 +227,7 @@ class ResourcesDownloadService {
         }
 
         log.debug { "gameDataDownload 开始下载装备背景图片" }
-
-        for (id in games.flatMap { game -> game.equipmentGrade.values }.toList()) {
+        for (id in games.flatMap { game -> game.equipmentGradeReal.values }.toList()) {
             downloadItemBgImage(id)
         }
         log.debug { "gameDataDownload 全部已完成" }

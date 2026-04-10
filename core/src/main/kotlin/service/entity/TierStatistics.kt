@@ -2,6 +2,7 @@ package cn.luorenmu.service.entity
 
 import cn.luorenmu.HTTP_SERVER_URL
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
+import java.text.SimpleDateFormat
 
 /**
  *
@@ -9,14 +10,15 @@ import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
  * Date 2025/11/1 01:07
  */
 data class TierStatistics(
-    val season:String,
+    val season: String,
     val tierTypes: List<String>,
     val count: Map<String, Int>,
     val rate: Map<String, String>,
     val eternal: DakGGLeaderboardResponse.Cutoffs,
     val demigod: DakGGLeaderboardResponse.Cutoffs,
-    val httpServer: String = HTTP_SERVER_URL
-){
+    val httpServer: String = HTTP_SERVER_URL,
+    val date: String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()),
+) {
     override fun toString(): String {
         return """
             段位统计 {

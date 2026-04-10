@@ -11,5 +11,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class DakGGMatchesResponse(
-    val matches: List<BattleUserGamesResponse.UserGame>,
+    val matches: MutableList<BattleUserGamesResponse.UserGame>,
 )

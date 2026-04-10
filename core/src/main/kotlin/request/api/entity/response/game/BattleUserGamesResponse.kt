@@ -2,7 +2,11 @@ package cn.luorenmu.request.api.entity.response.game
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  *
@@ -26,11 +30,11 @@ data class BattleUserGamesResponse(
         // 装备
         // https://cdn.dak.gg/assets/er/game-assets/1.44.0/ItemIcon_115504.png
         @SerialName("equipment")
-        val equipment: MutableMap<Int, Int>,
+        val equipmentVirtual: JsonElement,
         // 装备背景
         // https://cdn.dak.gg/er/images/item/ico-itemgradebg-04.svg
         @SerialName("equipmentGrade")
-        val equipmentGrade: MutableMap<Int, Int>,
+        val equipmentGradeVirtual: JsonElement,
         val userNum: Long = 0,
         val nickname: String = "",
         val gameId: Long = 0,
@@ -132,7 +136,7 @@ data class BattleUserGamesResponse(
         val escapeState: Int = 0,
         val totalExtraKill: Long = 0,
         val collectItemForLog: List<Long>,
-        val equipFirstItemForLog: Map<String, List<Long>>,
+        // val equipFirstItemForLog: Map<String, List<Long>>,
         /**
          *   战术技能  闪灵、赤色风暴
          */
@@ -145,5 +149,41 @@ data class BattleUserGamesResponse(
         val isLeavingBeforeCreditRevivalTerminate: Boolean,
         val mmrGainInGame: Long = 0,
         val mmrLossEntryCost: Long = 0,
-    )
+    ) {
+
+        val equipmentReal by lazy {
+            jsonElementToMap(equipmentVirtual)
+        }
+        val equipmentGradeReal by lazy {
+            jsonElementToMap(equipmentGradeVirtual)
+        }
+
+        fun jsonElementToMap(equipment: JsonElement): Map<Int, Int> {
+            return when (equipment) {
+                is JsonArray -> {
+                    jsonArrayToMap(equipment)
+                }
+
+                is JsonObject -> {
+                    jsonObjectToMap(equipment)
+                }
+
+                else -> {
+                    mapOf()
+                }
+            }
+        }
+
+        fun jsonObjectToMap(jsonObject: JsonObject): Map<Int, Int> {
+            return jsonObject.map { entry ->
+                entry.key.toInt() to entry.value.jsonPrimitive.int
+            }.toMap()
+        }
+
+        fun jsonArrayToMap(jsonArray: JsonArray): Map<Int, Int> {
+            return jsonArray.mapIndexed { index, element ->
+                index to element.toString().toInt()
+            }.toMap()
+        }
+    }
 }

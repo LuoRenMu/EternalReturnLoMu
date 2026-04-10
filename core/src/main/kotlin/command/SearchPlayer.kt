@@ -6,6 +6,7 @@ import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.render.FreemarkerRenderer
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.api.impl.EternalReturnOpenApi
 import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.service.EternalReturnRenderService
@@ -17,7 +18,7 @@ import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import love.forte.simbot.message.toText
 import org.koin.java.KoinJavaComponent.inject
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -26,7 +27,12 @@ import java.util.concurrent.TimeUnit
  * Date 2025/10/24 14:06
  */
 
-@BotCommand("查询玩家战绩", "search", "<nickname> <mode>", description = "查询玩家战绩 示例:\n /search LoMu \n /search LoMu 匹配\n /search LoMu 排位 ")
+@BotCommand(
+    "查询玩家战绩",
+    "search",
+    "<nickname> <mode>",
+    description = "查询玩家战绩 示例:\n /search LoMu \n /search LoMu 匹配\n /search LoMu 排位 "
+)
 class SearchPlayer : CommandEvent {
 
     private val log = KotlinLogging.logger {}
@@ -60,7 +66,7 @@ class SearchPlayer : CommandEvent {
         preheatRequest(nickname)
 
         val outputPath = PathUtils.resourcesPathResolve("render", "player", "$nickname.png")
-        val renderPath = PathUtils.resourcesPathResolve("render", "player","tmp", "${UUID.randomUUID()}.html")
+        val renderPath = PathUtils.resourcesPathResolve("render", "player", "tmp", "${UUID.randomUUID()}.html")
         val html =
             FreemarkerRenderer.render(
                 "search_player.ftl",
@@ -75,32 +81,22 @@ class SearchPlayer : CommandEvent {
 
     private suspend fun preheatRequest(nickname: String) {
         coroutineScope {
-            val user = EternalReturnOpenApi.User.GetIdByNickName(nickname).execute()
             ioLaunch {
-                val dataCurrentSeason = EternalReturnOpenApi.Data.GetGameDataBySeason.execute()
-                EternalReturnOpenApi.User.GetUserStats(
-                    user.user.userId,
-                    dataCurrentSeason.seasonID,
-                    MatchingMode.Rank
-                ).execute()
-                log.debug { "getUser 预备请求数据已完成" }
+                EternalReturnDakGGApi.User.Sync(nickname).execute()
             }
+            val games = EternalReturnDakGGApi.Game.GetGame(nickname).execute()
             ioLaunch {
-                val games = EternalReturnOpenApi.Game.GetGamesByUserId(
-                    user.user.userId
-                ).execute()
-                resourcesDownloadService.gameDataDownload(games.userGames)
+
+                // eternal return dev api time out
+//                val games = EternalReturnOpenApi.Game.GetGamesByUserId(
+//                    user.user.userId
+//                ).execute()
+                resourcesDownloadService.gameDataDownload(games.matches)
                 log.debug { "gameDataDownload 预备请求数据已完成" }
             }
             ioLaunch {
                 resourcesDownloadService.downloadProfileData(nickname)
                 log.debug { "downloadProfileData 预备请求数据已完成" }
-            }
-            ioLaunch {
-                EternalReturnOpenApi.Game.GetGamesByUserId(
-                    user.user.userId
-                ).execute()
-                log.debug { "getGamesByUserNum 预备请求数据已完成" }
             }
         }
     }

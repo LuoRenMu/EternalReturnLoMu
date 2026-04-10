@@ -22,7 +22,7 @@
             <div id="top">
                 <div class="level">Lv.${level}</div>
                 <div class="nickname">${nickName}</div>
-                <p>保留字段</p>
+                <p>防止违规用户名已统一打码</p>
             </div>
         </div>
         <div id="describe">
