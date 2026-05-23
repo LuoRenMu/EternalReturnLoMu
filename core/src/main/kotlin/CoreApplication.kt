@@ -8,7 +8,6 @@ import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.service.PlayerRenderAssembler
 import cn.luorenmu.service.TierStatisticsCollector
-import cn.luorenmu.service.OldNameCollector
 import cn.luorenmu.service.ResourcesDownloadService
 import freemarker.cache.ClassTemplateLoader
 import io.github.oshai.kotlinlogging.KotlinLogging
