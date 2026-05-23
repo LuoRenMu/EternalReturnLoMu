@@ -5,16 +5,18 @@ import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.PathUtils
-import cn.luorenmu.render.FreemarkerRenderer
+import cn.luorenmu.render.RenderScreenshotPipeline
 import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.MatchingMode
-import cn.luorenmu.service.EternalReturnRenderService
+import cn.luorenmu.service.PlayerRenderAssembler
 import cn.luorenmu.service.ResourcesDownloadService
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import love.forte.simbot.message.toText
@@ -39,17 +41,17 @@ class SearchPlayer : CommandEvent {
 
     private val log = KotlinLogging.logger {}
     private val resourcesDownloadService: ResourcesDownloadService by inject(ResourcesDownloadService::class.java)
-    private val eternalReturnRenderService: EternalReturnRenderService by inject(
-        EternalReturnRenderService::class.java
+    private val playerRenderAssembler: PlayerRenderAssembler by inject(
+        PlayerRenderAssembler::class.java
     )
     private val statisticsService: StatisticsRepository by inject(StatisticsRepository::class.java)
-
 
     private val cache = Caffeine.newBuilder()
         .maximumSize(500)
         .expireAfterWrite(5, TimeUnit.MINUTES)
         .build<String, String>()
 
+    private val cacheMutex = Mutex()
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         if (command.isEmpty() || command["nickname"] == null) {
@@ -60,27 +62,31 @@ class SearchPlayer : CommandEvent {
         statisticsService.recordCommandUsage("search", nickname)
         statisticsService.incrementNicknameQueryCount(nickname)
 
-        if (cache.getIfPresent(nickname) == null) {
-            synchronized(this) {
-                if (cache.getIfPresent(nickname) != null) {
-                    return OfflineImage.fileOfflineImage(cache.getIfPresent(nickname).toString())
-                }
-            }
+        // 快路径：缓存命中直接返回
+        cache.getIfPresent(nickname)?.let {
+            return OfflineImage.fileOfflineImage(it)
         }
+
         val mode = MatchingMode.convert(command["mode"])
-        preheatRequest(nickname)
-        val outputPath = PathUtils.resourcesPathResolve("render", "player", "$nickname.png")
-        val renderPath = PathUtils.resourcesPathResolve("render", "player", "tmp", "${UUID.randomUUID()}.html")
-        val html =
-            FreemarkerRenderer.render(
+
+        // 慢路径：持锁执行，防止并发重复渲染
+        return cacheMutex.withLock {
+            // 双重检查
+            cache.getIfPresent(nickname)?.let {
+                return@withLock OfflineImage.fileOfflineImage(it)
+            }
+
+            preheatRequest(nickname)
+            val outputPath = PathUtils.resourcesPathResolve("render", "player", "$nickname.png")
+            RenderScreenshotPipeline.renderAndScreenshot(
                 "search_player.ftl",
-                eternalReturnRenderService.getEternalReturnRender(nickname, mode)
+                playerRenderAssembler.assemble(nickname, mode),
+                outputPath,
+                "#content-container"
             )
-        renderPath.toFile().writeText(html)
-        BrowserPool.getBrowser()
-            .screenshotSelector(renderPath.toString(), outputPath, "#content-container")
-        cache.put(nickname, outputPath.toString())
-        return OfflineImage.fileOfflineImage(outputPath.toString())
+            cache.put(nickname, outputPath.toString())
+            OfflineImage.fileOfflineImage(outputPath.toString())
+        }
     }
 
     private suspend fun preheatRequest(nickname: String) {
@@ -90,11 +96,6 @@ class SearchPlayer : CommandEvent {
             }
             val games = EternalReturnDakGGApi.Game.GetGame(nickname).execute()
             ioLaunch {
-
-                // eternal return dev api time out
-//                val games = EternalReturnOpenApi.Game.GetGamesByUserId(
-//                    user.user.userId
-//                ).execute()
                 resourcesDownloadService.gameDataDownload(games.matches)
                 log.debug { "gameDataDownload 预备请求数据已完成" }
             }
@@ -104,6 +105,4 @@ class SearchPlayer : CommandEvent {
             }
         }
     }
-
-
 }

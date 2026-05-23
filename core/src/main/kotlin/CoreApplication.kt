@@ -6,7 +6,9 @@ import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.MongoDBManager
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.repository.StatisticsRepository
-import cn.luorenmu.service.EternalReturnRenderService
+import cn.luorenmu.service.PlayerRenderAssembler
+import cn.luorenmu.service.TierStatisticsCollector
+import cn.luorenmu.service.OldNameCollector
 import cn.luorenmu.service.ResourcesDownloadService
 import freemarker.cache.ClassTemplateLoader
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -56,7 +58,8 @@ fun Application.moduleCore(adapter: Adapter) {
 val appModule = module {
 
     single { ResourcesDownloadService() }
-    single { EternalReturnRenderService() }
+    single { PlayerRenderAssembler() }
+    single { TierStatisticsCollector() }
     single { MongoDBManager() }
     single { StatisticsRepository(get()) }
 }

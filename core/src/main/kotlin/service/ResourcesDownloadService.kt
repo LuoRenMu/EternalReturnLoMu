@@ -1,5 +1,7 @@
 package cn.luorenmu.service
 
+import cn.luorenmu.common.util.ResourceCheckUtil
+import cn.luorenmu.common.util.toPath
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
@@ -18,10 +20,9 @@ class ResourcesDownloadService {
 
     private val log = KotlinLogging.logger {}
 
-    /**
-     * 物品、装备
-     */
     suspend fun downloadItemImage(item: DakGGItemsResponse.Item) {
+        val path = ImageResourcesType.Item.getGeneralPath(item.id.toString()).toPath()
+        if (ResourceCheckUtil.checkResource(path)) return
         coroutineScope {
             ioLaunch {
                 EternalReturnDakGGApi.Image.DakGGImageUrlResources(
@@ -46,23 +47,16 @@ class ResourcesDownloadService {
             characters?.forEach { character ->
                 ioLaunch {
                     val characterById = charactersResponse.getCharacterById(character.key)
-
-                    /**
-                     * 不存在皮肤则获取第一个，第一个为原皮
-                     */
                     val skin = character.skinStats?.firstOrNull()?.key ?: characterById.skins.first().id
                     downloadCharacterImage(characterById, skin)
                 }
             }
         }
-
-
     }
 
-    /**
-     * 武器
-     */
     suspend fun downloadWeaponImage(weapon: DakGGWeaponResponse.Weapon) {
+        val path = ImageResourcesType.Weapon.getGeneralPath(weapon.id.toString()).toPath()
+        if (ResourceCheckUtil.checkResource(path)) return
         coroutineScope {
             ioLaunch {
                 EternalReturnDakGGApi.Image.DakGGImageUrlResources(
@@ -74,10 +68,9 @@ class ResourcesDownloadService {
         }
     }
 
-    /**
-     *  召唤师技能
-     */
     suspend fun downloadTacticalSkillImage(tacticalSkill: DakGGTacticalSkillResponse.TacticalSkill) {
+        val path = ImageResourcesType.TacticalSkill.getGeneralPath(tacticalSkill.id.toString()).toPath()
+        if (ResourceCheckUtil.checkResource(path)) return
         coroutineScope {
             ioLaunch {
                 EternalReturnDakGGApi.Image.DakGGImageUrlResources(
@@ -89,19 +82,24 @@ class ResourcesDownloadService {
         }
     }
 
-    /**
-     * 天赋技能
-     */
     suspend fun downloadTraitSkillImage(traitSkillId: Long, traitSkills: DakGGTraitSkillsResponse) {
+        val traitSkill = traitSkills.getTraitSkillById(traitSkillId)
+        val traitSkillGroup = traitSkills.traitSkillGroups.firstOrNull { it.key == traitSkill.group }
+
+        val traitSkillPath = ImageResourcesType.TraitSkill.getGeneralPath(traitSkillId.toString()).toPath()
+        val groupPath = traitSkillGroup?.let {
+            ImageResourcesType.TraitSkillGroup.getGeneralPath(it.key).toPath()
+        } ?: ImageResourcesType.TraitSkillGroupPlaceholder.getGeneralPath("").toPath()
+
+        if (ResourceCheckUtil.checkResource(traitSkillPath) && ResourceCheckUtil.checkResource(groupPath)) return
+
         coroutineScope {
             ioLaunch {
-                val traitSkill = traitSkills.getTraitSkillById(traitSkillId)
-                val traitSkillGroup = traitSkills.traitSkillGroups.firstOrNull { it.key == traitSkill.group }
                 traitSkillGroup?.let {
                     EternalReturnDakGGApi.Image.DakGGImageUrlResources(
-                        traitSkillGroup.imageUrl,
+                        it.imageUrl,
                         ImageResourcesType.TraitSkillGroup,
-                        traitSkillGroup.key
+                        it.key
                     ).callStream()
                 } ?: run {
                     EternalReturnDakGGApi.Image.DakGGImageUrlResources(
@@ -123,6 +121,10 @@ class ResourcesDownloadService {
         character: DakGGCharactersResponse.DakGGCharacterById,
         skinCode: Long,
     ) {
+        val firstPath = ImageResourcesType.Character.getCharacterPath(
+            character.id.toInt(), skinCode, DakGGCharacterImgType.CharProfile
+        ).toPath()
+        if (ResourceCheckUtil.checkResource(firstPath)) return
 
         coroutineScope {
             val characterSkinById = character.getCharacterSkinById(skinCode)
@@ -143,20 +145,25 @@ class ResourcesDownloadService {
         coroutineScope {
             for (tier in tiers.tiers.distinctBy { it.id }) {
                 val tierType = tier.id
-                ioLaunch {
-                    // 替换为高分辨率
-                    EternalReturnDakGGApi.Image.DakGGImageUrlResources(
-                        url = tier.imageUrl.replace("assets/", "").replace("rank", "tier"),
-                        ImageResourcesType.TierFull,
-                        tierType.toString()
-                    ).callStream()
+                val fullPath = ImageResourcesType.TierFull.getGeneralPath(tierType.toString()).toPath()
+                val roundPath = ImageResourcesType.TierRound.getGeneralPath(tierType.toString()).toPath()
+                if (!ResourceCheckUtil.checkResource(fullPath)) {
+                    ioLaunch {
+                        EternalReturnDakGGApi.Image.DakGGImageUrlResources(
+                            url = tier.imageUrl.replace("assets/", "").replace("rank", "tier"),
+                            ImageResourcesType.TierFull,
+                            tierType.toString()
+                        ).callStream()
+                    }
                 }
-                ioLaunch {
-                    EternalReturnDakGGApi.Image.DakGGImageUrlResources(
-                        tier.iconUrl,
-                        ImageResourcesType.TierRound,
-                        tierType.toString()
-                    ).callStream()
+                if (!ResourceCheckUtil.checkResource(roundPath)) {
+                    ioLaunch {
+                        EternalReturnDakGGApi.Image.DakGGImageUrlResources(
+                            tier.iconUrl,
+                            ImageResourcesType.TierRound,
+                            tierType.toString()
+                        ).callStream()
+                    }
                 }
             }
         }
@@ -202,7 +209,6 @@ class ResourcesDownloadService {
             downloadWeaponImage(weaponResponse.getWeaponById(game.bestWeapon))
         }
 
-
         log.debug { "gameDataDownload 开始下载天赋" }
         for (game in games) {
             val traitSkillId = game.traitFirstCore
@@ -234,6 +240,8 @@ class ResourcesDownloadService {
     }
 
     suspend fun downloadItemBgImage(id: Int) {
+        val path = ImageResourcesType.ItemBg.getGeneralPath(id.toString()).toPath()
+        if (ResourceCheckUtil.checkResource(path)) return
         coroutineScope {
             ioLaunch {
                 EternalReturnDakGGApi.Image.DakGGImageUrlItemBg(

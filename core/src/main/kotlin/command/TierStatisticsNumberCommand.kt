@@ -3,14 +3,13 @@ package cn.luorenmu.command
 import cn.luorenmu.Adapter
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
-import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.PathUtils
-import cn.luorenmu.render.FreemarkerRenderer
+import cn.luorenmu.render.RenderScreenshotPipeline
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGServerName
 import cn.luorenmu.request.entity.module.DakGGTeamMode
-import cn.luorenmu.service.EternalReturnRenderService
+import cn.luorenmu.service.TierStatisticsCollector
 import cn.luorenmu.service.ResourcesDownloadService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
@@ -23,26 +22,23 @@ import org.koin.java.KoinJavaComponent.inject
  * @author LoMu
  * Date 2025/11/1 00:39
  */
-@BotCommand("永恒/半身分段", "段位统计", "<server>",adapter = [Adapter.QG_BOT])
+@BotCommand("永恒/半身分段", "段位统计", "<server>", adapter = [Adapter.QG_BOT])
 
 class TierStatisticsNumberCommand : CommandEvent {
     private val log = KotlinLogging.logger {}
     private val resourcesDownloadService: ResourcesDownloadService by inject(ResourcesDownloadService::class.java)
-    private val eternalReturnRenderService: EternalReturnRenderService by inject(
-        EternalReturnRenderService::class.java
+    private val tierStatisticsCollector: TierStatisticsCollector by inject(
+        TierStatisticsCollector::class.java
     )
-
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         val serverName = command["server"]?.let { DakGGServerName.convert(it) } ?: DakGGServerName.Asia
         preheatRequest(serverName)
-        val cutoffsAndTierNumber = eternalReturnRenderService.getCutoffsAndTierNumber(serverName)
+        val cutoffsAndTierNumber = tierStatisticsCollector.collect(serverName)
         val outputPath = PathUtils.resourcesPathResolve("render", "tier", "tierStatisticsNumber.png")
-        val renderPath = PathUtils.resourcesPathResolve("render", "tier.html")
-        val html = FreemarkerRenderer.render("tier_statistics_number.ftl", cutoffsAndTierNumber)
-        renderPath.toFile().writeText(html)
-        BrowserPool.getBrowser().screenshotSelector(
-            renderPath.toString(),
+        RenderScreenshotPipeline.renderAndScreenshot(
+            "tier_statistics_number.ftl",
+            cutoffsAndTierNumber,
             outputPath,
             "#app"
         )
@@ -73,4 +69,3 @@ class TierStatisticsNumberCommand : CommandEvent {
         }
     }
 }
-

@@ -56,24 +56,6 @@ object RequestManager {
         map
     }
 
-    // SIMBOT Request require
-    val api = HttpClient(CIO) {
-        engine {
-            maxConnectionsCount = 50
-            endpoint {
-                maxConnectionsPerRoute = 100
-                pipelineMaxSize = 20
-                keepAliveTime = 5000
-                connectTimeout = 50_000
-                connectAttempts = 3
-            }
-        }
-        install(HttpTimeout) {
-            requestTimeoutMillis = 60000
-            connectTimeoutMillis = 60000
-            socketTimeoutMillis = 60000
-        }
-    }
     private val client = HttpClient(CIO) {
         engine {
             maxConnectionsCount = 1000
@@ -114,7 +96,7 @@ object RequestManager {
             }
 
         }
-        install(HttpCache.Companion) {
+        install(HttpCache) {
             val file = PathUtils.resourcesPathResolve("cache").toFile()
             if (!file.exists()) {
                 file.mkdirs()
@@ -130,14 +112,6 @@ object RequestManager {
                 coerceInputValues = true  // 强制转换输入值
                 allowStructuredMapKeys = true // 允许结构化 Map 键
             })
-        }
-        install(HttpCache) {
-            val resourcesPathResolve = PathUtils.resourcesPathResolve("cache")
-            if (!resourcesPathResolve.toFile().exists()) {
-                Files.createDirectory(resourcesPathResolve)
-            }
-            val fileDirectory = resourcesPathResolve.toFile()
-            publicStorage(FileStorage(fileDirectory))
         }
 
         defaultRequest {
