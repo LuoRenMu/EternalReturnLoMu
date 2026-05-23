@@ -3,7 +3,9 @@ package cn.luorenmu
 
 import cn.luorenmu.api.resourcesRouting
 import cn.luorenmu.common.util.BrowserPool
+import cn.luorenmu.common.util.MongoDBManager
 import cn.luorenmu.common.util.PathUtils
+import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.service.EternalReturnRenderService
 import cn.luorenmu.service.ResourcesDownloadService
 import freemarker.cache.ClassTemplateLoader
@@ -26,7 +28,7 @@ import kotlin.system.exitProcess
  */
 class CoreApplication
 
- val apiKey = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
+val apiKey = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
 
 var SERVER_PORT: Int = ConfigFile.config.port
 var HTTP_SERVER_URL = "http://127.0.0.1:${SERVER_PORT}"
@@ -55,7 +57,10 @@ val appModule = module {
 
     single { ResourcesDownloadService() }
     single { EternalReturnRenderService() }
+    single { MongoDBManager() }
+    single { StatisticsRepository(get()) }
 }
+
 
 fun Application.configureInstall() {
     install(FreeMarker) {
@@ -103,11 +108,19 @@ object ConfigFile {
         var apiKey: String = "非必要",
         var other: Map<String, String> = mapOf(),
         var browser: BrowserConfig = BrowserConfig(),
+        var mongo: MongoConfig = MongoConfig(),
     ) {
         @Serializable
         data class BrowserConfig(
             var headless: Boolean = false,
             var pool: Int = 1,
+        )
+
+        @Serializable
+        data class MongoConfig(
+            var enabled: Boolean = true,
+            var connectionString: String = "mongodb://192.168.1.104:27017",
+            var database: String = "bot_db",
         )
     }
 }

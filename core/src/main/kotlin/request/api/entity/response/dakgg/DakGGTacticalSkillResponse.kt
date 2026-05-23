@@ -1,6 +1,8 @@
 package cn.luorenmu.request.api.entity.response.dakgg
 
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGTacticalSkillResponse.TacticalSkill
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 /**
@@ -20,7 +22,10 @@ data class DakGGTacticalSkillResponse(
         val imageUrl: String = "",
     )
     fun getTacticalSkill(id: Long): TacticalSkill {
-        return this.tacticalSkills.first { it.id == id }
+        return this.tacticalSkills.firstOrNull { it.id == id }
+            ?: runBlocking {
+                EternalReturnDakGGApi.Data.GetTacticalSkills.refresh()
+                EternalReturnDakGGApi.Data.GetTacticalSkills.execute().tacticalSkills.first { it.id == id }
+            }
     }
 }
-

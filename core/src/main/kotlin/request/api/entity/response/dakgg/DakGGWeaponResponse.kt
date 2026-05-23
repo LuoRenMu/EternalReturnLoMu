@@ -1,5 +1,7 @@
 package cn.luorenmu.request.api.entity.response.dakgg
 
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 /**
@@ -19,8 +21,11 @@ data class DakGGWeaponResponse(
         val iconUrl: String = "",
     )
     fun getWeaponById(id: Int): Weapon {
-        return this.masteries.first { it.id == id }
+        return this.masteries.firstOrNull { it.id == id }
+            ?: runBlocking {
+                EternalReturnDakGGApi.Data.GetWeapons.refresh()
+                EternalReturnDakGGApi.Data.GetWeapons.execute().masteries.first { it.id == id }
+            }
     }
 
 }
-

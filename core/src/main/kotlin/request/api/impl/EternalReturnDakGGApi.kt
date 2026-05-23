@@ -3,6 +3,7 @@ package cn.luorenmu.request.api.impl
 import cn.luorenmu.common.util.toPath
 import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.exception.NotFoundNickNameException
+import cn.luorenmu.request.RequestManager
 import cn.luorenmu.request.api.PakeApi
 import cn.luorenmu.request.api.PakeResourceApi
 import cn.luorenmu.request.api.entity.module.CacheTime
@@ -25,6 +26,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import love.forte.simbot.message.toText
 import java.net.URLEncoder
 import java.nio.file.Path
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  *
@@ -54,6 +56,14 @@ sealed class EternalReturnDakGGApi<T>(
     init {
         headers["User-Agent"] =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0"
+    }
+
+    /**
+     * 清除该API端点的缓存并重新请求，用于缓存数据中找不到新元素时强制刷新
+     */
+    suspend fun refresh(): HttpResponse {
+        RequestManager.cacheMap[cacheTime]?.invalidate(url)
+        return call()
     }
 
     fun nameFoundCheck(nickname: String, body: String) {
@@ -188,14 +198,14 @@ sealed class EternalReturnDakGGApi<T>(
                         }
                         if (body.isRateLimited()) {
                             val waitTime = body.retryAfter?.toLong() ?: 1000L
-                            delay(waitTime)
+                            delay(waitTime.milliseconds)
                             continue
                         }
                         return body
                     } catch (_: Exception) {
                         if (attempt < maxRetries) {
                             val backoffTime = 1000L * attempt
-                            delay(backoffTime)
+                            delay(backoffTime.milliseconds)
                         }
                     }
                 }

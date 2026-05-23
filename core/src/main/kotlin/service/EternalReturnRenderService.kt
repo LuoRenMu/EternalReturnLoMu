@@ -20,7 +20,7 @@ import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.toText
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.stream.Collectors
 
 /**
@@ -44,6 +44,7 @@ class EternalReturnRenderService {
         lateinit var tiers: DakGGTiersResponse
         lateinit var season: DakGGCurrentSeasonResponse
         lateinit var gamesResponse: MutableList<UserGame>
+
         coroutineScope {
             val profileDF = ioAsync { EternalReturnDakGGApi.User.GetProfile(nickname).execute() }
             val charactersDF = ioAsync { EternalReturnDakGGApi.Data.GetCharacters.execute() }
@@ -59,6 +60,9 @@ class EternalReturnRenderService {
             tiers = tiersDF.await()
             season = seasonDF.await()
             gamesResponse = gamesDF.await().matches
+        }
+        if (gamesResponse.isEmpty()) {
+            throw MessageReplyException("该玩家无任何游玩数据".toText())
         }
 
         val playerSeasonOverviews = profile.playerSeasonOverviews
@@ -109,11 +113,11 @@ class EternalReturnRenderService {
 
         val eternalReturnPlayerData = EternalReturnPlayRender.EternalReturnPlayerData()
 
-
         /**
          * 段位收集
          */
         var tier: DakGGTiersResponse.EternalReturnTier = tiers.getUnRank()
+
         val latestPlaySeason = profile.playerSeasons.firstOrNull() ?: run {
             throw MessageReplyException("该玩家无任何游玩数据".toText())
         }
@@ -125,14 +129,15 @@ class EternalReturnRenderService {
         if (matchingMode == MatchingMode.Rank) {
             tier = tiers.getTierById(latestPlaySeason.tierId)
         }
+        val tierGradeId = latestPlaySeason.tierGradeId
+        val tierMmr = latestPlaySeason.tierMmr
 
-
-        /**
+            /**
          * 左边栏段位显示
          */
         eternalReturnPlayerData.tierImageUrl = ImageResourcesType.TierRound.getGeneralPath(tier.id.toString())
         if (matchingMode == MatchingMode.Rank) {
-            eternalReturnPlayerData.rpName = tier.name
+            eternalReturnPlayerData.rpName = "${tier.name} $tierGradeId - $tierMmr"
             eternalReturnPlayerData.rp =
                 if (latestPlaySeason.mmr == 0) "段位鉴定中." else latestPlaySeason.mmr.toString()
             eternalReturnPlayerData.tierImageUrl = ImageResourcesType.TierRound.getGeneralPath(tier.id.toString())
@@ -206,7 +211,20 @@ class EternalReturnRenderService {
                     )
                 )
             }
-
+        val summary = if (playerSeasonOverviews.firstOrNull{it.teamModeId == 3 && it.matchingModeId== 3} != null){
+            val pso = playerSeasonOverviews.first{it.teamModeId == 3 && it.matchingModeId== 3}
+            val result = if (pso.recentMatches.isNotEmpty()){
+                val recentMatches = pso.recentMatches
+                EternalReturnPlayRender.EternalReturnSummary(
+                    count = pso.recentMatches.size,
+                    avgRank = String.format("%.1f", recentMatches.map { it.gameRank.toDouble() }.average()),
+                    wins = recentMatches.filter { it.gameRank == 1 }.size.toString(),
+                    avgTk = String.format("%.1f", recentMatches.map { it.teamKill.toDouble() }.average()),
+                    ranks = recentMatches.map { it.gameRank}.toList(),
+                )
+            }else null
+            result
+        } else null
         return EternalReturnPlayRender(
             mmrStats = playerMMRStats,
             nickName = nicknameHide(nickname),
@@ -216,9 +234,9 @@ class EternalReturnRenderService {
             matches = gamesResponse.map { gameConvertMatcher(it, characters) },
             recentPlayers = recentPlays,
             characterUseStats = characterUseStats,
-            // 待修改
             season = season.name,
-            mode = matchingMode.modeName
+            mode = matchingMode.modeName,
+            summary = summary
         )
     }
 
@@ -284,7 +302,7 @@ class EternalReturnRenderService {
     private fun nicknameHide(nickname: String): String {
         val length = nickname.length
         return if (length < 3) {
-            nickname.replace(nickname.substring(1, length - 1), " * ")
+            nickname.replace(nickname.substring(1, length), " * ")
         } else {
             nickname.replace(nickname.substring(1, length - 1), " * ".repeat(length - 2))
         }
@@ -379,35 +397,26 @@ class EternalReturnRenderService {
         val userId = userResponse.user.userId
         val seasonID = dataCurrentSeason.seasonID
         val userStatsResponses = coroutineScope {
-            val list = CopyOnWriteArrayList<UserStatsResponse>()
+            val list = CopyOnWriteArraySet<UserStatsResponse>()
             for (i in 1..<seasonID) {
                 ioLaunch {
                     // TODO 缓存来自底层 在没有缓存的情况下会同时发送大量请求
-                    val resp = EternalReturnOpenApi.User.GetUserStats(
+                    val resp = EternalReturnOpenApi.User.GetUserStatsV1(
                         userId,
-                        i,
-                        MatchingMode.Rank
+                        i
                     ).execute()
                     list.add(resp)
                 }
             }
-            list
+            list.mapNotNull { it.user.firstOrNull()?.nickname }.toList()
         }
 
-        val oldNames = mutableSetOf<String>()
-        for (response in userStatsResponses) {
-            response.user.firstOrNull()?.nickname?.let { oldName ->
-                if (!oldName.equals(nickname, true)) {
-                    oldNames.add(oldName)
-                }
-            }
-        }
-        if (oldNames.isEmpty()) {
+        if (userStatsResponses.size == 1) {
             throw MessageReplyException("没有找到该玩家之前的昵称".toText())
         }
         return EternalReturnOldName(
             nickname,
-            oldNames.toList()
+            userStatsResponses
         )
 
     }

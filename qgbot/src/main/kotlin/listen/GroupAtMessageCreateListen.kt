@@ -30,7 +30,9 @@ class GroupAtMessageCreateListen : EventHandle {
             )
         )
 
-        reply?.let { atEvent.reply(it) }
+        reply?.let { atEvent.reply(it) } ?: run {
+            atEvent.reply("命令格式错误或不存在,请确保指令之间存在空格符")
+        }
     }
 
 }

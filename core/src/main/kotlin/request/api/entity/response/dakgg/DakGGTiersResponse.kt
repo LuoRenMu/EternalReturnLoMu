@@ -1,5 +1,7 @@
 package cn.luorenmu.request.api.entity.response.dakgg
 
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 /**
@@ -24,11 +26,18 @@ data class DakGGTiersResponse(
      * 获取 "无段位"信息
      */
     fun getUnRank(): EternalReturnTier {
-        return tiers.first { it.id == 0 }
+        return tiers.firstOrNull { it.id == 0 }
+            ?: runBlocking {
+                EternalReturnDakGGApi.Data.GetTiers.refresh()
+                EternalReturnDakGGApi.Data.GetTiers.execute().tiers.first { it.id == 0 }
+            }
     }
 
     fun getTierById(id: Int): EternalReturnTier {
-        return tiers.first { it.id == id }
+        return tiers.firstOrNull { it.id == id }
+            ?: runBlocking {
+                EternalReturnDakGGApi.Data.GetTiers.refresh()
+                EternalReturnDakGGApi.Data.GetTiers.execute().tiers.first { it.id == id }
+            }
     }
 }
-

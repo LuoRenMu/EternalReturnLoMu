@@ -5,13 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="${httpServer}/static/css/search_player.css">
+    <link rel="stylesheet" href="${ httpServer}/static/css/search_player.css">
     <script src="${httpServer}/static/js/chart.js"></script>
 </head>
 <body>
 <div id="content-container">
     <div id="header">
-        <div id="banner_user_info" style="background-size: contain; background-position: center; background-image: url('${httpServer}/static/images/bg-landing-search-v10.jpg')">
+        <div id="banner_user_info"
+             style="background-size: contain; background-position: center; background-image: url('${httpServer}/static/images/bg-landing-search-v11.jpg')">
             <div class="profile-image-wrapper">
                 <#if profileImageUrl??>
                     <img src="${httpServer}${profileImageUrl}" alt=""/>
@@ -22,7 +23,7 @@
             <div id="top">
                 <div class="level">Lv.${level}</div>
                 <div class="nickname">${nickName}</div>
-                <p>防止违规用户名已统一打码</p>
+                <p>如对该UI有任何建议或问题,欢迎加入654087758群聊反馈 ξ( ✿＞◡❛)</p>
             </div>
         </div>
         <div id="describe">
@@ -227,14 +228,45 @@
             </#if>
         </div>
         <div id="right">
-            <#if rating??>
-                <div id="lomu_rating">
-                    ${rating}
+            <#if summary?has_content>
+                <div id="recent_play_summary">
+                    <div id="recent_play_title">Recent ${summary.count} Match Summary(排位)</div>
+                    <div id="recent_play_stats">
+                        <div class="summary_item">
+                            <div class="summary_label">最近对局获胜数</div>
+                            <div class="summary_value">${summary.wins}</div>
+                        </div>
+                        <div class="summary_item">
+                            <div class="summary_label">最近对局平均排名</div>
+                            <div class="summary_value">${summary.avgRank}</div>
+                        </div>
+                        <div class="summary_item">
+                            <div class="summary_label">最近对局平均团队击杀</div>
+                            <div class="summary_value">${summary.avgTk}</div>
+                        </div>
+                    </div>
+                    <div id="recent_play_rank">
+                        <#list summary.ranks as rank>
+                            <span style="<#if rank == 1>background-color: #11B288;
+                            <#elseif rank == 2>background-color:#207AC7 ;
+                            <#elseif rank == 3>background-color:#207AC7 ;
+                            <#elseif rank == 99>background-color:#475482;
+                            <#else>background-color: #D6D6D6; color: #808080;
+                            </#if>">
+                                <#if rank == 99>
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5.79221 9.71567C5.98067 10.025 6.22298 10.3063 6.54606 10.5032L6.81529 10.6719L6.43836 11.5719C6.19606 12.1344 5.65759 12.5 5.06529 12.5H3.04606C2.66913 12.5 2.3999 12.2188 2.3999 11.825C2.3999 11.4594 2.66913 11.15 3.04606 11.15H5.06529C5.14606 11.15 5.22683 11.1219 5.25375 11.0375L5.79221 9.71567ZM9.72298 3.50005C8.99606 3.50005 8.43067 2.90942 8.43067 2.15005C8.43067 1.4188 8.99606 0.800049 9.72298 0.800049C10.423 0.800049 11.0153 1.4188 11.0153 2.15005C11.0153 2.90942 10.423 3.50005 9.72298 3.50005ZM12.9537 7.57817C13.3037 7.57817 13.5999 7.88755 13.5999 8.25317C13.5999 8.6188 13.3037 8.92817 12.9268 8.92817H11.6345C10.9614 8.92817 10.3961 8.47817 10.2076 7.80317L9.83067 6.50942C9.77683 6.39692 9.72298 6.28442 9.64221 6.17192L8.51144 9.12505L9.91144 9.99692C10.3691 10.3063 10.6384 10.8125 10.6384 11.3469C10.6384 11.4875 10.6114 11.6563 10.5845 11.7969L9.69606 14.7219C9.61529 15.0313 9.34606 15.2 9.07683 15.2C8.59221 15.2 8.43067 14.75 8.43067 14.525C8.43067 14.4688 8.43067 14.4125 8.45759 14.3563L9.34606 11.4313C9.34606 11.4032 9.34606 11.375 9.34606 11.3469C9.34606 11.2907 9.31913 11.2063 9.23836 11.15L6.97683 9.7438C6.51913 9.43442 6.2499 8.92817 6.2499 8.3938C6.2499 8.19692 6.30375 8.00005 6.38452 7.80317L7.32683 5.32817L6.92298 5.2438C6.84221 5.2438 6.76144 5.21567 6.68067 5.21567C6.43836 5.21567 6.22298 5.30005 6.03452 5.4688L4.71529 6.50942C4.60759 6.5938 4.47298 6.65005 4.33836 6.65005C3.93452 6.65005 3.69221 6.31255 3.69221 5.97505C3.69221 5.77817 3.77298 5.5813 3.93452 5.44067L5.22683 4.40005C5.65759 4.06255 6.16913 3.86567 6.68067 3.86567C6.84221 3.86567 7.03067 3.8938 7.21913 3.92192L9.31913 4.42817C10.1537 4.62505 10.7999 5.27192 11.0691 6.11567L11.4191 7.40942C11.4461 7.52192 11.5537 7.57817 11.6345 7.57817H12.9537Z" fill="white"></path>
+                                    </svg>
+                                <#else>${rank}
+                                </#if>
+                        </span>
+                        </#list>
+                    </div>
                 </div>
             </#if>
             <#list matches as match>
                 <div class="war_record">
-                    <div class="game_id">Game ID
+                    <div class="game_id">对局ID
                         ${match.serverName}-${match.gameId}
                         (${match.version})
                     </div>
@@ -290,7 +322,7 @@
 
                             <div class="trait">
                                 <img src="${httpServer}${match.traitSkillGroupUrl}"
-                                         alt="">
+                                     alt="">
                             </div>
                         </div>
 
@@ -337,11 +369,13 @@
                                     <div class="play_data_label">KDA</div>
                                 </div>
                             </#if>
-                            <div class="route">
-                                <div class="play_data_title">${match.routeId}</div>
-                                <div class="play_data_label">路径ID
+                            <#if match.type != "钴协议">
+                                <div class="route">
+                                    <div class="play_data_title">${match.routeId}</div>
+                                    <div class="play_data_label">路径ID
+                                    </div>
                                 </div>
-                            </div>
+                            </#if>
                         </div>
 
                         <ul class="item_box">
@@ -390,13 +424,14 @@
 
                                     <div class="trait">
                                         <img src="${httpServer}${teamMate.traitSkillGroupUrl}"
-                                                 alt="">
+                                             alt="">
                                     </div>
                                 </div>
                                 <div class="play_data">
                                     <div class="play_stat">
                                         <div class="play_data_title">
-                                            ${teamMate.tk} <span>/</span> ${teamMate.kill} <span>/</span> ${teamMate.assist}
+                                            ${teamMate.tk} <span>/</span> ${teamMate.kill}
+                                            <span>/</span> ${teamMate.assist}
                                         </div>
                                         <div class="play_data_label">
                                             TK <span>/</span> K <span>/</span> A

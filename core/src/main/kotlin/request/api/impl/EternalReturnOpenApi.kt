@@ -1,6 +1,7 @@
 package cn.luorenmu.request.api.impl
 
 import cn.luorenmu.apiKey
+import cn.luorenmu.exception.ForbiddenException
 import cn.luorenmu.exception.NotFoundNickNameException
 import cn.luorenmu.request.api.PakeApi
 import cn.luorenmu.request.api.entity.module.CacheTime
@@ -11,11 +12,15 @@ import cn.luorenmu.request.api.entity.response.user.UserNickNameResponse
 import cn.luorenmu.request.api.entity.response.user.UserStatsResponse
 import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.request.entity.module.MatchingTeamMode
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body
+import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlin.random.Random
 import love.forte.simbot.message.toText
 import java.net.URLEncoder
 import java.time.LocalDateTime
@@ -37,6 +42,28 @@ sealed class EternalReturnOpenApi<T>(
     }
 
     override var baseUrl: String = "https://open-api.bser.io"
+
+    private val log = KotlinLogging.logger {}
+
+    /**
+     * 拦截 API 调用并在遇到限流或禁止访问时重试
+     */
+    override suspend fun call(): HttpResponse {
+        val response = super.call()
+        val jsonObject = response.body<JsonObject>().jsonObject
+        jsonObject["message"]?.jsonPrimitive?.content?.let {
+            if (it == "Too Many Requests") {
+                log.debug { "EternalReturnOpenApi Too Many Requests retry $url" }
+                delay(Random.nextLong(1000, 3000))
+                return call()
+            }
+            if (it == "Forbidden") {
+                log.debug { "EternalReturnOpenApi Forbidden $url" }
+                throw ForbiddenException()
+            }
+        }
+        return response
+    }
 
     abstract suspend fun execute(): T
 
@@ -66,7 +93,17 @@ sealed class EternalReturnOpenApi<T>(
             }
         }
 
-        class GetUserStats(
+        class GetUserStatsV1(
+            userId: String,
+            seasonId: Int,
+        ) : User<UserStatsResponse>(
+            "/v1/user/stats/uid/$userId/$seasonId"
+        ) {
+            override suspend fun execute(): UserStatsResponse =
+                call().body()
+        }
+
+        class GetUserStatsV2(
             userId: String,
             seasonId: Int,
             matchingMode: MatchingMode

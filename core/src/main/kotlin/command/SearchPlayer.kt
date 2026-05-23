@@ -1,13 +1,14 @@
 package cn.luorenmu.command
 
+import cn.luorenmu.Adapter
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.render.FreemarkerRenderer
+import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
-import cn.luorenmu.request.api.impl.EternalReturnOpenApi
 import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.service.EternalReturnRenderService
 import cn.luorenmu.service.ResourcesDownloadService
@@ -31,7 +32,8 @@ import java.util.concurrent.TimeUnit
     "查询玩家战绩",
     "search",
     "<nickname> <mode>",
-    description = "查询玩家战绩 示例:\n /search LoMu \n /search LoMu 匹配\n /search LoMu 排位 "
+    description = "查询玩家战绩 示例:\n /search LoMu \n /search LoMu 匹配\n /search LoMu 排位 ",
+    adapter = [Adapter.QG_BOT, Adapter.ONE_BOT]
 )
 class SearchPlayer : CommandEvent {
 
@@ -40,6 +42,7 @@ class SearchPlayer : CommandEvent {
     private val eternalReturnRenderService: EternalReturnRenderService by inject(
         EternalReturnRenderService::class.java
     )
+    private val statisticsService: StatisticsRepository by inject(StatisticsRepository::class.java)
 
 
     private val cache = Caffeine.newBuilder()
@@ -53,6 +56,10 @@ class SearchPlayer : CommandEvent {
             return "请使用命令格式/search (!名称)".toText()
         }
         val nickname = command["nickname"]!!
+
+        statisticsService.recordCommandUsage("search", nickname)
+        statisticsService.incrementNicknameQueryCount(nickname)
+
         if (cache.getIfPresent(nickname) == null) {
             synchronized(this) {
                 if (cache.getIfPresent(nickname) != null) {
@@ -60,11 +67,8 @@ class SearchPlayer : CommandEvent {
                 }
             }
         }
-
-
         val mode = MatchingMode.convert(command["mode"])
         preheatRequest(nickname)
-
         val outputPath = PathUtils.resourcesPathResolve("render", "player", "$nickname.png")
         val renderPath = PathUtils.resourcesPathResolve("render", "player", "tmp", "${UUID.randomUUID()}.html")
         val html =

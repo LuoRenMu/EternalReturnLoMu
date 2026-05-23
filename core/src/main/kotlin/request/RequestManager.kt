@@ -8,7 +8,6 @@ import cn.luorenmu.request.api.Api
 import cn.luorenmu.request.api.PakeResourceApi
 import cn.luorenmu.request.api.ResourceApi
 import cn.luorenmu.request.api.entity.module.CacheTime
-import cn.luorenmu.request.api.impl.EternalReturnOpenApi
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -27,18 +26,13 @@ import io.ktor.network.sockets.SocketTimeoutException
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import love.forte.simbot.message.toText
 import java.io.FileOutputStream
 import java.net.SocketException
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.random.Random
 
 /**
  *
@@ -193,20 +187,6 @@ object RequestManager {
                     log.debug { "call stream file: ${api.path} from ${api.baseUrl}${api.url}" }
                 } else {
                     log.debug { "call ${api.method.value} ${api.baseUrl}${api.url} take ${(System.currentTimeMillis() - currentTimeMillis) / 1000.0}m" }
-                }
-            }
-        }
-        if (api is EternalReturnOpenApi<*>) {
-            val jsonObject = response.body<JsonObject>().jsonObject
-            jsonObject["message"]?.jsonPrimitive?.content?.let {
-                if (it == "Too Many Requests") {
-                    log.debug { "EternalReturnOpenApi Too Many Requests retry ${api.url}" }
-                    delay(Random.nextLong(1000, 3000))
-                    return call(api)
-                }
-                if (it == "Forbidden") {
-                    log.debug { "EternalReturnOpenApi Forbidden ${api.url}" }
-                    throw ForbiddenException()
                 }
             }
         }

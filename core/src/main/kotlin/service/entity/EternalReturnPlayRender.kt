@@ -15,7 +15,7 @@ data class EternalReturnPlayRender(
     val profileImageUrl: String? = null,
     val recentPlayers: List<EternalReturnPlayerRecentPlay>,
     val characterUseStats: List<EternalReturnCharacterUseStats>,
-    var rating: String? = null,
+    var summary: EternalReturnSummary?,
     val mmrStats: EternalReturnPlayerMMRStats? = null,
     var matches: List<EternalReturnPlayerMatchData> = mutableListOf(),
     val season: String,
@@ -23,6 +23,13 @@ data class EternalReturnPlayRender(
     val mode :String = "排位"
 ) {
 
+    data class EternalReturnSummary(
+        val count: Int,
+        val avgRank: String,
+        val wins: String,
+        val avgTk: String,
+        val ranks: List<Int>,
+    )
 
     data class EternalReturnPlayerMMRStats(
         val mmrDate: List<String>,

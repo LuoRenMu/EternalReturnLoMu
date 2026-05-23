@@ -45,7 +45,8 @@ data class BattleUserGamesResponse(
         val skinCode: Long = 0,
         val characterLevel: Long = 0,
         val squadRumbleRank: Int = 0,
-        val gameRank: Int = 0,
+        @SerialName("gameRank")
+        val gameRankVirtual: Int = 0,
         val playerKill: Int = 0,
         val playerDeaths: Int = 0,
         val playerAssistant: Int = 0,
@@ -65,7 +66,8 @@ data class BattleUserGamesResponse(
         val masteryLevel: Map<String, Long>,
         val versionMajor: Long = 0,
         val versionMinor: Long = 0,
-        val serverName: String = "",
+        @SerialName("serverName")
+        val serverNameVirtual: String = "",
         val criticalStrikeDamage: Double = 0.0,
         val coolDownReduction: Double = 0.0,
         val lifeSteal: Double = 0.0,
@@ -151,6 +153,27 @@ data class BattleUserGamesResponse(
         val mmrLossEntryCost: Long = 0,
     ) {
 
+        val serverName by lazy {
+            when(serverNameVirtual.lowercase()) {
+                "asia" -> "亚一"
+                "asia2" -> "亚二"
+                "asia3" -> "亚三"
+                "europe" -> "欧服"
+                "ohio" -> "美东"
+                "frankfurt" -> "法兰克福"
+                "saopaulo" -> "南美"
+                "global" -> "全球"
+                else -> serverNameVirtual
+            }
+        }
+
+        val gameRank by lazy {
+            if (escapeState != 0) {
+               99
+            } else {
+                gameRankVirtual
+            }
+        }
         val equipmentReal by lazy {
             jsonElementToMap(equipmentVirtual)
         }

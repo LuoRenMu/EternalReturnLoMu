@@ -1,5 +1,7 @@
 package cn.luorenmu.request.api.entity.response.dakgg
 
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 /**
@@ -30,4 +32,12 @@ data class DakGGTraitSkillsResponse(
         val imageUrl: String = "",
         val active: Boolean = false,
     )
+
+    fun getTraitSkillById(id: Long): TraitSkill {
+        return this.traitSkills.firstOrNull { it.id == id }
+            ?: runBlocking {
+                EternalReturnDakGGApi.Data.GetTraitSkills.refresh()
+                EternalReturnDakGGApi.Data.GetTraitSkills.execute().traitSkills.first { it.id == id }
+            }
+    }
 }

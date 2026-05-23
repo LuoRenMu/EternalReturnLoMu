@@ -95,7 +95,7 @@ class ResourcesDownloadService {
     suspend fun downloadTraitSkillImage(traitSkillId: Long, traitSkills: DakGGTraitSkillsResponse) {
         coroutineScope {
             ioLaunch {
-                val traitSkill = traitSkills.traitSkills.first { it.id == traitSkillId }
+                val traitSkill = traitSkills.getTraitSkillById(traitSkillId)
                 val traitSkillGroup = traitSkills.traitSkillGroups.firstOrNull { it.key == traitSkill.group }
                 traitSkillGroup?.let {
                     EternalReturnDakGGApi.Image.DakGGImageUrlResources(

@@ -1,5 +1,7 @@
 package cn.luorenmu.request.api.entity.response.dakgg
 
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 /**
@@ -15,14 +17,23 @@ data class DakGGCharactersResponse(
         characterId: Long,
         skinId: Long,
     ): DakGGCharacterById.DakGGSkin {
-        return this.characters.first { it.id == characterId }.skins.first { it.id == skinId }
+        return this.characters.firstOrNull { it.id == characterId }?.skins?.firstOrNull { it.id == skinId }
+            ?: runBlocking {
+                EternalReturnDakGGApi.Data.GetCharacters.refresh()
+                EternalReturnDakGGApi.Data.GetCharacters.execute().characters
+                    .first { it.id == characterId }.skins.first { it.id == skinId }
+            }
     }
 
 
     fun getCharacterById(
         characterId: Long,
     ): DakGGCharacterById {
-        return this.characters.first { it.id == characterId }
+        return this.characters.firstOrNull { it.id == characterId }
+            ?: runBlocking {
+                EternalReturnDakGGApi.Data.GetCharacters.refresh()
+                EternalReturnDakGGApi.Data.GetCharacters.execute().characters.first { it.id == characterId }
+            }
     }
 
     @Serializable
@@ -37,7 +48,12 @@ data class DakGGCharactersResponse(
         val skins: List<DakGGSkin> = arrayListOf(),
     ) {
         fun getCharacterSkinById(skinId: Long): DakGGSkin {
-            return this.skins.first { it.id == skinId }
+            return this.skins.firstOrNull { it.id == skinId }
+                ?: runBlocking {
+                    EternalReturnDakGGApi.Data.GetCharacters.refresh()
+                    EternalReturnDakGGApi.Data.GetCharacters.execute().characters
+                        .first { it.id == this@DakGGCharacterById.id }.skins.first { it.id == skinId }
+                }
         }
         @Serializable
         data class DakGGSkin(

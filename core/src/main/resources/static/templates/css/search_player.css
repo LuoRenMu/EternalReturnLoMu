@@ -10,14 +10,14 @@ body {
 
 #content-container {
     overflow: hidden;
-    width: 1200px;
     background-size: cover;
     background-position: center;
     padding: 20px;
+    width: 1250px;
 }
 
 #header {
-    width: 1200px;
+    width: 1250px;
     overflow: hidden;
 }
 
@@ -25,6 +25,9 @@ body {
     height: 177px;
     border-radius: 10px 10px 0 0;
     width: 100%;
+    background-size: contain;
+    background-position: center;
+    background-image: url("https://cdn.dak.gg/er/images/bg/bg-landing-search-v9.jpg");
     box-sizing: content-box;
     border: 1px solid #363944;
     display: flex;
@@ -73,7 +76,7 @@ body {
 
 #top>p {
     margin-top: 20px;
-    font-size: 12px;
+    font-size: 11px;
     color: #ffffff;
 }
 
@@ -93,14 +96,13 @@ body {
 #left {
     border-radius: 10px;
     margin-top: 20px;
-    width: 350px;
+    width: 370px;
 }
 
 
 #right {
     padding: 20px;
     margin-left: 20px;
-    width: 775px;
 }
 
 #rank {
@@ -153,9 +155,10 @@ body {
 }
 
 #record {
-    height: 135px;
 
-    text-align: center;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
     padding: 10px 0;
     margin-bottom: 10px;
 }
@@ -632,16 +635,79 @@ img {
     border-radius: 50%;
 }
 
-#lomu_rating {
-    height: 44px;
-    width: 810px;
-    text-align: center;
-    background-color: #727CF2;
-    line-height: 44px;
-    color: #FFFFFF;
+#recent_play_summary {
+    margin: 0 auto;
+    border-spacing: 0;
+    overflow: hidden;
+    background-color: rgb(255, 255, 255);
     border-radius: 10px;
+    border: solid 1px rgb(201, 201, 201);
+    width: 100%;
+    border-collapse: separate;
+    font-weight: normal;
+}
+
+
+#recent_play_title {
+    height: 50px;
+    line-height: 50px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #000000;
+    text-align: left;
+    padding-left: 10px;
+    border-bottom: 1px solid rgb(201, 201, 201);
+}
+
+#recent_play_stats {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #646464;
+    text-align: center;
+    height: 80px;
+    padding-left: 10px;
+    gap: 30px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+#summary_item {
     display: inline-block;
-    margin-bottom: 15px;
+    margin-right: 20px;
+}
+
+#summary_label {
+    font-size: 20px;
+    color: #646464;
+}
+
+#summary_value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #323232;
+}
+
+#recent_play_rank {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+#recent_play_rank span {
+    font-size: 14px;
+    color: #ffffff;
+    font-weight: bold;
+    text-align: center;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 3px;
+    width: 24px;
 }
 
 #rank_stats {
@@ -651,4 +717,5 @@ img {
     display: flex;
     justify-content: center;
     align-items: center;
+
 }

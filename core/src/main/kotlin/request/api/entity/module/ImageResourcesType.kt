@@ -76,7 +76,7 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
         var type = name
         if (this == TraitSkillGroup && traitSkillIdRegex.matches(name)) {
             val traitSkill = runBlocking { EternalReturnDakGGApi.Data.GetTraitSkills.execute() }
-            type = traitSkill.traitSkills.first { it.id == name.toLong() }.group
+            type = traitSkill.getTraitSkillById(name.toLong()).group
         }
         return "/resources/images${this.path}$type${this.fileType}"
     }

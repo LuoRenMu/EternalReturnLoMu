@@ -1,5 +1,6 @@
 package cn.luorenmu.request.api.entity.response.dakgg
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -104,7 +105,8 @@ data class DakGGProfileResponse(
             val teamMode: Int = 0,
             val characterNum: Int = 0,
             val skinCode: Int = 0,
-            val gameRank: Int = 0,
+            @SerialName("gameRank")
+            val gameRankVirtual: Int = 0,
             val playerKill: Int = 0,
             val playerAssistant: Int = 0,
             val monsterKill: Int = 0,
@@ -117,7 +119,15 @@ data class DakGGProfileResponse(
             val teamKill: Int = 0,
             val playerDeaths: Int = 0,
             val escapeState: Int = 0,
-        )
+        ){
+            val gameRank by lazy {
+                if (escapeState !=0) {
+                    99
+                }else{
+                    gameRankVirtual
+                }
+            }
+        }
 
         @Serializable
         data class ProfileDuoStat(

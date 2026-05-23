@@ -1,5 +1,7 @@
 package cn.luorenmu.request.api.entity.response.dakgg
 
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 /**
@@ -31,7 +33,11 @@ data class DakGGItemsResponse(
         val specialItemType: String? = null,
     )
     fun getItemById(id: Long): Item {
-        return this.items.first { it.id == id }
+        return this.items.firstOrNull { it.id == id }
+            ?: runBlocking {
+                EternalReturnDakGGApi.Data.GetItems.refresh()
+                EternalReturnDakGGApi.Data.GetItems.execute().items.first { it.id == id }
+            }
     }
 }
 

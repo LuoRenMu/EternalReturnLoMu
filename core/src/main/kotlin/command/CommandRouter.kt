@@ -54,13 +54,15 @@ class CommandRouter {
             return result
         }catch (e: MessageReplyException){
             return e.returnMsg
-        }catch (_: TimeoutError){
-            return "任务超时".toText()
-        }catch (_: HttpRequestTimeoutException){
-            return "已尽力向目标发送请求，但仍然无法到达 这绝对不是'LoMu'的问题".toText()
+        }catch (e: TimeoutError){
+            log.error { e.printStack() }
+            return "任务超时,非常抱歉!请稍后再试。".toText()
+        }catch (e: HttpRequestTimeoutException){
+            log.error { e.printStack() }
+            return "已尽力向目标发送请求，但仍然无法到达 这绝对不是'LoMu'的问题。".toText()
         }catch (e: Exception){
             log.error { e.printStack() }
-            return "内部处理发生未知错误,无法正常处理".toText()
+            return "***内部处理发生了非预期错误,该问题可能需要内部修复\n 如后续仍存在请您加入654087758群聊反馈\uD83E\uDD7A！非常感谢orz".toText()
         }
 
     }

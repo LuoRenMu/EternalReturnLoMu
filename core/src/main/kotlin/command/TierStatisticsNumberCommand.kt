@@ -1,5 +1,6 @@
 package cn.luorenmu.command
 
+import cn.luorenmu.Adapter
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.BrowserPool
@@ -22,7 +23,7 @@ import org.koin.java.KoinJavaComponent.inject
  * @author LoMu
  * Date 2025/11/1 00:39
  */
-@BotCommand("永恒/半身分段", "段位统计", "<server>")
+@BotCommand("永恒/半身分段", "段位统计", "<server>",adapter = [Adapter.QG_BOT])
 
 class TierStatisticsNumberCommand : CommandEvent {
     private val log = KotlinLogging.logger {}

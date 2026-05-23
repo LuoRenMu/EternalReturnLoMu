@@ -33,8 +33,8 @@ import kotlin.system.exitProcess
 private val commandRouter = CommandRouter()
 suspend fun main() {
     config.other = mapOf(
-            "one_bot_http" to "http://127.0.0.1:3000",
-            "one_bot_ws" to "ws://127.0.0.1:3001"
+            "one_bot_http" to "http://192.168.1.108:9191",
+            "one_bot_ws" to "ws://192.168.1.108:5752"
         )
 
     val app = launchSimpleApplication {
