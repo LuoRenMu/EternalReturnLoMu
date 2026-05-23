@@ -11,6 +11,7 @@ import com.microsoft.playwright.TimeoutError
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.utils.io.printStack
+import love.forte.simbot.component.qguild.message.QGMarkdown
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.toText
 

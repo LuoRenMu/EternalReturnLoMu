@@ -54,7 +54,9 @@ object BrowserPool {
                 .setDeviceScaleFactor(2.0)
         )
 
-        private val page = context.newPage()
+        private val page = context.newPage().apply {
+            setDefaultTimeout(120_000.0)
+        }
 
         /**
          * @param url 网页链接
@@ -69,7 +71,7 @@ object BrowserPool {
             pageConsumer: (page: Page, box: BoundingBox) -> Unit,
         ) {
             synchronized(this) {
-                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(60000.0))
+                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(120_000.0))
                 val locator = page.locator(selector)
                 val boundingBox = locator.boundingBox()
                 pageConsumer(page, boundingBox)
@@ -84,7 +86,7 @@ object BrowserPool {
             pageConsumer: (page: Page) -> Unit = {},
         ) {
             synchronized(this) {
-                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(60000.0))
+                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(120_000.0))
                 val locator = page.locator(selector)
                 val boundingBox = locator.boundingBox()
                 pageConsumer(page)
@@ -120,7 +122,7 @@ object BrowserPool {
             pageConsumer: (page: Page) -> Unit = {},
         ) {
             synchronized(this) {
-                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(60000.0))
+                page.navigate(url, Page.NavigateOptions().setWaitUntil(waitUntilState).setTimeout(120_000.0))
                 pageConsumer(page)
                 page.screenshot(
                     Page.ScreenshotOptions().setPath(output)
