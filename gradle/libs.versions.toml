@@ -2,21 +2,38 @@
 kotlin = "2.1.20"
 simbot-core = "4.14.0"
 simbot-qq = "4.2.2"
-simbot-onebot="1.9.0"
+simbot-onebot = "1.9.0"
 ktor = "2.3.12"
 koin = "3.5.5"
-
+coroutines = "1.8.1"
+kotlin-logging = "6.0.3"
+caffeine = "3.2.3"
+playwright = "1.42.0"
+logback = "1.4.11"
+reflections = "0.10.2"
+mongodb = "5.3.1"
 
 [libraries]
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 simbot-core = { module = "love.forte.simbot:simbot-core", version.ref = "simbot-core" }
 simbot-component-qq = { module = "love.forte.simbot.component:simbot-component-qq-guild-core", version.ref = "simbot-qq" }
-simbot-component-onebot = { module = "love.forte.simbot.component:simbot-component-onebot-v11-core", version.ref = "simbot-onebot"}
+simbot-component-onebot = { module = "love.forte.simbot.component:simbot-component-onebot-v11-core", version.ref = "simbot-onebot" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
-koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
-ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
-ktor-freemarker = { module = "io.ktor:ktor-freemarker", version = "1.6.8" }
-ktor-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-server-freemarker = { module = "io.ktor:ktor-server-freemarker", version.ref = "ktor" }
+ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
+koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
+kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin-logging" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+playwright = { module = "com.microsoft.playwright:playwright", version.ref = "playwright" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
+mongodb-driver-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
+
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

@@ -41,7 +41,7 @@ class QGBotService {
 
         // 如果找不到，响应 404 异常
         if (targetBot == null) {
-            respond(HttpStatusCode.Companion.NotFound)
+            respond(HttpStatusCode.NotFound)
             return
         }
 
@@ -49,7 +49,7 @@ class QGBotService {
         val signature = request.header(SIGNATURE_HEAD)
             ?: run {
                 respond(
-                    HttpStatusCode.Companion.BadRequest,
+                    HttpStatusCode.BadRequest,
                     "Required header $SIGNATURE_HEAD is missing"
                 )
                 return
@@ -58,7 +58,7 @@ class QGBotService {
         val timestamp = request.header(TIMESTAMP_HEAD)
             ?: run {
                 respond(
-                    HttpStatusCode.Companion.BadRequest,
+                    HttpStatusCode.BadRequest,
                     "Required header $TIMESTAMP_HEAD is missing"
                 )
                 return

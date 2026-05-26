@@ -1,0 +1,350 @@
+#content-container {
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: #f5f6fa;
+    width: 1250px;
+}
+
+/* --- Header --- */
+.header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.title {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #1a1d28;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.title-icon {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    border-radius: 8px;
+    position: relative;
+}
+
+.title-icon::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6.4-4.8-6.4 4.8 2.4-7.2-6-4.8h7.6z'/%3E%3C/svg%3E") center/14px no-repeat;
+}
+
+/* --- Stats Bar --- */
+.stats-bar {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.stat-badge {
+    background: #fff;
+    border: 1px solid #e2e5ee;
+    border-radius: 12px;
+    padding: 12px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 140px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8890a8;
+}
+
+.stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1d28;
+}
+
+.rank-bronze {
+    background: linear-gradient(135deg, #cd7f32, #e0a050);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* --- Table Container --- */
+.table-container {
+    background: #fff;
+    border: 1px solid #e2e5ee;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow:
+            0 1px 3px rgba(0, 0, 0, 0.04),
+            0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* --- Table --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+/* --- Head --- */
+thead {
+    background: #f8f9fc;
+    border-bottom: 1px solid #e8ebf2;
+}
+
+th {
+    padding: 16px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #7880a0;
+}
+
+/* --- Body Rows --- */
+tbody tr {
+    border-bottom: 1px solid #f0f1f6;
+    transition: background 0.18s ease;
+}
+
+tbody tr:last-child {
+    border-bottom: none;
+}
+
+
+
+td {
+    padding: 14px 14px;
+    vertical-align: middle;
+}
+
+/* --- Rank Column --- */
+.col-rank {
+    width: 64px;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 700;
+    background: #f0f1f6;
+    color: #8890a8;
+    border: 1px solid #e8ebf2;
+}
+
+.rank-1 {
+    background: linear-gradient(135deg, #f6a800, #ffd700);
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 12px rgba(240, 170, 0, 0.30);
+    font-size: 16px;
+}
+
+.rank-2 {
+    background: linear-gradient(135deg, #a0a8b8, #c8d0e0);
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 10px rgba(150, 160, 180, 0.25);
+}
+
+.rank-3 {
+    background: linear-gradient(135deg, #cd7f32, #e0a858);
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 10px rgba(200, 130, 50, 0.28);
+}
+
+/* --- Character Column --- */
+.col-char {
+    text-align: left;
+    padding-left: 24px;
+    width: 250px;
+}
+
+.char-cell {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e2e5ee;
+    transition: border-color 0.2s;
+}
+
+.weapon-icon {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 22px;
+    height: 22px;
+    background: #000000;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e2e5ee;
+}
+
+.weapon-icon img {
+    width: 70%;
+    height: 70%;
+}
+
+.char-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2a2e3a;
+}
+
+/* --- Tier Column --- */
+.col-tier {
+    width: 72px;
+}
+
+
+
+.tier-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.tier-s {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(255, 100, 80, 0.30);
+}
+
+.tier-a {
+    background: linear-gradient(135deg, #ffa502, #ff6348);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(255, 160, 40, 0.25);
+}
+
+.tier-b {
+    background: linear-gradient(135deg, #7bed9f, #2ed573);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(70, 210, 120, 0.25);
+}
+
+/* --- RP Column --- */
+.col-rp {
+    font-size: 15px;
+    font-weight: 700;
+    color: #2a2e3a;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+}
+
+/* --- Bar Columns (Pick / Win) --- */
+.bar-cell {
+    position: relative;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    overflow: hidden;
+    background: #f0f1f6;
+}
+
+.bar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: var(--w);
+    border-radius: 13px;
+    background: linear-gradient(90deg, rgba(100, 140, 240, 0.30), rgba(100, 140, 240, 0.45));
+    transition: width 0.6s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
+
+.bar-fill.win {
+    background: linear-gradient(90deg, rgba(80, 200, 120, 0.35), rgba(80, 200, 120, 0.50));
+}
+
+.bar-label {
+    position: relative;
+    z-index: 1;
+    font-size: 12px;
+    font-weight: 700;
+    color: #3a3e4a;
+}
+
+tr:hover .bar-fill {
+    filter: brightness(1.1);
+}
+
+/* --- DMG Column --- */
+.col-dmg {
+    font-size: 15px;
+    font-weight: 700;
+    color: #e07030;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+}
+
+/* --- Column Widths --- */
+.col-rank {
+    width: 64px;
+}
+
+.col-tier {
+    width: 72px;
+}
+
+.col-rp {
+    width: 80px;
+}
+
+.col-pick {
+    width: 150px;
+}
+
+.col-win {
+    width: 150px;
+}
+
+.col-dmg {
+    width: 100px;
+}
+
+.col-top3 {
+    width: 150px;
+}
+
+.col-play {
+    width: 150px;
+}

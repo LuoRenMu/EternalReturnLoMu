@@ -20,7 +20,7 @@
             <totalSizeCap>3GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %cn.luorenmu.logger{36} - %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
@@ -37,7 +37,7 @@
             <totalSizeCap>3GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %cn.luorenmu.logger{36} - %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
@@ -57,23 +57,23 @@
             <totalSizeCap>3GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %cn.luorenmu.logger{36} - %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
     <!-- Ktor 请求日志记录器 -->
-    <logger name="ktor.application" level="INFO" additivity="false">
+    <cn.luorenmu.logger name="ktor.application" level="INFO" additivity="false">
         <appender-ref ref="KTOR_REQUEST_FILE"/>
         <appender-ref ref="CONSOLE"/>
-    </logger>
+    </cn.luorenmu.logger>
 
     <!-- 应用日志记录器 -->
-    <logger name="cn.luorenmu" level="DEBUG" additivity="false">
+    <cn.luorenmu.logger name="cn.luorenmu" level="DEBUG" additivity="false">
         <appender-ref ref="APPLICATION_FILE"/>
         <appender-ref ref="ERROR_FILE"/>
         <appender-ref ref="CONSOLE"/>
-    </logger>
+    </cn.luorenmu.logger>
 
     <!-- 根日志记录器 -->
     <root level="INFO">

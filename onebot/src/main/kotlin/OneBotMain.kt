@@ -1,7 +1,6 @@
 package cn.luorenmu.onebot
 
 import cn.luorenmu.Adapter
-import cn.luorenmu.ConfigFile
 import cn.luorenmu.ConfigFile.config
 import cn.luorenmu.command.CommandRouter
 import cn.luorenmu.command.entity.MessageSender
@@ -11,7 +10,6 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import love.forte.simbot.application.Application
 import love.forte.simbot.application.listeners
-import love.forte.simbot.common.id.IntID.Companion.ID
 import love.forte.simbot.component.onebot.v11.core.bot.OneBotBotConfiguration
 import love.forte.simbot.component.onebot.v11.core.bot.firstOneBotBotManager
 import love.forte.simbot.component.onebot.v11.core.useOneBot11
