@@ -3,6 +3,7 @@ package cn.luorenmu.service
 import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
+import cn.luorenmu.request.api.entity.response.dakgg.resolveCutoffs
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGServerName
 import cn.luorenmu.request.entity.module.DakGGTeamMode
@@ -51,26 +52,7 @@ class TierStatisticsCollector {
             }
         }
 
-        if (leaderboard.cutoffs.isEmpty()) {
-            throw MessageReplyException("数据收集中...")
-        }
-        val eternal: DakGGLeaderboardResponse.Cutoffs
-        val demigod: DakGGLeaderboardResponse.Cutoffs
-        when (leaderboard.cutoffs.size) {
-            1 -> {
-                eternal = leaderboard.cutoffs[0]
-                demigod = leaderboard.cutoffs[0]
-            }
-
-            2 -> {
-                eternal = leaderboard.cutoffs[1]
-                demigod = leaderboard.cutoffs[0]
-            }
-
-            else -> {
-                throw MessageReplyException("数据收集中...")
-            }
-        }
+        val (eternal, demigod) = leaderboard.cutoffs.resolveCutoffs()
 
         val rateStr = rate.mapValues { String.format("%.2f", it.value * 100) }.mapKeys { it.key.toString() }
         val tierTypesStr = tierTypes.map { it.toString() }

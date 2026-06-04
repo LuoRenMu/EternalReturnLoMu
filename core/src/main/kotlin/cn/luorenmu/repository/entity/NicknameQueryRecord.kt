@@ -1,7 +1,5 @@
 package cn.luorenmu.repository.entity
 
-import org.bson.codecs.pojo.annotations.BsonId
-import org.bson.types.ObjectId
 import java.time.LocalDateTime
 
 /**
@@ -11,10 +9,9 @@ import java.time.LocalDateTime
  * Date 2026/5/1 18:37
  */
 data class NicknameQueryRecord(
-    @BsonId
-    val id: ObjectId = ObjectId(),
+    val id: Long = 0,
     val nickname: String,
-    var queryCount: Long = 0L,
+    val queryCount: Long = 0L,
     val firstQueryAt: LocalDateTime,
-    var lastQueryAt: LocalDateTime,
+    val lastQueryAt: LocalDateTime,
 )

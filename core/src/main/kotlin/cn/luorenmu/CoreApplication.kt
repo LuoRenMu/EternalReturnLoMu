@@ -1,9 +1,10 @@
 package cn.luorenmu
 import cn.luorenmu.api.resourcesRouting
 import cn.luorenmu.common.util.BrowserPool
-import cn.luorenmu.common.util.MongoDBManager
+import cn.luorenmu.common.util.DatabaseManager
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.request.ApiKeyConfig
+import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.service.CharacterStatsCollector
 import cn.luorenmu.service.PlayerRenderAssembler
@@ -49,10 +50,6 @@ fun Application.moduleCore(adapter: Adapter) {
     logger.info { "正在启动 PlayWright" }
     BrowserPool.getBrowser()
     logger.info { "PlayWright 已启动" }
-    if (ConfigFile.config.ai.apiKey.isNotBlank()) {
-        logger.info { "启动新闻定时任务" }
-        EternalReturnNewsTask(NewsClassifier()).start()
-    }
     environment.config.port.let {
         SERVER_PORT = it
     }
@@ -67,8 +64,9 @@ val appModule = module {
     single { TierStatisticsCollector() }
     single { NewsClassifier() }
     single { EternalReturnNewsTask(get()) }
-    single { MongoDBManager() }
+    single { DatabaseManager() }
     single { StatisticsRepository(get()) }
+    single { PlayerAliasRepository(get()) }
 }
 
 
@@ -118,7 +116,7 @@ object ConfigFile {
         var apiKey: String = "非必要",
         var other: Map<String, String> = mapOf(),
         var browser: BrowserConfig = BrowserConfig(),
-        var mongo: MongoConfig = MongoConfig(),
+        var postgres: PostgresConfig = PostgresConfig(),
         var ai: AIConfig = AIConfig(),
     ) {
         @Serializable
@@ -128,10 +126,14 @@ object ConfigFile {
         )
 
         @Serializable
-        data class MongoConfig(
+        data class PostgresConfig(
             var enabled: Boolean = true,
-            var connectionString: String = "mongodb://192.168.1.104:27017",
+            var host: String = "localhost",
+            var port: Int = 5432,
             var database: String = "bot_db",
+            var user: String = "postgres",
+            var password: String = "postgres",
+            var schema: String = "public",
         )
 
         @Serializable

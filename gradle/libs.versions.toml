@@ -12,6 +12,9 @@ playwright = "1.42.0"
 logback = "1.4.11"
 reflections = "0.10.2"
 mongodb = "5.3.1"
+ktorm = "3.6.0"
+postgresql = "42.7.3"
+hikari = "5.1.0"
 
 [libraries]
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
@@ -33,6 +36,10 @@ playwright = { module = "com.microsoft.playwright:playwright", version.ref = "pl
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
 mongodb-driver-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
+ktorm-core = { module = "org.ktorm:ktorm-core", version.ref = "ktorm" }
+ktorm-support-postgresql = { module = "org.ktorm:ktorm-support-postgresql", version.ref = "ktorm" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+hikari-cp = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

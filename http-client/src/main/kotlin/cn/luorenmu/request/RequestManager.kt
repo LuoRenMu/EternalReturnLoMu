@@ -89,9 +89,6 @@ object RequestManager {
                 }
             }
             exponentialDelay()
-            delayMillis { retry ->
-                retry * 1000L
-            }
 
         }
         install(HttpCache) {
@@ -172,33 +169,31 @@ object RequestManager {
         return response
     }
 
-    suspend fun callStream(api: PakeResourceApi, path: Path) {
+    suspend fun callStream(api: PakeResourceApi, path: Path, maxRetries: Int = 3) {
         // only first check io
         if (ResourceCheckUtil.checkResource(path)) {
             return
         }
         val file = path.toFile()
-        try {
-            file.parentFile?.let { parent ->
-                if (!parent.exists()) {
-                    parent.mkdirs()
+        file.parentFile?.let { if (!it.exists()) it.mkdirs() }
+        var lastException: Exception? = null
+        repeat(maxRetries) { attempt ->
+            try {
+                val readBytes = call(api).readBytes()
+                withContext(Dispatchers.IO) {
+                    FileOutputStream(file).use { it.write(readBytes) }
+                }
+                return
+            } catch (e: Exception) {
+                lastException = e
+                log.warn { "callStream retry ${attempt + 1}/$maxRetries: $path => $e" }
+                if (file.exists() && file.length() == 0L) {
+                    file.delete()
+                    ResourceCheckUtil.removeResource(path)
                 }
             }
-            val response = call(api)
-
-            val readBytes = response.readBytes()
-            withContext(Dispatchers.IO) {
-                FileOutputStream(file).use { output ->
-                    output.write(readBytes)
-                }
-            }
-        } catch (e: Exception) {
-            log.error(e) { "Failed to download file: $path from ${api.baseUrl}${api.url} => $e" }
-            if (file.exists() && file.length() == 0L) {
-                file.delete()
-                ResourceCheckUtil.removeResource(path)
-            }
-            throw e
         }
+        log.error(lastException) { "Failed to download file: $path from ${api.baseUrl}${api.url}" }
+        throw lastException!!
     }
 }

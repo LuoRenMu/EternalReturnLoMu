@@ -7,7 +7,24 @@
 body {
     background-color: #F5F5F5;
 }
-
+.hero_avatar{
+    position: relative;
+}
+.hero_level {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    color: #323232;
+    font-weight: bold;
+    border: 1px solid #323232;
+    font-size: 9px;
+    line-height: 20px;
+    bottom: 0;
+    text-align: center;
+    right: 0;
+}
 #content-container {
     overflow: hidden;
     background-size: cover;

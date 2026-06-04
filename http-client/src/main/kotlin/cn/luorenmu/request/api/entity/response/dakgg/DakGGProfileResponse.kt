@@ -69,11 +69,23 @@ data class DakGGProfileResponse(
         val mmrStats: List<List<Int>>,
         val duoStats: List<ProfileDuoStat>,
         val recentMatches: List<RecentGameMatcher>,
+        val totalGainVFCredit: Int = 0,
+        val viewContribution: Int = 0,
+        val rank:RankArea? = null,
 
-        /**
-         * val rank
-         */
     ) {
+        @Serializable
+        data class RankArea (
+            val global: Rank,
+            val in1000:Rank,
+            val local: Rank
+        ){
+            @Serializable
+            data class Rank(
+                val rank: Int = 0,
+                val rankSize: Int = 0,
+            )
+        }
         @Serializable
         data class ProfileStat(
             val key: Long = 0,

@@ -1,38 +1,38 @@
 package cn.luorenmu.repository
 
-import cn.luorenmu.common.util.MongoDBManager
+import cn.luorenmu.common.util.DatabaseManager
 import cn.luorenmu.repository.entity.CommandUsageRecord
 import cn.luorenmu.repository.entity.NicknameQueryRecord
-import com.mongodb.client.model.Filters
-import com.mongodb.client.model.Sorts
-import com.mongodb.client.model.UpdateOptions
-import com.mongodb.client.model.Updates
-import com.mongodb.kotlin.client.coroutine.MongoCollection
-import com.mongodb.kotlin.client.coroutine.MongoDatabase
+import cn.luorenmu.repository.table.CommandUsages
+import cn.luorenmu.repository.table.NicknameQueries
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.toList
+import org.ktorm.database.Database
+import org.ktorm.dsl.desc
+import org.ktorm.dsl.eq
+import org.ktorm.dsl.from
+import org.ktorm.dsl.insert
+import org.ktorm.dsl.limit
+import org.ktorm.dsl.map
+import org.ktorm.dsl.orderBy
+import org.ktorm.dsl.plus
+import org.ktorm.dsl.select
+import org.ktorm.dsl.update
+import org.ktorm.dsl.where
 import java.time.LocalDateTime
 
 /**
  * 统计信息仓储层，负责命令使用记录和昵称查询记录的持久化操作。
  *
- * 所有公开方法均通过 [withDatabase] 统一处理 MongoDB 启用状态检查和异常处理，
- * 避免重复的样板代码。
+ * 使用 Ktorm + PostgreSQL 替代原有的 MongoDB 实现。所有公开方法均通过
+ * [withDatabase] 统一处理数据库启用状态检查和异常处理。
  *
  * @author LoMu
  * Date 2026/5/1 18:33
  */
-class StatisticsRepository(private val mongoManager: MongoDBManager) {
+class StatisticsRepository(private val dbManager: DatabaseManager) {
     private val logger = KotlinLogging.logger {}
 
     companion object {
-        /** 命令使用记录集合名称 */
-        private const val COLLECTION_COMMAND_USAGE = "command_usage"
-
-        /** 昵称查询记录集合名称 */
-        private const val COLLECTION_NICKNAME_QUERIES = "nickname_queries"
-
         /** 默认热门昵称查询数量 */
         private const val DEFAULT_TOP_NICKNAMES_LIMIT = 10
 
@@ -43,28 +43,23 @@ class StatisticsRepository(private val mongoManager: MongoDBManager) {
     /**
      * 统一的数据操作模板方法。
      *
-     * 1. 检查 MongoDB 是否启用，未启用时返回 [defaultValue]
-     * 2. 获取数据库实例，为 null 时返回 [defaultValue]
+     * 1. 检查数据库是否启用，未启用时返回 [defaultValue]
+     * 2. 获取 Database 实例，为 null 时返回 [defaultValue]
      * 3. 执行 [block] 中的业务逻辑
      * 4. 捕获所有异常并记录日志，返回 [defaultValue]
-     *
-     * @param operationName 操作名称，用于日志标识
-     * @param defaultValue 操作失败或不可用时的默认返回值
-     * @param block 实际的数据操作代码块，接收 [MongoDatabase] 参数
-     * @return block 的执行结果，或失败时的 defaultValue
      */
-    private suspend fun <T> withDatabase(
+    private fun <T> withDatabase(
         operationName: String,
         defaultValue: T,
-        block: suspend (MongoDatabase) -> T,
+        block: (Database) -> T,
     ): T {
-        if (!mongoManager.isEnabled()) {
-            logger.debug { "MongoDB 未启用，跳过操作: $operationName" }
+        if (!dbManager.isEnabled()) {
+            logger.debug { "PostgreSQL 未启用，跳过操作: $operationName" }
             return defaultValue
         }
-        val database = mongoManager.database
+        val database = dbManager.database
         if (database == null) {
-            logger.warn { "MongoDB 数据库实例为 null，跳过操作: $operationName" }
+            logger.warn { "PostgreSQL Database 实例为 null，跳过操作: $operationName" }
             return defaultValue
         }
         return try {
@@ -81,19 +76,15 @@ class StatisticsRepository(private val mongoManager: MongoDBManager) {
      * @param commandName 命令名称，不能为空或空白
      * @param nickname 触发命令的用户昵称（可选）
      */
-    suspend fun recordCommandUsage(commandName: String, nickname: String? = null) {
+    fun recordCommandUsage(commandName: String, nickname: String? = null) {
         require(commandName.isNotBlank()) { "commandName 不能为空" }
 
         withDatabase(operationName = "recordCommandUsage", defaultValue = Unit) { database ->
-            val collection: MongoCollection<CommandUsageRecord> =
-                database.getCollection(COLLECTION_COMMAND_USAGE)
-
-            val record = CommandUsageRecord(
-                commandName = commandName,
-                nickname = nickname,
-                timestamp = LocalDateTime.now(),
-            )
-            collection.insertOne(record)
+            database.insert(CommandUsages) {
+                set(it.commandName, commandName)
+                set(it.nickname, nickname)
+                set(it.timestamp, LocalDateTime.now())
+            }
             logger.debug { "记录命令使用: $commandName, nickname: $nickname" }
         }
     }
@@ -101,27 +92,41 @@ class StatisticsRepository(private val mongoManager: MongoDBManager) {
     /**
      * 原子性地增加昵称查询计数。
      *
-     * 使用 MongoDB 的 `upsert` 机制，避免"先查再插"带来的竞态条件。
-     * 如果记录不存在，会自动创建新记录并将 [firstQueryAt] 和 [lastQueryAt] 设为当前时间。
+     * 使用 PostgreSQL 的 `INSERT ... ON CONFLICT ... DO UPDATE` 实现 upsert，
+     * 避免"先查再插"带来的竞态条件。
      *
      * @param nickname 要查询的昵称，不能为空或空白
      */
-    suspend fun incrementNicknameQueryCount(nickname: String) {
+    fun incrementNicknameQueryCount(nickname: String) {
         require(nickname.isNotBlank()) { "nickname 不能为空" }
 
         withDatabase(operationName = "incrementNicknameQueryCount", defaultValue = Unit) { database ->
-            val collection: MongoCollection<NicknameQueryRecord> =
-                database.getCollection(COLLECTION_NICKNAME_QUERIES)
-
             val now = LocalDateTime.now()
-            val filter = Filters.eq("nickname", nickname)
-            val update = Updates.combine(
-                Updates.inc("queryCount", 1),
-                Updates.set("lastQueryAt", now),
-                Updates.setOnInsert("firstQueryAt", now),
-            )
 
-            collection.updateOne(filter, update, UpdateOptions().upsert(true))
+            val updatedRows = database.update(NicknameQueries) {
+                set(it.queryCount, it.queryCount + 1)
+                set(it.lastQueryAt, now)
+                where { it.nickname eq nickname }
+            }
+
+            if (updatedRows == 0) {
+                try {
+                    database.insert(NicknameQueries) {
+                        set(it.nickname, nickname)
+                        set(it.queryCount, 1)
+                        set(it.firstQueryAt, now)
+                        set(it.lastQueryAt, now)
+                    }
+                } catch (_: Exception) {
+                    // 并发插入冲突，重试 update
+                    database.update(NicknameQueries) {
+                        set(it.queryCount, it.queryCount + 1)
+                        set(it.lastQueryAt, now)
+                        where { it.nickname eq nickname }
+                    }
+                }
+            }
+
             logger.debug { "更新昵称查询计数: $nickname" }
         }
     }
@@ -132,16 +137,16 @@ class StatisticsRepository(private val mongoManager: MongoDBManager) {
      * @param nickname 要查询的昵称，不能为空或空白
      * @return 查询次数，如果记录不存在则返回 0
      */
-    suspend fun getNicknameQueryCount(nickname: String): Long {
+    fun getNicknameQueryCount(nickname: String): Long {
         require(nickname.isNotBlank()) { "nickname 不能为空" }
 
         return withDatabase(operationName = "getNicknameQueryCount", defaultValue = 0L) { database ->
-            val collection: MongoCollection<NicknameQueryRecord> =
-                database.getCollection(COLLECTION_NICKNAME_QUERIES)
-
-            val filter = Filters.eq("nickname", nickname)
-            val record = collection.find(filter).firstOrNull()
-            record?.queryCount ?: 0L
+            database
+                .from(NicknameQueries)
+                .select(NicknameQueries.queryCount)
+                .where { NicknameQueries.nickname eq nickname }
+                .map { row -> row[NicknameQueries.queryCount] ?: 0L }
+                .firstOrNull() ?: 0L
         }
     }
 
@@ -151,20 +156,27 @@ class StatisticsRepository(private val mongoManager: MongoDBManager) {
      * @param limit 返回结果数量上限，必须大于 0，默认为 [DEFAULT_TOP_NICKNAMES_LIMIT]
      * @return 按查询次数降序排列的昵称记录列表
      */
-    suspend fun getTopQueriedNicknames(limit: Int = DEFAULT_TOP_NICKNAMES_LIMIT): List<NicknameQueryRecord> {
+    fun getTopQueriedNicknames(limit: Int = DEFAULT_TOP_NICKNAMES_LIMIT): List<NicknameQueryRecord> {
         require(limit > 0) { "limit 必须大于 0，当前值: $limit" }
 
         return withDatabase(
             operationName = "getTopQueriedNicknames",
             defaultValue = emptyList(),
         ) { database ->
-            val collection: MongoCollection<NicknameQueryRecord> =
-                database.getCollection(COLLECTION_NICKNAME_QUERIES)
-
-            collection.find()
-                .sort(Sorts.descending("queryCount"))
+            database
+                .from(NicknameQueries)
+                .select()
+                .orderBy(NicknameQueries.queryCount.desc())
                 .limit(limit)
-                .toList()
+                .map { row ->
+                    NicknameQueryRecord(
+                        id = row[NicknameQueries.id] ?: 0,
+                        nickname = row[NicknameQueries.nickname] ?: "",
+                        queryCount = row[NicknameQueries.queryCount] ?: 0,
+                        firstQueryAt = row[NicknameQueries.firstQueryAt] ?: LocalDateTime.now(),
+                        lastQueryAt = row[NicknameQueries.lastQueryAt] ?: LocalDateTime.now(),
+                    )
+                }
         }
     }
 
@@ -175,7 +187,7 @@ class StatisticsRepository(private val mongoManager: MongoDBManager) {
      * @param limit 返回结果数量上限，必须大于 0，默认为 [DEFAULT_COMMAND_STATS_LIMIT]
      * @return 按时间戳降序排列的命令使用记录列表
      */
-    suspend fun getCommandUsageStats(
+    fun getCommandUsageStats(
         commandName: String? = null,
         limit: Int = DEFAULT_COMMAND_STATS_LIMIT,
     ): List<CommandUsageRecord> {
@@ -185,16 +197,27 @@ class StatisticsRepository(private val mongoManager: MongoDBManager) {
             operationName = "getCommandUsageStats",
             defaultValue = emptyList(),
         ) { database ->
-            val collection: MongoCollection<CommandUsageRecord> =
-                database.getCollection(COLLECTION_COMMAND_USAGE)
+            val query = database
+                .from(CommandUsages)
+                .select()
 
-            val filter = commandName?.let { Filters.eq("commandName", it) }
-                ?: Filters.empty()
+            val filtered = if (commandName != null) {
+                query.where { CommandUsages.commandName eq commandName }
+            } else {
+                query
+            }
 
-            collection.find(filter)
-                .sort(Sorts.descending("timestamp"))
+            filtered
+                .orderBy(CommandUsages.timestamp.desc())
                 .limit(limit)
-                .toList()
+                .map { row ->
+                    CommandUsageRecord(
+                        id = row[CommandUsages.id] ?: 0,
+                        commandName = row[CommandUsages.commandName] ?: "",
+                        nickname = row[CommandUsages.nickname],
+                        timestamp = row[CommandUsages.timestamp] ?: LocalDateTime.now(),
+                    )
+                }
         }
     }
 }

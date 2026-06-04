@@ -7,12 +7,14 @@ import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.ReflectionUtil
 import cn.luorenmu.currentAdapter
 import cn.luorenmu.exception.MessageReplyException
+import cn.luorenmu.repository.StatisticsRepository
 import com.microsoft.playwright.TimeoutError
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.plugins.HttpRequestTimeoutException
-import io.ktor.utils.io.printStack
+import io.ktor.client.plugins.*
+import io.ktor.utils.io.*
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.toText
+import org.koin.java.KoinJavaComponent.inject
 
 
 /**
@@ -23,6 +25,8 @@ import love.forte.simbot.message.toText
 private val log = KotlinLogging.logger {}
 
 class CommandRouter {
+    private val statisticsService: StatisticsRepository by inject(StatisticsRepository::class.java)
+
     companion object {
         /**
          * KEY IS ALIAS
@@ -48,20 +52,22 @@ class CommandRouter {
     }
 
     suspend fun call(messageSender: MessageSender): Message? {
-        try{
+        try {
             val result = commandFind(messageSender.plainText)?.let {
+                log.info { "command -> ${it.eventObj}" }
+                statisticsService.recordCommandUsage(it.command.name, messageSender.plainText)
                 it.eventObj.listen(messageSender, it.commandParse)
             }
             return result
-        }catch (e: MessageReplyException){
+        } catch (e: MessageReplyException) {
             return e.returnMsg.toText()
-        }catch (e: TimeoutError){
+        } catch (e: TimeoutError) {
             log.error { e.printStack() }
             return "任务超时,非常抱歉!请稍后再试。".toText()
-        }catch (e: HttpRequestTimeoutException){
+        } catch (e: HttpRequestTimeoutException) {
             log.error { e.printStack() }
             return "已尽力向目标发送请求，但仍然无法到达 这绝对不是'LoMu'的问题。".toText()
-        }catch (e: Exception){
+        } catch (e: Exception) {
             log.error { e.printStack() }
             return "***内部处理发生了非预期错误,该问题可能需要内部修复\n 如后续仍存在请您加入654087758群聊反馈\uD83E\uDD7A！非常感谢orz".toText()
         }
@@ -76,7 +82,7 @@ class CommandRouter {
             val inputCommandFirst = inputCommand[0]
             val command = COMMANDS[inputCommandFirst] ?: run { return null }
             return CommandFindResult(
-                command.commandEvent,
+                command.commandEvent, command.command,
                 parseCommand(command.command.value, originCommand)
             )
         }

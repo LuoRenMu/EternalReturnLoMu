@@ -27,7 +27,10 @@ dependencies {
     implementation(libs.logback.classic)
     implementation(libs.caffeine)
     implementation(libs.reflections)
-    implementation(libs.mongodb.driver.kotlin.coroutine)
+    implementation(libs.ktorm.core)
+    implementation(libs.ktorm.support.postgresql)
+    implementation(libs.postgresql)
+    implementation(libs.hikari.cp)
     testImplementation(kotlin("test"))
 }
 

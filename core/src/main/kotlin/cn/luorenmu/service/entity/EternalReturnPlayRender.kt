@@ -63,6 +63,9 @@ data class EternalReturnPlayRender(
         var top1: String = "-",
         var top2: String = "-",
         var top3: String = "-",
+        var avgVision: String = "-",
+        var avgCredit: String = "-",
+        var avgAnimal: String = "-"
     )
 
     data class EternalReturnPlayerRecentPlay(
@@ -99,6 +102,7 @@ data class EternalReturnPlayRender(
         val routeId: String = "Private",
         val equips: MutableList<EternalReturnEquip> = mutableListOf(),
         val gameId: String = "0",
+        val level: Int = 1,
         val version: String = "",
         val teamMates: List<EternalReturnTeammate>? = null,
     ) {

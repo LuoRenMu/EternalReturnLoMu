@@ -64,7 +64,7 @@
                         <td class="col-rp">${player.rp}</td>
                         <td class="col-pick">${player.pick}</td>
                         <td class="col-win">
-                            <div class="bar-cell"><span class="bar-label">${player.winRate}%</span><span class="bar-fill win" style="--w:${player.relativeWinRate}"></span></div>
+                            <div class="bar-cell"><span class="bar-label">${player.winRate}</span><span class="bar-fill win" style="--w:${player.relativeWinRate}%"></span></div>
                         </td>
                         <td class="col-top3">${player.top3Rate}</td>
                         <td class="col-rank">${player.avgRank}</td>

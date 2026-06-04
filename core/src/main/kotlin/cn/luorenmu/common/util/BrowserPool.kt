@@ -2,6 +2,7 @@ package cn.luorenmu.common.util
 
 import cn.luorenmu.ConfigFile
 import com.microsoft.playwright.Browser
+import io.github.oshai.kotlinlogging.KotlinLogging
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
@@ -34,6 +35,7 @@ object BrowserPool {
     }
 
     class WebPageScreenshot internal constructor(headless: Boolean = true) {
+        private val log = KotlinLogging.logger {}
         private val playwright: Playwright = Playwright.create()
         private val browser: Browser =
 
@@ -95,6 +97,38 @@ object BrowserPool {
                         .setFullPage(true)
                         .setClip(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height)
                 )
+            }
+        }
+
+        /**
+         * 用 setContent 注入 HTML（跳过文件 I/O 和导航），等待指定条件后截图。
+         * 比 screenshotSelector 少一次 file:// 导航往返。
+         *
+         * @param readyExpression 截图前等待的 JS 表达式（返回 truthy 即继续），null 则不等待
+         */
+        fun screenshotHtmlSelector(
+            html: String,
+            output: Path,
+            selector: String,
+            readyExpression: String? = null,
+        ) {
+            synchronized(this) {
+                val t0 = System.currentTimeMillis()
+                page.setContent(html, Page.SetContentOptions().setWaitUntil(WaitUntilState.LOAD))
+                val t1 = System.currentTimeMillis()
+                readyExpression?.let { page.waitForFunction(it) }
+                val t2 = System.currentTimeMillis()
+                val boundingBox = page.locator(selector).boundingBox()
+                page.screenshot(
+                    Page.ScreenshotOptions().setPath(output)
+                        .setFullPage(true)
+                        .setClip(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height)
+                )
+                val t3 = System.currentTimeMillis()
+                log.info {
+                    "screenshot timing [${output.fileName}]: " +
+                    "setContent=${t1-t0}ms, waitForFunction=${t2-t1}ms, screenshot=${t3-t2}ms, total=${t3-t0}ms"
+                }
             }
         }
 

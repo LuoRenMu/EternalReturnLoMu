@@ -54,6 +54,25 @@ class ResourcesDownloadService {
         }
     }
 
+    /**
+     * 使用预取的 profile 下载角色图片，跳过 GetProfile API 调用。
+     */
+    suspend fun downloadProfileData(profile: DakGGProfileResponse) {
+        coroutineScope {
+            val charactersResponse = ioAsync {
+                EternalReturnDakGGApi.Data.GetCharacters.execute()
+            }.await()
+            val characters = profile.playerSeasonOverviews.firstOrNull()?.characterStats
+            characters?.forEach { character ->
+                ioLaunch {
+                    val characterById = charactersResponse.getCharacterById(character.key)
+                    val skin = character.skinStats?.firstOrNull()?.key ?: characterById.skins.first().id
+                    downloadCharacterImage(characterById, skin)
+                }
+            }
+        }
+    }
+
     suspend fun downloadWeaponImage(weapon: DakGGWeaponResponse.Weapon) {
         val path = ImageResourcesType.Weapon.getGeneralPath(weapon.id.toString()).toPath()
         if (ResourceCheckUtil.checkResource(path)) return

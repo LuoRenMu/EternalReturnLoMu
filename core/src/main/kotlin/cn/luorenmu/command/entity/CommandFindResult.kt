@@ -1,6 +1,7 @@
 package cn.luorenmu.command.entity
 
 import cn.luorenmu.command.CommandEvent
+import cn.luorenmu.common.annotation.BotCommand
 
 /**
  *
@@ -9,5 +10,6 @@ import cn.luorenmu.command.CommandEvent
  */
 data class CommandFindResult(
     val eventObj: CommandEvent,
+    val command: BotCommand,
     val commandParse: Map<String,String>
 )

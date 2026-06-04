@@ -15,6 +15,7 @@ import cn.luorenmu.service.ResourcesDownloadService
 import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
+import love.forte.simbot.message.OfflineURIImage
 import org.koin.java.KoinJavaComponent.inject
 
 /**
@@ -27,7 +28,7 @@ import org.koin.java.KoinJavaComponent.inject
 class TierStatisticsNumberCommand : CommandEvent {
     override val example: String = "/段位统计"
     override val optionals: List<CommandOptional> = listOf(
-        CommandOptional(false, "server", "服务器名称,默认为亚1"),
+        CommandOptional( "server", "服务器名称,默认为亚1",false),
     )
     override val description = "永恒/半身分段统计"
 
@@ -47,6 +48,7 @@ class TierStatisticsNumberCommand : CommandEvent {
             outputPath,
             "#app"
         )
+
         return OfflineImage.fileOfflineImage(outputPath.toString())
     }
 

@@ -60,6 +60,7 @@
                             <h4>${data.top1}</h4>
                         </div>
                         <div class="record_box">
+
                             <h4>游戏场次</h4>
                             <h4>${data.play}</h4>
                         </div>
@@ -87,6 +88,18 @@
                         <div class="record_box">
                             <h4>平均排名</h4>
                             <h4>${data.avgRank}</h4>
+                        </div>
+                        <div class="record_box">
+                            <h4>平均野怪击杀</h4>
+                            <h4>${data.avgAnimal}</h4>
+                        </div>
+                        <div class="record_box">
+                            <h4>平均Credit获得</h4>
+                            <h4>${data.avgCredit}</h4>
+                        </div>
+                        <div class="record_box">
+                            <h4>平均视野贡献</h4>
+                            <h4>${data.avgVision}</h4>
                         </div>
                     </div>
                 </div>
@@ -230,19 +243,23 @@
         <div id="right">
             <#if summary?has_content>
                 <div id="recent_play_summary">
-                    <div id="recent_play_title">Recent ${summary.count} Match Summary(排位)</div>
+                    <div id="recent_play_title">近期 ${summary.count} 场对局(排位)</div>
                     <div id="recent_play_stats">
                         <div class="summary_item">
-                            <div class="summary_label">最近对局获胜数</div>
+                            <div class="summary_label">对局获胜数</div>
                             <div class="summary_value">${summary.wins}</div>
                         </div>
                         <div class="summary_item">
-                            <div class="summary_label">最近对局平均排名</div>
+                            <div class="summary_label">平均排名</div>
                             <div class="summary_value">${summary.avgRank}</div>
                         </div>
                         <div class="summary_item">
-                            <div class="summary_label">最近对局平均团队击杀</div>
+                            <div class="summary_label">平均团队击杀</div>
                             <div class="summary_value">${summary.avgTk}</div>
+                        </div>
+                        <div class="summary_item">
+                            <div class="summary_label">平均伤害</div>
+                            <div class="summary_value">${summary.avgDmg}</div>
                         </div>
                     </div>
                     <div id="recent_play_rank">
@@ -303,6 +320,7 @@
                             <div class="hero_avatar">
                                 <img src="${httpServer}${match.characterAvatarUrl}"
                                      alt="">
+                                <span class="hero_level">${match.level}</span>
                             </div>
                             <div class="character_name">${match.characterName}</div>
                         </div>
