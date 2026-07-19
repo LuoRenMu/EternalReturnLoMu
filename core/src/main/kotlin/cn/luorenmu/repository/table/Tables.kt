@@ -15,6 +15,8 @@ object CommandUsages : Table<Nothing>("command_usage") {
     val id = long("id").primaryKey()
     val commandName = varchar("command_name")
     val nickname = varchar("nickname")
+    val groupId = varchar("group_id")
+    val senderId = varchar("sender_id")
     val timestamp = datetime("timestamp")
 }
 

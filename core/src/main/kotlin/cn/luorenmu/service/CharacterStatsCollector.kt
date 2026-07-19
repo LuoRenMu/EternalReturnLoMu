@@ -1,5 +1,6 @@
 package cn.luorenmu.service
 
+import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharacterImgType
@@ -22,7 +23,7 @@ class CharacterStatsCollector {
         teamMode: DakGGTeamMode = DakGGTeamMode.Squad,
         matchingMode: MatchingMode = MatchingMode.Rank,
         rank: DakGGRank = DakGGRank.DIAMOND_PLUS,
-        tier: String = "s"
+        tierOrCharacter: String = "s"
     ): CharacterStats {
         lateinit var characters: DakGGCharactersResponse
         lateinit var stats: DakGGCharacterStatsResponse
@@ -37,6 +38,8 @@ class CharacterStatsCollector {
         }
 
         val snapshot = stats.characterStatSnapshot
+        // 当 tierOrCharacter 为角色id时 按角色筛选 否则按评级筛选
+        val filterCharacterId = tierOrCharacter.toLongOrNull()
         val flat = snapshot.characterStats
             .flatMap { charStat ->
                 val characterId = charStat.key.toLong()
@@ -44,8 +47,17 @@ class CharacterStatsCollector {
                 charStat.weaponStats.map { wp -> Triple(character, wp, if (wp.count > 0) wp.win.toDouble() / wp.count else 0.0) }
             }
             .sortedByDescending { (_, wp) -> wp.tierScore }
-            .filter { (_,wp) ->  wp.tier.equals(tier, ignoreCase = true) }
+            .filter { (character, wp) ->
+                if (filterCharacterId != null) {
+                    character.id == filterCharacterId
+                } else {
+                    wp.tier.equals(tierOrCharacter, ignoreCase = true)
+                }
+            }
 
+        if (flat.isEmpty()){
+            throw MessageReplyException("数据统计中..")
+        }
         val maxWinRate = flat.maxOfOrNull { (_, _, raw) -> raw } ?: 1.0
 
         val players = flat.mapIndexed { index, (character, wp, rawWin) ->

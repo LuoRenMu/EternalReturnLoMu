@@ -20,7 +20,8 @@ data class EternalReturnPlayRender(
     var matches: List<EternalReturnPlayerMatchData> = mutableListOf(),
     val season: String,
     val httpServer: String = HTTP_SERVER_URL,
-    val mode :String = "排位"
+    val mode :String = "排位",
+    val bannerUrl: String = "/resources/images/bg/bg-landing-search-v11.jpg",
 ) {
 
     data class EternalReturnSummary(
@@ -105,7 +106,17 @@ data class EternalReturnPlayRender(
         val level: Int = 1,
         val version: String = "",
         val teamMates: List<EternalReturnTeammate>? = null,
+        val infusions: List<EternalReturnPlayerInfusion>? = null,
     ) {
+        /**
+         * 钴协议显示灌注行，固定 3 槽位，最多展示前 3 个 Trait 类型灌注。
+         * 空槽位 imageUrl 为空字符串、count 为 0。
+         */
+        data class EternalReturnPlayerInfusion(
+            val imageUrl: String = "",
+            val count: Int = 0,
+        )
+
         data class EternalReturnTeammate(
             var nickName: String = "",
             var avatarUrl: String = "",

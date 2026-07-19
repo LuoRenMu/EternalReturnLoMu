@@ -1,6 +1,5 @@
 package cn.luorenmu.service
 
-import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
 import cn.luorenmu.request.api.entity.response.dakgg.resolveCutoffs
@@ -52,7 +51,7 @@ class TierStatisticsCollector {
             }
         }
 
-        val (eternal, demigod) = leaderboard.cutoffs.resolveCutoffs()
+        val cutoffs = leaderboard.cutoffs.resolveCutoffs()
 
         val rateStr = rate.mapValues { String.format("%.2f", it.value * 100) }.mapKeys { it.key.toString() }
         val tierTypesStr = tierTypes.map { it.toString() }
@@ -62,8 +61,8 @@ class TierStatisticsCollector {
             tierTypesStr,
             countStr,
             rateStr,
-            eternal,
-            demigod
+            cutoffs?.first,
+            cutoffs?.second
         )
     }
 }

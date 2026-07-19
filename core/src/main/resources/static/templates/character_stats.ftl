@@ -60,7 +60,7 @@
                                 <span class="char-name">${player.characterName}</span>
                             </div>
                         </td>
-                        <td class="col-tier"><span class="tier-badge tier-s">${player.tier}</span></td>
+                        <td class="col-tier"><span class="tier-badge tier-${player.tier?lower_case}">${player.tier}</span></td>
                         <td class="col-rp">${player.rp}</td>
                         <td class="col-pick">${player.pick}</td>
                         <td class="col-win">

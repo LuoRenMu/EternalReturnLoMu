@@ -5,9 +5,6 @@ plugins {
 group = "cn.luorenmu"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     implementation(project(":core"))

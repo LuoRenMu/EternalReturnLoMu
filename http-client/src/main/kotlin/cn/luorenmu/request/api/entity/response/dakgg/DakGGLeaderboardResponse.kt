@@ -1,6 +1,5 @@
 package cn.luorenmu.request.api.entity.response.dakgg
 
-import cn.luorenmu.exception.MessageReplyException
 import kotlinx.serialization.Serializable
 
 /**
@@ -71,12 +70,12 @@ data class DakGGLeaderboardResponse(
 }
 
 /**
- * 解析 cutoffs 返回 (eternal, demigod) 对。
- * size=1 两者相同，size=2 时 [1]=eternal [0]=demigod，其他抛异常。
+ * 解析 cutoffs 返回 (eternal, demigod) 对，数据不存在时返回 null。
+ * size=1 两者相同，size=2 时 [1]=eternal [0]=demigod，其他返回 null。
  */
-fun ArrayList<DakGGLeaderboardResponse.Cutoffs>.resolveCutoffs(): Pair<DakGGLeaderboardResponse.Cutoffs, DakGGLeaderboardResponse.Cutoffs> =
+fun ArrayList<DakGGLeaderboardResponse.Cutoffs>.resolveCutoffs(): Pair<DakGGLeaderboardResponse.Cutoffs, DakGGLeaderboardResponse.Cutoffs>? =
     when (size) {
-        0, in 3..Int.MAX_VALUE -> throw MessageReplyException("数据收集中...")
         1 -> get(0) to get(0)
-        else -> get(1) to get(0) // size == 2
+        2 -> get(1) to get(0)
+        else -> null
     }

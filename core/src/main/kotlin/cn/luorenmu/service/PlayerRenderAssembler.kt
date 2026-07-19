@@ -1,12 +1,16 @@
 package cn.luorenmu.service
 
 import cn.luorenmu.exception.MessageReplyException
+import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
-import cn.luorenmu.request.entity.module.MatchingMode
+import cn.luorenmu.request.api.entity.module.MatchingMode
+import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.service.entity.EternalReturnEquip
 import cn.luorenmu.service.entity.EternalReturnPlayRender
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
@@ -16,6 +20,7 @@ import java.time.format.DateTimeFormatter
  */
 class PlayerRenderAssembler {
 
+    private val infusionJson = Json { ignoreUnknownKeys = true; coercionConsistency = false }
 
     fun assemble(
         profile: DakGGProfileResponse,
@@ -72,7 +77,7 @@ class PlayerRenderAssembler {
                         )
                         this.plays = duoStat.play
                         val playDouble = this.plays.toDouble()
-                        this.nickname = nicknameHide(duoStat.nickname)
+                        this.nickname = duoStat.nickname
                         this.winRate = "${String.format("%.1f", (duoStat.win / playDouble) * 100)}%"
                         this.avgRank = "#${String.format("%.1f", duoStat.place / playDouble)}"
                     })
@@ -98,13 +103,13 @@ class PlayerRenderAssembler {
                 // 8 永恒
                 8 -> {
                     val rankArea = playerSeasonOverviews.first { it.rank != null }.rank!!
-                    eternalReturnPlayerData.rpName = "${tier.name} - 第${rankArea.global.rank}名"
+                    eternalReturnPlayerData.rpName = "${tier.name} - 第${rankArea.global?.rank}名"
 
                 }
                 // 7 半神
                 7 -> {
                     val rankArea = playerSeasonOverviews.first { it.rank != null }.rank!!
-                    eternalReturnPlayerData.rpName = "${tier.name} - 第${rankArea.global.rank}名"
+                    eternalReturnPlayerData.rpName = "${tier.name} - 第${rankArea.global?.rank}名"
                 }
 
                 else -> {
@@ -189,23 +194,33 @@ class PlayerRenderAssembler {
                     wins = recentMatches.filter { it.gameRank == 1 }.size.toString(),
                     avgTk = String.format("%.1f", recentMatches.map { it.teamKill.toDouble() }.average()),
                     ranks = recentMatches.map { it.gameRank }.toList(),
-                    avgDmg = recentMatches.map { it.damageToPlayer.toDouble() }.average().toString(),
+                    avgDmg =  String.format("%.1f",recentMatches.map { it.damageToPlayer.toDouble() }.average()),
 
                     )
             } else null
         } else null
+
+        // 灌注引用：钴协议对局 boughtInfusion 的 key 是 infusionId，需要通过 infusions API 映射到 productId。
+        val infusionsResponse = runBlocking { ioAsync { EternalReturnDakGGApi.Data.GetInfusions.execute() }.await() }
+
+        // banner 路径基于当前赛季ID推导,与 Search.tsx 中保持一致逻辑。
+        val seasonId = season.id.takeIf { it > 0 } ?: 39
+        val bannerId = (seasonId - 1) / 2 * 2 - 27
+        val bannerUrl = ImageResourcesType.Banner.getGeneralPath("bg-landing-search-v${bannerId}")
+
         return EternalReturnPlayRender(
             mmrStats = playerMMRStats,
-            nickName = nicknameHide(nickname),
+            nickName = nickname,
             profileImageUrl = profileImageUrl,
             level = accountLevel,
             data = eternalReturnPlayerData,
-            matches = games.map { gameConvertMatcher(it, characters) },
+            matches = games.map { gameConvertMatcher(it, characters, infusionsResponse) },
             recentPlayers = recentPlays,
             characterUseStats = characterUseStats,
             season = season.name,
             mode = matchingMode.modeName,
-            summary = summary
+            summary = summary,
+            bannerUrl = bannerUrl,
         )
     }
 
@@ -214,10 +229,11 @@ class PlayerRenderAssembler {
     private fun gameConvertMatcher(
         game: UserGame,
         characters: DakGGCharactersResponse,
+        infusions: DakGGInfusionsResponse,
     ): EternalReturnPlayRender.EternalReturnPlayerMatchData {
         val killAndAssist = game.playerKill + game.playerAssistant
         val date = ZonedDateTime.parse(game.startDtm, dateFormatter).plusHours(-1)
-        val now = ZonedDateTime.now()
+        val isCobalt = MatchingMode.convert(game.matchingMode) == MatchingMode.Cobalt
         return EternalReturnPlayRender.EternalReturnPlayerMatchData(
             level = game.characterLevel.toInt(),
             rp = game.mmrAfter,
@@ -233,7 +249,7 @@ class PlayerRenderAssembler {
             weaponUrl = ImageResourcesType.Weapon.getGeneralPath(game.bestWeapon.toString()),
             tacticalSkillUrl = ImageResourcesType.TacticalSkill.getGeneralPath(game.tacticalSkillGroup.toString()),
             traitSkillUrl = ImageResourcesType.TraitSkill.getGeneralPath(game.traitFirstCore.toString()),
-            traitSkillGroupUrl = if (MatchingMode.convert(game.matchingMode) == MatchingMode.Cobalt)
+            traitSkillGroupUrl = if (isCobalt)
                 ImageResourcesType.TraitSkillGroupPlaceholder.getGeneralPath("")
             else ImageResourcesType.TraitSkillGroup.getGeneralPath(
                 game.traitSecondSub.first().toString()
@@ -245,20 +261,75 @@ class PlayerRenderAssembler {
             dateHour = "${String.format("%02d", date.hour)}:${
                 String.format("%02d", date.minute)
             }:${String.format("%02d", date.second)}",
-            dateMonth = if (isSameDay(date, now)) "今天" else "${date.monthValue}月${date.dayOfMonth}日",
+            dateMonth = recentlyDateConvert(date),
             assist = game.playerAssistant,
             gameId = game.gameId.toString(),
             dmg = game.damageToPlayer,
             kda = if (game.playerDeaths == 0) killAndAssist.toDouble()
             else killAndAssist.toDouble() / game.playerDeaths,
             routeId = if (game.routeIdOfStart != 0L) game.routeIdOfStart.toString() else "Private",
-            version = "${game.versionMajor}.${game.versionMinor}"
+            version = "${game.versionMajor}.${game.versionMinor}",
+            infusions = if (isCobalt) buildInfusionRow(game.boughtInfusion, infusions) else null,
         )
     }
 
-    private fun isSameDay(date1: ZonedDateTime, date2: ZonedDateTime): Boolean {
-        return date1.year == date2.year && date1.month == date2.month && date1.dayOfMonth == date2.dayOfMonth
+    /**
+     * 解析 boughtInfusion JSON（infusionId → 数量），仅保留 Trait 类型，按数量降序取前 3。
+     * 固定填充 3 个槽位：不足时 imageUrl 为空、count 为 0。
+     */
+    private fun buildInfusionRow(
+        raw: String,
+        infusions: DakGGInfusionsResponse,
+    ): List<EternalReturnPlayRender.EternalReturnPlayerInfusion> {
+        if (raw.isBlank()) {
+            return List(3) { EternalReturnPlayRender.EternalReturnPlayerInfusion() }
+        }
+        val entries: List<Pair<Long, Long>> = try {
+            val map = infusionJson.decodeFromString<Map<String, Long>>(raw)
+            map.mapNotNull { (idStr, count) ->
+                val id = idStr.toLongOrNull() ?: return@mapNotNull null
+                id to count
+            }
+        } catch (_: Exception) {
+            return List(3) { EternalReturnPlayRender.EternalReturnPlayerInfusion() }
+        }
+
+        val traits = entries
+            .mapNotNull { (id, count) ->
+                val infusion = infusions.getInfusionById(id)
+                if (infusion?.productType == "Trait") infusion.productId to count else null
+            }
+            .sortedWith(compareByDescending<Pair<Long, Long>> { it.second }.thenByDescending { it.first })
+            .take(3)
+
+        return (0 until 3).map { i ->
+            traits.getOrNull(i)?.let { (productId, count) ->
+                EternalReturnPlayRender.EternalReturnPlayerInfusion(
+                    imageUrl = ImageResourcesType.TraitSkill.getGeneralPath(productId.toString()),
+                    count = count.toInt(),
+                )
+            } ?: EternalReturnPlayRender.EternalReturnPlayerInfusion()
+        }
     }
+
+    private fun recentlyDateConvert(date1: ZonedDateTime): String {
+        val now = ZonedDateTime.now()
+        if (isSameDay(now, date1)) {
+            return "今天"
+        }
+        now.minusDays(1)
+        if (isSameDay(now, date1)) {
+            return "昨天"
+        }
+        now.minusDays(1)
+        if (isSameDay(now, date1)) {
+            return "前天"
+        }
+        return "${date1.monthValue}月${date1.dayOfMonth}日"
+    }
+
+    private fun isSameDay(date1: ZonedDateTime, date2: ZonedDateTime) =
+        date1.year == date2.year && date1.month == date2.month && date1.dayOfMonth == date2.dayOfMonth
 
     private fun gameEquip(game: UserGame): MutableList<EternalReturnEquip> {
         val equipList = mutableListOf<EternalReturnEquip>()
@@ -272,12 +343,5 @@ class PlayerRenderAssembler {
         return equipList
     }
 
-    private fun nicknameHide(nickname: String): String {
-        val length = nickname.length
-        return if (length < 3) {
-            nickname.replace(nickname.substring(1, length), " * ")
-        } else {
-            nickname.replace(nickname.substring(1, length - 1), " * ".repeat(length - 2))
-        }
-    }
+
 }

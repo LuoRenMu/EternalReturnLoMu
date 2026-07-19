@@ -134,6 +134,7 @@
     <div id="tier_box">
         <h1>${season}</h1>
         <h2>生成时间 ${date}</h2>
+        <#if eternal??>
         <div id="tier_cutoffs">
             <div class="tier_item">
                 <div class="tier_img">
@@ -141,13 +142,16 @@
                 </div>
                 ${eternal.mmr}
             </div>
+            <#if demigod??>
             <div class="tier_item">
                 <div class="tier_img">
                     <img src="${httpServer}/resources/images/tier/full/7.png" alt="">
                 </div>
                 ${demigod.mmr}
             </div>
+            </#if>
         </div>
+        </#if>
         <div id="tier_list">
             <#list tierTypes as tierType>
                 <div class="tier_item">

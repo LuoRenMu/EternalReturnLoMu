@@ -6,14 +6,12 @@ plugins {
 group = "cn.luorenmu"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     implementation(libs.kotlin.reflect)
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(kotlin("test"))
+    implementation(libs.tinypinyin)
 }
 
 tasks.test {

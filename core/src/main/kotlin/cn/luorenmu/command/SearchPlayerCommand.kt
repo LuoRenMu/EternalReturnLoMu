@@ -4,6 +4,7 @@ import cn.luorenmu.Adapter
 import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
+import cn.luorenmu.common.util.NickNameUtil
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.render.RenderScreenshotPipeline
 import cn.luorenmu.repository.PlayerAliasRepository
@@ -77,8 +78,9 @@ class SearchPlayerCommand : CommandEvent {
 
         actualNickname ?: return "未设置别名或未输入昵称".toText()
 
-        statisticsService.incrementNicknameQueryCount(actualNickname)
-
+        if (!NickNameUtil.isValidNickname(actualNickname)) {
+            return "[${NickNameUtil.hideNickname(actualNickname)}]该名称不合法,EternalReturn不允许使用这样的名称".toText()
+        }
         val mode = MatchingMode.convert(command["mode"])
         val cacheKey = "$actualNickname:${mode.value}"
 
@@ -89,15 +91,15 @@ class SearchPlayerCommand : CommandEvent {
             cache.getIfPresent(cacheKey)?.let { return@withLock OfflineImage.fileOfflineImage(it) }
             val preheated = preheatRequest(actualNickname)
             val outputPath = PathUtils.resourcesPathResolve("render", "player", "$actualNickname-${mode.value}.png")
-            RenderScreenshotPipeline.renderHtmlAndScreenshot(
+            RenderScreenshotPipeline.renderAndScreenshot(
                 "search_player.ftl",
                 playerRenderAssembler.assemble(preheated.profile, preheated.games, preheated.characters, preheated.tiers, preheated.season, mode, actualNickname),
                 outputPath,
                 "#content-container",
-                readyExpression = "document.querySelector('#rank_canvas') === null || typeof Chart !== 'undefined'"
             )
             cache.put(cacheKey, outputPath.toString())
             keyMutexes.remove(cacheKey)
+            statisticsService.incrementNicknameQueryCount(actualNickname)
             OfflineImage.fileOfflineImage(outputPath.toString())
         }
     }

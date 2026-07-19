@@ -14,8 +14,8 @@ data class TierStatistics(
     val tierTypes: List<String>,
     val count: Map<String, Int>,
     val rate: Map<String, String>,
-    val eternal: DakGGLeaderboardResponse.Cutoffs,
-    val demigod: DakGGLeaderboardResponse.Cutoffs,
+    val eternal: DakGGLeaderboardResponse.Cutoffs?,
+    val demigod: DakGGLeaderboardResponse.Cutoffs?,
     val httpServer: String = HTTP_SERVER_URL,
     val date: String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()),
 ) {
@@ -25,8 +25,8 @@ data class TierStatistics(
             段位类型: ${tierTypes.joinToString(",")}
             段位人数: ${count.map { "${it.key}:${it.value}" }.joinToString(",")}
             段位占率: ${rate.map { "${it.key}:${it.value}" }.joinToString(",")}
-            永恒段位: ${eternal.mmr}
-            半神段位: ${demigod.mmr}}
+            永恒段位: ${eternal?.mmr}
+            半神段位: ${demigod?.mmr}}
         """.trimIndent()
     }
 }

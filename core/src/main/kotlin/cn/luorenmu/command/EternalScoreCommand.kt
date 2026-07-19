@@ -33,16 +33,18 @@ class EternalScoreCommand : CommandEvent {
         val type = EternalReturnDakGGApi.Data.GetCurrentSeason.execute().type
         val leaderboard =
             EternalReturnDakGGApi.Leaderboard.GetLeaderboard(1, type, serverName, DakGGTeamMode.Squad).execute()
-        val (eternal, demigod) = leaderboard.cutoffs.resolveCutoffs()
+        val (eternal, demigod) = leaderboard.cutoffs.resolveCutoffs() ?: (null to null)
         val duration =
-            Duration.between(LocalDateTime.now(), LocalDateTime.ofInstant(Date().toInstant(), ZoneId.systemDefault()))
-        return QGMarkdown.create(
-            """
-            # 最近${duration.toMinutes()}
-            |**最高**: ${leaderboard.leaderboards.firstOrNull()?.mmr} RP
-            |**永恒**: ${eternal.mmr} RP
-            |**半神**: ${demigod.mmr} RP
-        """.trimMargin()
-        )
+            Duration.between(
+                LocalDateTime.ofInstant(Date(leaderboard.updatedAt).toInstant(), ZoneId.systemDefault()),
+                LocalDateTime.now()
+            )
+
+        return QGMarkdown.create(buildString {
+            appendLine("# 最近${if (duration.toMinutes() == 0.toLong()) "刚刚" else "${duration.toMinutes()}分钟"}")
+            appendLine("**最高**: ${leaderboard.leaderboards.firstOrNull()?.mmr} RP")
+            if (eternal != null) appendLine("**永恒**: ${eternal.mmr} RP")
+            if (demigod != null) append("**半神**: ${demigod.mmr} RP")
+        })
     }
 }

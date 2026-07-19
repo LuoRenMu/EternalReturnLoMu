@@ -5,11 +5,13 @@ import cn.luorenmu.common.util.toPath
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
+import cn.luorenmu.request.api.entity.module.MatchingMode
 import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
+import kotlinx.serialization.json.Json
 
 /**
  *
@@ -20,19 +22,18 @@ class ResourcesDownloadService {
 
     private val log = KotlinLogging.logger {}
 
-    suspend fun downloadItemImage(item: DakGGItemsResponse.Item) {
-        val path = ImageResourcesType.Item.getGeneralPath(item.id.toString()).toPath()
+    private val infusionJson = Json { ignoreUnknownKeys = true; coercionConsistency = false }
+
+    private suspend fun downloadIfAbsent(url: String, type: ImageResourcesType, id: String) {
+        val path = type.getGeneralPath(id).toPath()
         if (ResourceCheckUtil.checkResource(path)) return
         coroutineScope {
-            ioLaunch {
-                EternalReturnDakGGApi.Image.DakGGImageUrlResources(
-                    item.imageUrl,
-                    ImageResourcesType.Item,
-                    item.id.toString()
-                ).callStream()
-            }
+            ioLaunch { EternalReturnDakGGApi.Image.DakGGImageUrlResources(url, type, id).callStream() }
         }
     }
+
+    suspend fun downloadItemImage(item: DakGGItemsResponse.Item) =
+        downloadIfAbsent(item.imageUrl, ImageResourcesType.Item, item.id.toString())
 
     suspend fun downloadProfileData(nickname: String) {
         coroutineScope {
@@ -73,33 +74,11 @@ class ResourcesDownloadService {
         }
     }
 
-    suspend fun downloadWeaponImage(weapon: DakGGWeaponResponse.Weapon) {
-        val path = ImageResourcesType.Weapon.getGeneralPath(weapon.id.toString()).toPath()
-        if (ResourceCheckUtil.checkResource(path)) return
-        coroutineScope {
-            ioLaunch {
-                EternalReturnDakGGApi.Image.DakGGImageUrlResources(
-                    weapon.iconUrl,
-                    ImageResourcesType.Weapon,
-                    weapon.id.toString()
-                ).callStream()
-            }
-        }
-    }
+    suspend fun downloadWeaponImage(weapon: DakGGWeaponResponse.Weapon) =
+        downloadIfAbsent(weapon.iconUrl, ImageResourcesType.Weapon, weapon.id.toString())
 
-    suspend fun downloadTacticalSkillImage(tacticalSkill: DakGGTacticalSkillResponse.TacticalSkill) {
-        val path = ImageResourcesType.TacticalSkill.getGeneralPath(tacticalSkill.id.toString()).toPath()
-        if (ResourceCheckUtil.checkResource(path)) return
-        coroutineScope {
-            ioLaunch {
-                EternalReturnDakGGApi.Image.DakGGImageUrlResources(
-                    tacticalSkill.imageUrl,
-                    ImageResourcesType.TacticalSkill,
-                    tacticalSkill.id.toString()
-                ).callStream()
-            }
-        }
-    }
+    suspend fun downloadTacticalSkillImage(tacticalSkill: DakGGTacticalSkillResponse.TacticalSkill) =
+        downloadIfAbsent(tacticalSkill.imageUrl, ImageResourcesType.TacticalSkill, tacticalSkill.id.toString())
 
     suspend fun downloadTraitSkillImage(traitSkillId: Long, traitSkills: DakGGTraitSkillsResponse) {
         val traitSkill = traitSkills.getTraitSkillById(traitSkillId)
@@ -195,6 +174,7 @@ class ResourcesDownloadService {
         lateinit var itemsResponse: DakGGItemsResponse
         lateinit var tacticalSkillResponse: DakGGTacticalSkillResponse
         lateinit var tiers: DakGGTiersResponse
+        lateinit var infusionsResponse: DakGGInfusionsResponse
 
         coroutineScope {
             val characterResponseDF = ioAsync { EternalReturnDakGGApi.Data.GetCharacters.execute() }
@@ -203,6 +183,7 @@ class ResourcesDownloadService {
             val itemsResponseDF = ioAsync { EternalReturnDakGGApi.Data.GetItems.execute() }
             val tacticalSkillResponseDF = ioAsync { EternalReturnDakGGApi.Data.GetTacticalSkills.execute() }
             val tiersDF = ioAsync { EternalReturnDakGGApi.Data.GetTiers.execute() }
+            val infusionsResponseDF = ioAsync { EternalReturnDakGGApi.Data.GetInfusions.execute() }
 
             characterResponse = characterResponseDF.await()
             weaponResponse = weaponResponseDF.await()
@@ -210,6 +191,7 @@ class ResourcesDownloadService {
             itemsResponse = itemsResponseDF.await()
             tacticalSkillResponse = tacticalSkillResponseDF.await()
             tiers = tiersDF.await()
+            infusionsResponse = infusionsResponseDF.await()
         }
 
         log.debug { "gameDataDownload 数据已收集完毕" }
@@ -234,7 +216,18 @@ class ResourcesDownloadService {
             val traitSecondSubId = game.traitSecondSub.firstOrNull()
             downloadTraitSkillImage(traitSkillId, traitSkillResponse)
             traitSecondSubId?.let {
-                downloadTraitSkillImage(traitSecondSubId, traitSkillResponse)
+                downloadTraitSkillImage(it, traitSkillResponse)
+            }
+        }
+
+        log.debug { "gameDataDownload 开始下载钴协议灌注 Trait 图标" }
+        val infusionTraitIds = mutableSetOf<Long>()
+        for (game in games.filter { MatchingMode.convert(it.matchingMode) == MatchingMode.Cobalt }) {
+            collectInfusionTraitIds(game.boughtInfusion, infusionsResponse, infusionTraitIds)
+        }
+        coroutineScope {
+            for (traitId in infusionTraitIds) {
+                ioLaunch { downloadTraitSkillImage(traitId, traitSkillResponse) }
             }
         }
 
@@ -255,7 +248,48 @@ class ResourcesDownloadService {
         for (id in games.flatMap { game -> game.equipmentGradeReal.values }.toList()) {
             downloadItemBgImage(id)
         }
+        log.debug { "gameDataDownload 开始下载 banner" }
+        downloadBanner(games)
         log.debug { "gameDataDownload 全部已完成" }
+    }
+
+    private fun collectInfusionTraitIds(
+        raw: String,
+        infusions: DakGGInfusionsResponse,
+        out: MutableSet<Long>,
+    ) {
+        if (raw.isBlank()) return
+        val map = try {
+            infusionJson.decodeFromString<Map<String, Long>>(raw)
+        } catch (_: Exception) {
+            return
+        }
+        for ((idStr, _) in map) {
+            val id = idStr.toLongOrNull() ?: continue
+            val infusion = infusions.getInfusionById(id)
+            if (infusion?.productType == "Trait") out.add(infusion.productId)
+        }
+    }
+
+    /**
+     * 与 Search.tsx 一致的 banner 公式：bannerId = floor((seasonId - 1) / 2) * 2 - 27
+     * 初次按需下载 dak.gg 的 bg-landing-search-v{bannerId}.jpg 到本地 resources/images/bg/。
+     */
+    private suspend fun downloadBanner(games: MutableList<UserGame>) {
+        val seasonId = games.maxOfOrNull { it.seasonId }?.toInt()?.takeIf { it > 0 } ?: 39
+        val bannerId = (seasonId - 1) / 2 * 2 - 27
+        val name = "bg-landing-search-v${bannerId}"
+        val path = ImageResourcesType.Banner.getGeneralPath(name).toPath()
+        if (ResourceCheckUtil.checkResource(path)) return
+        coroutineScope {
+            ioLaunch {
+                EternalReturnDakGGApi.Image.DakGGImageUrlResources(
+                    "https://cdn.dak.gg/er/images/bg/${name}.jpg",
+                    ImageResourcesType.Banner,
+                    name
+                ).callStream()
+            }
+        }
     }
 
     suspend fun downloadItemBgImage(id: Int) {

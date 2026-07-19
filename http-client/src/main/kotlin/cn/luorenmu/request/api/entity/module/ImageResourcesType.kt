@@ -60,7 +60,12 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
     /**
      * ID
      */
-    TraitSkillGroup("/trait/group/", ".png");
+    TraitSkillGroup("/trait/group/", ".png"),
+
+    /**
+     * bg-landing-search-v{bannerId}
+     */
+    Banner("/bg/", ".jpg");
 
 
     /**

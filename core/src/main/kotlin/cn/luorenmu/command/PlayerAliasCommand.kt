@@ -4,6 +4,7 @@ import cn.luorenmu.Adapter
 import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
+import cn.luorenmu.common.util.NickNameUtil
 import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.entity.AliasScope
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -26,11 +27,11 @@ import org.koin.java.KoinJavaComponent.inject
     adapter = [Adapter.QG_BOT, Adapter.ONE_BOT],
 )
 class PlayerAliasCommand : CommandEvent {
-    override val example: String = "/玩家别名 set RIOORI RIO 群|/玩家别名 del RIO|/玩家别名 list"
+    override val example: String = "/玩家别名 set 五字 한동그라미 群"
     override val optionals: List<CommandOptional> =
         listOf(
             CommandOptional(name = "action", description = "set / del / list", required = true),
-            CommandOptional(name = "alias", description = "别名（set/del 时为别名，当为空时表示自己）", required = false),
+            CommandOptional(name = "alias", description = "别名（set/del 时为别名，当为“我”时表示自己）", required = false),
             CommandOptional(name = "nickname", description = "真实玩家名（set 时指定）", required = false),
             CommandOptional(name = "scope", description = "别名作用域 群 / 个人（默认个人）", required = false),
         )
@@ -47,7 +48,15 @@ class PlayerAliasCommand : CommandEvent {
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message? {
         val action = command["action"] ?: return helpText()
         // alias 在前（别名），nickname 在后（真实玩家名）
-        val alias = command["alias"] ?: MY_SELF
+        val alias = if (action.trim().equals("list",true)){
+            MY_SELF
+        }else{
+            var alias = command["alias"] ?: return helpText()
+            if (alias == "我"){
+                alias = MY_SELF
+            }
+            alias
+        }
         val nickname = command["nickname"]
         val scope = if (command["scope"] == "群") AliasScope.GROUP else AliasScope.PERSONAL
         val groupId = sender.groupOpenId.toString()
@@ -69,6 +78,9 @@ class PlayerAliasCommand : CommandEvent {
     ): Message {
         if (nickname == null) {
             return "请指定真实玩家名（用法：/玩家别名 set <别名> <真实昵称> [群|个人]）".toText()
+        }
+        if (!NickNameUtil.isValidNickname(nickname)) {
+            return "[${NickNameUtil.hideNickname(nickname)}] 该名称不合法,EternalReturn不允许使用这样的名称".toText()
         }
         // 检查该 alias 在同 scope 下是否已指向其他玩家（歧义检测）
         val existing = repository.resolveAlias(alias, groupOpenId, id)
@@ -101,7 +113,6 @@ class PlayerAliasCommand : CommandEvent {
             return "暂无别名，使用 /玩家别名 set <别名> <昵称> 来添加".toText()
         }
 
-
         val sb = StringBuilder("#玩家别名列表:\n")
         val scopeIcons = mapOf(
             AliasScope.GLOBAL to "全局",
@@ -116,12 +127,10 @@ class PlayerAliasCommand : CommandEvent {
 
     private fun helpText(): Message {
         return QGMarkdown.create(
-            """
-          ## 别名命令（仅对自己生效）
-            - **设置**：`/玩家别名 set <别名> <真实昵称> [群|个人]`
-            - **删除**：`/玩家别名 del <别名> [群|个人]`
-            - **列表**：`/玩家别名 list`
-        """.trimIndent()
+            """## 别名命令   
+            **设置** ：`/玩家别名 set <别名> <真实昵称> [群|个人]`   
+            **删除** ：`/玩家别名 del <别名> [群|个人]`   
+            **列表** ：`/玩家别名 list`"""
         )
     }
 }

@@ -36,7 +36,7 @@ class NewsClassifier {
         val model: String,
         val messages: List<Message>,
         val temperature: Double = 0.1,
-        val max_tokens: Int = 256,
+        val maxTokens: Int = 256,
     )
 
     @Serializable

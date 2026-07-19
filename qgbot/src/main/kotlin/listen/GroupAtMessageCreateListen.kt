@@ -20,10 +20,9 @@ class GroupAtMessageCreateListen : EventHandle {
     override suspend fun handle(event: Event) {
         val atEvent = event as QGGroupAtMessageCreateEvent
 
-        atEvent.author()
         val reply = commandListenAllocator.call(
             MessageSender(
-                groupOpenId = event.id,
+                groupOpenId = event.content().id,
                 senderName = event.author().name,
                 senderOpenId = event.authorId,
                 message = event.messageContent.messages.toString(),

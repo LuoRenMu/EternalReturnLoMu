@@ -12,7 +12,7 @@
 <div id="content-container">
     <div id="header">
         <div id="banner_user_info"
-             style="background-size: contain; background-position: center; background-image: url('${httpServer}/static/images/bg-landing-search-v11.jpg')">
+             style="background-size: contain; background-position: center; background-image: url('${httpServer}${bannerUrl}')">
             <div class="profile-image-wrapper">
                 <#if profileImageUrl??>
                     <img src="${httpServer}${profileImageUrl}" alt=""/>
@@ -387,7 +387,23 @@
                                     <div class="play_data_label">KDA</div>
                                 </div>
                             </#if>
-                            <#if match.type != "钴协议">
+                            <#if match.type == "钴协议">
+                                <div class="infusion_row">
+                                    <#if match.infusions??>
+                                        <#list match.infusions as infusion>
+                                            <div class="infusion_item">
+                                                <#if infusion.imageUrl != "">
+                                                    <img src="${httpServer}${infusion.imageUrl}" alt=""/>
+                                                </#if>
+                                                <#if infusion.count gt 1>
+                                                    <span class="infusion_count">${infusion.count}</span>
+                                                </#if>
+                                            </div>
+                                        </#list>
+                                    </#if>
+                                </div>
+                                <div class="play_data_label">灌注</div>
+                            <#else>
                                 <div class="route">
                                     <div class="play_data_title">${match.routeId}</div>
                                     <div class="play_data_label">路径ID

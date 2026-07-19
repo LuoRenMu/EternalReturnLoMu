@@ -45,7 +45,7 @@ data class DakGGCharacterStatsResponse (
         val teamKill: Int,                // 团队击杀
         val mmrGain: Int,                 // MMR增益
         val tier: String,                 // 段位 (如 "S")
-        val tierScore: Double,               // 段位分数
+        val tierScore: Double? = 0.0,               // 段位分数
         val viewContribution: Int,        // 视野贡献
         val rank: RankStat? = null        // 排名统计 (可能为空)
     )

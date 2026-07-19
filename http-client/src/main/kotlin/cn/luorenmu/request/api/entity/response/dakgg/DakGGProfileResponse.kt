@@ -76,9 +76,9 @@ data class DakGGProfileResponse(
     ) {
         @Serializable
         data class RankArea (
-            val global: Rank,
-            val in1000:Rank,
-            val local: Rank
+            val global: Rank?,
+            val in1000:Rank?,
+            val local: Rank?
         ){
             @Serializable
             data class Rank(

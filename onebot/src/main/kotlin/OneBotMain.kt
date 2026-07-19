@@ -57,7 +57,7 @@ suspend fun Application.configure() {
         process<ChatGroupMessageEvent> { event ->
             val reply = commandRouter.call(
                 MessageSender(
-                    groupOpenId = event.id,
+                    groupOpenId = event.content().id,
                     senderName = event.author().name,
                     senderOpenId = event.authorId,
                     message = event.messageContent.messages.toString(),

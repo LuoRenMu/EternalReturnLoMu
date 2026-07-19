@@ -76,16 +76,18 @@ class StatisticsRepository(private val dbManager: DatabaseManager) {
      * @param commandName 命令名称，不能为空或空白
      * @param nickname 触发命令的用户昵称（可选）
      */
-    fun recordCommandUsage(commandName: String, nickname: String? = null) {
+    fun recordCommandUsage(commandName: String, nickname: String? = null, groupId: String? = null, senderId: String? = null) {
         require(commandName.isNotBlank()) { "commandName 不能为空" }
 
         withDatabase(operationName = "recordCommandUsage", defaultValue = Unit) { database ->
             database.insert(CommandUsages) {
                 set(it.commandName, commandName)
                 set(it.nickname, nickname)
+                set(it.groupId, groupId)
+                set(it.senderId, senderId)
                 set(it.timestamp, LocalDateTime.now())
             }
-            logger.debug { "记录命令使用: $commandName, nickname: $nickname" }
+            logger.debug { "记录命令使用: $commandName, nickname: $nickname, group: $groupId, sender: $senderId" }
         }
     }
 

@@ -2,6 +2,8 @@ CREATE TABLE IF NOT EXISTS command_usage (
     id BIGSERIAL PRIMARY KEY,
     command_name VARCHAR(255) NOT NULL,
     nickname VARCHAR(255),
+    group_id VARCHAR(255),
+    sender_id VARCHAR(255),
     timestamp TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

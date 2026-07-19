@@ -6,9 +6,6 @@ plugins {
 group = "cn.luorenmu"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     implementation(project(":common"))
@@ -22,6 +19,7 @@ dependencies {
     implementation(libs.koin.logger.slf4j)
     compileOnly(libs.simbot.component.onebot)
     compileOnly(libs.simbot.component.qq)
+
     implementation(libs.playwright)
     implementation(libs.kotlin.logging.jvm)
     implementation(libs.logback.classic)

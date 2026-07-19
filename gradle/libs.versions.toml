@@ -15,8 +15,10 @@ mongodb = "5.3.1"
 ktorm = "3.6.0"
 postgresql = "42.7.3"
 hikari = "5.1.0"
+tinypinyin = "2.0.1"
 
 [libraries]
+tinypinyin = { module = "com.github.promeg:tinypinyin", version.ref = "tinypinyin" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 simbot-core = { module = "love.forte.simbot:simbot-core", version.ref = "simbot-core" }

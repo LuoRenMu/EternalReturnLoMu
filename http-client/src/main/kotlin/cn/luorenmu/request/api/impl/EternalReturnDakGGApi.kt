@@ -1,5 +1,6 @@
 package cn.luorenmu.request.api.impl
 
+import cn.luorenmu.common.util.NickNameUtil
 import cn.luorenmu.common.util.toPath
 import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.exception.NotFoundNickNameException
@@ -153,6 +154,13 @@ sealed class EternalReturnDakGGApi<T>(
             override suspend fun execute(): DakGGTacticalSkillResponse =
                 call().body()
         }
+
+        object GetInfusions : Data<DakGGInfusionsResponse>(
+            "/v1/data/infusions?hl=zh_cn"
+        ) {
+            override suspend fun execute(): DakGGInfusionsResponse =
+                call().body()
+        }
     }
 
     sealed class User<T>(
@@ -192,7 +200,7 @@ sealed class EternalReturnDakGGApi<T>(
                 for (attempt in 1..maxRetries) {
                     try {
                         if (body.isNotFound()) {
-                            throw NotFoundNickNameException("没有找到的用户名称 (${nickname[0]}***) 请检查名称")
+                            throw NotFoundNickNameException("没有找到的用户名称 (${NickNameUtil.hideNickname(nickname)}) 请检查名称")
                         }
                         if (body.isSuccess()) {
                             return body

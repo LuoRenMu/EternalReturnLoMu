@@ -39,7 +39,7 @@ import java.nio.file.Path
  */
 object RequestManager {
     private val log = KotlinLogging.logger {}
-
+    const val RETRY_COUNT = 5
     /**
      * public 用于在赛季更新时清空缓存
      */
@@ -133,7 +133,18 @@ object RequestManager {
         }
     }
 
-    suspend fun call(api: Api): HttpResponse {
+    suspend fun requestRetryCall(api: Api,retryCount: Int = 0): HttpResponse {
+        try {
+            return call(api);
+        }catch (e: Exception){
+            if (retryCount >= RETRY_COUNT) {
+                log.debug { "retry count exceed limit ${e.printStackTrace()}" }
+                throw ForbiddenException("已超过最大重试次数，DakGG服务器拒绝了本次请求")
+            }
+           return requestRetryCall(api, retryCount + 1)
+        }
+    }
+     suspend fun call(api: Api): HttpResponse {
         log.debug { "call ${api.method.value} ${api.baseUrl}${api.url}" }
         if (api !is ResourceApi && api.cacheTime != CacheTime.NULL) {
             if (api.method == HttpMethod.Get) {
@@ -150,7 +161,7 @@ object RequestManager {
                 return@withKeyLock executeRequest(api)
             } catch (e: SocketException) {
                 log.debug { "SocketException : ${api.baseUrl}${api.url} ->${e.printStack()}" }
-                throw ForbiddenException("服务器拒绝了本次请求")
+                throw ForbiddenException("DakGG服务器拒绝了本次请求")
             } finally {
                 if (api is ResourceApi) {
                     log.debug { "call stream file: ${api.path} from ${api.baseUrl}${api.url}" }

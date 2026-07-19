@@ -103,6 +103,7 @@ object ConfigFile {
                 json.encodeToString(botConfig)
             )
             println("初次运行, 请填写 config.json 文件.(first run, please fill in config.json file)")
+            println(file.toPath())
             exitProcess(0)
         }
         val json = Json.decodeFromString<BotConfig>(file.readText())

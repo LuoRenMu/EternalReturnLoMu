@@ -20,11 +20,16 @@ tasks.jar {
 group = "cn.luorenmu"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
+allprojects {
+    repositories {
+        maven(url = "https://maven.aliyun.com/repository/public/")
+        maven(url = "https://jitpack.io")
+        mavenCentral()
+    }
 }
 
 dependencies {
+
     testImplementation(kotlin("test"))
 }
 
