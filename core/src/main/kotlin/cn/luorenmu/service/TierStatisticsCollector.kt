@@ -14,7 +14,7 @@ import java.util.stream.Collectors
  * @author LoMu
  * Date 2025/11/21 14:20
  */
-class TierStatisticsCollector {
+open class TierStatisticsCollector {
 
     suspend fun collect(serverName: DakGGServerName): TierStatistics {
         val (leaderboard, td, season) = coroutineScope {

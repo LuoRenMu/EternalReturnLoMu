@@ -5,7 +5,7 @@ import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
-import cn.luorenmu.request.api.entity.module.MatchingMode
+import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.service.entity.EternalReturnEquip
 import cn.luorenmu.service.entity.EternalReturnPlayRender
@@ -18,9 +18,9 @@ import java.time.format.DateTimeFormatter
  * @author LoMu
  * Date 2025/11/21 14:20
  */
-class PlayerRenderAssembler {
+open class PlayerRenderAssembler {
 
-    private val infusionJson = Json { ignoreUnknownKeys = true; coercionConsistency = false }
+    private val infusionJson = Json { ignoreUnknownKeys = true }
 
     fun assemble(
         profile: DakGGProfileResponse,
@@ -280,9 +280,9 @@ class PlayerRenderAssembler {
     private fun buildInfusionRow(
         raw: String,
         infusions: DakGGInfusionsResponse,
-    ): List<EternalReturnPlayRender.EternalReturnPlayerInfusion> {
+    ): List<EternalReturnPlayRender.EternalReturnPlayerMatchData.EternalReturnPlayerInfusion> {
         if (raw.isBlank()) {
-            return List(3) { EternalReturnPlayRender.EternalReturnPlayerInfusion() }
+            return List(3) { EternalReturnPlayRender.EternalReturnPlayerMatchData.EternalReturnPlayerInfusion() }
         }
         val entries: List<Pair<Long, Long>> = try {
             val map = infusionJson.decodeFromString<Map<String, Long>>(raw)
@@ -291,7 +291,7 @@ class PlayerRenderAssembler {
                 id to count
             }
         } catch (_: Exception) {
-            return List(3) { EternalReturnPlayRender.EternalReturnPlayerInfusion() }
+            return List(3) { EternalReturnPlayRender.EternalReturnPlayerMatchData.EternalReturnPlayerInfusion() }
         }
 
         val traits = entries
@@ -304,11 +304,11 @@ class PlayerRenderAssembler {
 
         return (0 until 3).map { i ->
             traits.getOrNull(i)?.let { (productId, count) ->
-                EternalReturnPlayRender.EternalReturnPlayerInfusion(
+                EternalReturnPlayRender.EternalReturnPlayerMatchData.EternalReturnPlayerInfusion(
                     imageUrl = ImageResourcesType.TraitSkill.getGeneralPath(productId.toString()),
                     count = count.toInt(),
                 )
-            } ?: EternalReturnPlayRender.EternalReturnPlayerInfusion()
+            } ?: EternalReturnPlayRender.EternalReturnPlayerMatchData.EternalReturnPlayerInfusion()
         }
     }
 

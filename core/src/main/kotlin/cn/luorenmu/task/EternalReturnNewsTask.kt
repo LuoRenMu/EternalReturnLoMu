@@ -1,5 +1,6 @@
 package cn.luorenmu.task
 
+import cn.luorenmu.ai.NewsClassifier
 import cn.luorenmu.request.RequestManager
 import cn.luorenmu.request.api.PakeApi
 import cn.luorenmu.request.api.entity.module.CacheTime
@@ -20,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Date 2026/5/23 18:31
  */
 class EternalReturnNewsTask(
-    private val classifier: NewsClassifier = NewsClassifier(),
+    private val classifier: NewsClassifier,
 ) {
 
     private val log = KotlinLogging.logger {}

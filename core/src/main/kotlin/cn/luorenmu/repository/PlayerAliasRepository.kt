@@ -36,7 +36,7 @@ import java.time.LocalDateTime
  * @author LoMu
  * Date 2026/6/2
  */
-class PlayerAliasRepository(private val dbManager: DatabaseManager) {
+open class PlayerAliasRepository(private val dbManager: DatabaseManager) {
     private val logger = KotlinLogging.logger {}
 
     companion object {
@@ -68,7 +68,7 @@ class PlayerAliasRepository(private val dbManager: DatabaseManager) {
      * 设置别名（upsert）。
      * 同一 scope 内 aliasName 唯一；冲突时更新 actualNickname。
      */
-    fun setAlias(
+    open fun setAlias(
         alias: String,
         actualNickname: String,
         scope: AliasScope = AliasScope.GROUP,
@@ -125,7 +125,7 @@ class PlayerAliasRepository(private val dbManager: DatabaseManager) {
      * @return 真实昵称，若未匹配到别名则返回 null
      */
 
-    fun resolveAlias(
+    open fun resolveAlias(
         alias: String,
         groupId: String?,
         userId: String?,
@@ -161,7 +161,7 @@ class PlayerAliasRepository(private val dbManager: DatabaseManager) {
     /**
      * 删除别名。
      */
-    fun deleteAlias(
+    open fun deleteAlias(
         alias: String,
         scope: AliasScope,
         groupId: String? = null,
@@ -183,7 +183,7 @@ class PlayerAliasRepository(private val dbManager: DatabaseManager) {
      * @param groupId 群聊上下文
      * @param userId 用户上下文
      */
-    fun listAliases(
+    open fun listAliases(
         scope: AliasScope? = null,
         groupId: String? = null,
         userId: String? = null,

@@ -21,6 +21,7 @@ import io.ktor.http.*
 import io.ktor.serialization.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.delay
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
@@ -160,6 +161,53 @@ sealed class EternalReturnDakGGApi<T>(
         ) {
             override suspend fun execute(): DakGGInfusionsResponse =
                 call().body()
+        }
+
+        object GetSkills : Data<DakGGSkillsResponse>(
+            "/v1/data/skills?hl=zh_cn"
+        ) {
+            override suspend fun execute(): DakGGSkillsResponse =
+                call().body()
+        }
+    }
+
+    /**
+     * dak.gg 角色详情页（tab=introduction）抓取。
+     *
+     * 页面为 Next.js HTML，统计 JSON 藏在 `__NEXT_DATA__` 脚本中，需正则提取后解析。
+     * 使用完整 URL（baseUrl 置空），不走 `/v1` 接口缓存。
+     */
+    class GetCharacterAnalysis(
+        characterKey: String,
+        teamMode: String,
+        matchingMode: String,
+        tier: String?,
+    ) : EternalReturnDakGGApi<CharacterAnalysisResponse>(
+        url = buildString {
+            append(
+                "https://dak.gg/er/characters/$characterKey?hl=zh_CN&tab=introduction" +
+                        "&teamMode=$teamMode&matchingMode=$matchingMode"
+            )
+            if (tier != null) append("&tier=$tier")
+        },
+    ) {
+        override var baseUrl: String = ""
+
+        private val json = Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            coerceInputValues = true
+            explicitNulls = false
+            allowStructuredMapKeys = true
+        }
+
+        private val nextDataRegex = Regex("""(?s)<script id="__NEXT_DATA__"[^>]*>(.*?)</script>""")
+
+        override suspend fun execute(): CharacterAnalysisResponse {
+            val html = call().bodyAsText()
+            val match = nextDataRegex.find(html)
+                ?: throw MessageReplyException("角色详情页解析失败,请稍后再试")
+            return json.decodeFromString(match.groupValues[1])
         }
     }
 

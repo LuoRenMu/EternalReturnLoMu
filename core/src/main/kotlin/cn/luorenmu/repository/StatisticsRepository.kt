@@ -1,7 +1,6 @@
 package cn.luorenmu.repository
 
 import cn.luorenmu.common.util.DatabaseManager
-import cn.luorenmu.repository.entity.CommandUsageRecord
 import cn.luorenmu.repository.entity.NicknameQueryRecord
 import cn.luorenmu.repository.table.CommandUsages
 import cn.luorenmu.repository.table.NicknameQueries
@@ -29,15 +28,12 @@ import java.time.LocalDateTime
  * @author LoMu
  * Date 2026/5/1 18:33
  */
-class StatisticsRepository(private val dbManager: DatabaseManager) {
+open class StatisticsRepository(private val dbManager: DatabaseManager) {
     private val logger = KotlinLogging.logger {}
 
     companion object {
         /** 默认热门昵称查询数量 */
         private const val DEFAULT_TOP_NICKNAMES_LIMIT = 10
-
-        /** 默认命令使用统计查询数量 */
-        private const val DEFAULT_COMMAND_STATS_LIMIT = 100
     }
 
     /**
@@ -76,7 +72,7 @@ class StatisticsRepository(private val dbManager: DatabaseManager) {
      * @param commandName 命令名称，不能为空或空白
      * @param nickname 触发命令的用户昵称（可选）
      */
-    fun recordCommandUsage(commandName: String, nickname: String? = null, groupId: String? = null, senderId: String? = null) {
+    open fun recordCommandUsage(commandName: String, nickname: String? = null, groupId: String? = null, senderId: String? = null) {
         require(commandName.isNotBlank()) { "commandName 不能为空" }
 
         withDatabase(operationName = "recordCommandUsage", defaultValue = Unit) { database ->
@@ -99,7 +95,7 @@ class StatisticsRepository(private val dbManager: DatabaseManager) {
      *
      * @param nickname 要查询的昵称，不能为空或空白
      */
-    fun incrementNicknameQueryCount(nickname: String) {
+    open fun incrementNicknameQueryCount(nickname: String) {
         require(nickname.isNotBlank()) { "nickname 不能为空" }
 
         withDatabase(operationName = "incrementNicknameQueryCount", defaultValue = Unit) { database ->
@@ -139,7 +135,7 @@ class StatisticsRepository(private val dbManager: DatabaseManager) {
      * @param nickname 要查询的昵称，不能为空或空白
      * @return 查询次数，如果记录不存在则返回 0
      */
-    fun getNicknameQueryCount(nickname: String): Long {
+    open fun getNicknameQueryCount(nickname: String): Long {
         require(nickname.isNotBlank()) { "nickname 不能为空" }
 
         return withDatabase(operationName = "getNicknameQueryCount", defaultValue = 0L) { database ->
@@ -158,7 +154,7 @@ class StatisticsRepository(private val dbManager: DatabaseManager) {
      * @param limit 返回结果数量上限，必须大于 0，默认为 [DEFAULT_TOP_NICKNAMES_LIMIT]
      * @return 按查询次数降序排列的昵称记录列表
      */
-    fun getTopQueriedNicknames(limit: Int = DEFAULT_TOP_NICKNAMES_LIMIT): List<NicknameQueryRecord> {
+    open fun getTopQueriedNicknames(limit: Int = DEFAULT_TOP_NICKNAMES_LIMIT): List<NicknameQueryRecord> {
         require(limit > 0) { "limit 必须大于 0，当前值: $limit" }
 
         return withDatabase(
@@ -182,44 +178,4 @@ class StatisticsRepository(private val dbManager: DatabaseManager) {
         }
     }
 
-    /**
-     * 获取命令使用统计记录。
-     *
-     * @param commandName 可选的命令名称过滤条件，为 null 时返回所有命令的记录
-     * @param limit 返回结果数量上限，必须大于 0，默认为 [DEFAULT_COMMAND_STATS_LIMIT]
-     * @return 按时间戳降序排列的命令使用记录列表
-     */
-    fun getCommandUsageStats(
-        commandName: String? = null,
-        limit: Int = DEFAULT_COMMAND_STATS_LIMIT,
-    ): List<CommandUsageRecord> {
-        require(limit > 0) { "limit 必须大于 0，当前值: $limit" }
-
-        return withDatabase(
-            operationName = "getCommandUsageStats",
-            defaultValue = emptyList(),
-        ) { database ->
-            val query = database
-                .from(CommandUsages)
-                .select()
-
-            val filtered = if (commandName != null) {
-                query.where { CommandUsages.commandName eq commandName }
-            } else {
-                query
-            }
-
-            filtered
-                .orderBy(CommandUsages.timestamp.desc())
-                .limit(limit)
-                .map { row ->
-                    CommandUsageRecord(
-                        id = row[CommandUsages.id] ?: 0,
-                        commandName = row[CommandUsages.commandName] ?: "",
-                        nickname = row[CommandUsages.nickname],
-                        timestamp = row[CommandUsages.timestamp] ?: LocalDateTime.now(),
-                    )
-                }
-        }
-    }
 }

@@ -1,4 +1,7 @@
 package cn.luorenmu
+import cn.luorenmu.ai.AIConfig
+import cn.luorenmu.ai.KoogLLMClient
+import cn.luorenmu.ai.NewsClassifier
 import cn.luorenmu.api.resourcesRouting
 import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.DatabaseManager
@@ -6,11 +9,11 @@ import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.request.ApiKeyConfig
 import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.StatisticsRepository
+import cn.luorenmu.service.CharacterDetailCollector
 import cn.luorenmu.service.CharacterStatsCollector
 import cn.luorenmu.service.PlayerRenderAssembler
 import cn.luorenmu.service.TierStatisticsCollector
 import cn.luorenmu.service.ResourcesDownloadService
-import cn.luorenmu.task.NewsClassifier
 import cn.luorenmu.task.EternalReturnNewsTask
 import freemarker.cache.ClassTemplateLoader
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -61,8 +64,10 @@ val appModule = module {
     single { ResourcesDownloadService() }
     single { PlayerRenderAssembler() }
     single { CharacterStatsCollector() }
+    single { CharacterDetailCollector(get()) }
     single { TierStatisticsCollector() }
-    single { NewsClassifier() }
+    single { KoogLLMClient(AIConfig(ConfigFile.config.ai.apiKey, ConfigFile.config.ai.model, ConfigFile.config.ai.baseUrl)) }
+    single { NewsClassifier(get()) }
     single { EternalReturnNewsTask(get()) }
     single { DatabaseManager() }
     single { StatisticsRepository(get()) }
@@ -92,6 +97,7 @@ object ConfigFile {
     val config: BotConfig = initConfig()
     fun initConfig(): BotConfig {
         val file = PathUtils.pathResolve(paths = arrayOf("config.json")).toFile()
+        println(file)
         if (!file.exists()) {
             file.createNewFile()
             val json = Json {

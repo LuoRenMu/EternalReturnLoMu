@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.1.20"
+kotlin = "2.3.21"
 simbot-core = "4.14.0"
 simbot-qq = "4.2.2"
 simbot-onebot = "1.9.0"
@@ -16,9 +16,13 @@ ktorm = "3.6.0"
 postgresql = "42.7.3"
 hikari = "5.1.0"
 tinypinyin = "2.0.1"
+koog = "1.0.0"
+kotlinx-serialization = "1.10.0"
 
 [libraries]
 tinypinyin = { module = "com.github.promeg:tinypinyin", version.ref = "tinypinyin" }
+koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 simbot-core = { module = "love.forte.simbot:simbot-core", version.ref = "simbot-core" }

@@ -10,6 +10,7 @@ version = "1.0-SNAPSHOT"
 dependencies {
     implementation(project(":common"))
     implementation(project(":http-client"))
+    implementation(project(":ai"))
     implementation(libs.kotlin.reflect)
     implementation(libs.simbot.core)
     implementation(libs.ktor.server.core)
@@ -30,6 +31,8 @@ dependencies {
     implementation(libs.postgresql)
     implementation(libs.hikari.cp)
     testImplementation(kotlin("test"))
+    // QGMarkdown 等 QQ 组件类型在核心模块为 compileOnly，测试运行期需要显式加入
+    testImplementation(libs.simbot.component.qq)
 }
 
 tasks.test {
