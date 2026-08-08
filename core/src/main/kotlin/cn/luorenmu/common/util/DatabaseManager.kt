@@ -14,7 +14,7 @@ import org.ktorm.database.Database
  * @author LoMu
  * Date 2026/6/2
  */
-class DatabaseManager {
+open class DatabaseManager {
     private val logger = KotlinLogging.logger {}
 
     private val dataSource by lazy {
@@ -25,11 +25,11 @@ class DatabaseManager {
         }
     }
 
-    val database: Database? by lazy {
+    open val database: Database? by lazy {
         dataSource?.let { Database.connect(it) }
     }
 
-    fun isEnabled(): Boolean = ConfigFile.config.postgres.enabled
+    open fun isEnabled(): Boolean = ConfigFile.config.postgres.enabled
 
     private fun createDataSource(): HikariDataSource {
         val pg = ConfigFile.config.postgres

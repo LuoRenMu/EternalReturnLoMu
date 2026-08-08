@@ -52,6 +52,12 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
     TraitSkill("/trait/skill/", ".png"),
 
     /**
+     * ID
+     * 角色技能（Q/W/E/R/T）图标
+     */
+    Skill("/skill/", ".png"),
+
+    /**
      * NULL
      * 未知图标占位符 (小威)
      */

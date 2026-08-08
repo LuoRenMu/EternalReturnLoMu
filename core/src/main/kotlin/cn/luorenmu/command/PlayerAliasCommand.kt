@@ -16,7 +16,6 @@ import org.koin.java.KoinJavaComponent.inject
 /**
  * 玩家别名管理命令。
  *
- *
  * @author LoMu
  * Date 2026/6/2
  */
@@ -130,7 +129,8 @@ class PlayerAliasCommand : CommandEvent {
             """## 别名命令   
             **设置** ：`/玩家别名 set <别名> <真实昵称> [群|个人]`   
             **删除** ：`/玩家别名 del <别名> [群|个人]`   
-            **列表** ：`/玩家别名 list`"""
+            **列表** ：`/玩家别名 list`     
+            （你的命令可能出错或你需要帮助）"""
         )
     }
 }

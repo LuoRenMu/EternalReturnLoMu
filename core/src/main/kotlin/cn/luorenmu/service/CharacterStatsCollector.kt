@@ -17,7 +17,7 @@ import kotlinx.coroutines.coroutineScope
  * @author LoMu
  * Date 2026/5/24
  */
-class CharacterStatsCollector {
+open class CharacterStatsCollector {
 
     suspend fun collect(
         teamMode: DakGGTeamMode = DakGGTeamMode.Squad,

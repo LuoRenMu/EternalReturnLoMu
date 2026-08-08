@@ -76,7 +76,7 @@
     </cn.luorenmu.logger>
 
     <!-- 根日志记录器 -->
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ERROR_FILE"/>
     </root>

@@ -56,7 +56,7 @@ suspend fun love.forte.simbot.application.Application.configure() {
     val bot = botManager.register(
         appId = ConfigFile.config.other["app_id"]!!,
         secret = ConfigFile.config.other["secret"]!!,
-        token = ConfigFile.config.other["token"]!!,
+        token = ConfigFile.config.other["token"] ?: "",
     ) {
         botConfigure = ConfigurerFunction {
             intents += EventIntents.GroupAndC2CEvent.intents

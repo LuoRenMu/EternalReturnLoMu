@@ -5,7 +5,7 @@ import cn.luorenmu.common.util.toPath
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
-import cn.luorenmu.request.api.entity.module.MatchingMode
+import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
@@ -18,11 +18,11 @@ import kotlinx.serialization.json.Json
  * @author LoMu
  * Date 2025/11/5 12:34
  */
-class ResourcesDownloadService {
+open class ResourcesDownloadService {
 
     private val log = KotlinLogging.logger {}
 
-    private val infusionJson = Json { ignoreUnknownKeys = true; coercionConsistency = false }
+    private val infusionJson = Json { ignoreUnknownKeys = true }
 
     private suspend fun downloadIfAbsent(url: String, type: ImageResourcesType, id: String) {
         val path = type.getGeneralPath(id).toPath()
@@ -35,7 +35,7 @@ class ResourcesDownloadService {
     suspend fun downloadItemImage(item: DakGGItemsResponse.Item) =
         downloadIfAbsent(item.imageUrl, ImageResourcesType.Item, item.id.toString())
 
-    suspend fun downloadProfileData(nickname: String) {
+    open suspend fun downloadProfileData(nickname: String) {
         coroutineScope {
             val profileDF = ioAsync {
                 EternalReturnDakGGApi.User.GetProfile(nickname).execute()
@@ -58,7 +58,7 @@ class ResourcesDownloadService {
     /**
      * 使用预取的 profile 下载角色图片，跳过 GetProfile API 调用。
      */
-    suspend fun downloadProfileData(profile: DakGGProfileResponse) {
+    open suspend fun downloadProfileData(profile: DakGGProfileResponse) {
         coroutineScope {
             val charactersResponse = ioAsync {
                 EternalReturnDakGGApi.Data.GetCharacters.execute()
@@ -79,6 +79,9 @@ class ResourcesDownloadService {
 
     suspend fun downloadTacticalSkillImage(tacticalSkill: DakGGTacticalSkillResponse.TacticalSkill) =
         downloadIfAbsent(tacticalSkill.imageUrl, ImageResourcesType.TacticalSkill, tacticalSkill.id.toString())
+
+    suspend fun downloadSkillImage(skill: DakGGSkillsResponse.DakGGSkill) =
+        downloadIfAbsent(skill.imageUrl, ImageResourcesType.Skill, skill.id.toString())
 
     suspend fun downloadTraitSkillImage(traitSkillId: Long, traitSkills: DakGGTraitSkillsResponse) {
         val traitSkill = traitSkills.getTraitSkillById(traitSkillId)
@@ -139,7 +142,7 @@ class ResourcesDownloadService {
         }
     }
 
-    suspend fun downloadTiers(tiers: DakGGTiersResponse) {
+    open suspend fun downloadTiers(tiers: DakGGTiersResponse) {
         coroutineScope {
             for (tier in tiers.tiers.distinctBy { it.id }) {
                 val tierType = tier.id
@@ -167,7 +170,7 @@ class ResourcesDownloadService {
         }
     }
 
-    suspend fun gameDataDownload(games: MutableList<UserGame>) {
+    open suspend fun gameDataDownload(games: MutableList<UserGame>) {
         lateinit var characterResponse: DakGGCharactersResponse
         lateinit var weaponResponse: DakGGWeaponResponse
         lateinit var traitSkillResponse: DakGGTraitSkillsResponse
