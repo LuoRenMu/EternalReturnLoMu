@@ -12,6 +12,7 @@ import org.ktorm.dsl.from
 import org.ktorm.dsl.insert
 import org.ktorm.dsl.limit
 import org.ktorm.dsl.map
+import org.ktorm.dsl.or
 import org.ktorm.dsl.orderBy
 import org.ktorm.dsl.select
 import org.ktorm.dsl.where
@@ -89,6 +90,21 @@ open class NewsRepository(private val dbManager: DatabaseManager) {
         }
     }
 
+    /** 查询最近识别出的游戏活动。 */
+    open fun findLatestGameActivities(limit: Int = 5): List<EternalReturnNewsRecord> {
+        require(limit > 0) { "limit 必须大于 0" }
+
+        return withDatabase("findLatestGameActivities", emptyList()) { database ->
+            database
+                .from(EternalReturnNews)
+                .select()
+                .where { (EternalReturnNews.isGameActivity eq true) or (EternalReturnNews.isRedemptionCode eq true) }
+                .orderBy(EternalReturnNews.processedAt.desc())
+                .limit(limit)
+                .map { row -> mapRow(row) }
+        }
+    }
+
     /** 插入一条新闻记录（已存在则忽略）。 */
     open fun insert(record: EternalReturnNewsRecord): Boolean {
         return withDatabase("insertNews", false) { database ->
@@ -104,6 +120,7 @@ open class NewsRepository(private val dbManager: DatabaseManager) {
                 set(it.contentText, record.contentText)
                 set(it.eventStartTime, record.eventStartTime)
                 set(it.eventEndTime, record.eventEndTime)
+                set(it.isGameActivity, record.isGameActivity)
                 set(it.isRedemptionCode, record.isRedemptionCode)
                 set(it.code, record.code)
                 set(it.reward, record.reward)
@@ -126,6 +143,7 @@ open class NewsRepository(private val dbManager: DatabaseManager) {
             contentText = row[EternalReturnNews.contentText] ?: "",
             eventStartTime = row[EternalReturnNews.eventStartTime],
             eventEndTime = row[EternalReturnNews.eventEndTime],
+            isGameActivity = row[EternalReturnNews.isGameActivity] ?: false,
             isRedemptionCode = row[EternalReturnNews.isRedemptionCode] ?: false,
             code = row[EternalReturnNews.code],
             reward = row[EternalReturnNews.reward],

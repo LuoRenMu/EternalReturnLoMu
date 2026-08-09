@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS eternal_return_news (
     content_text TEXT NOT NULL DEFAULT '',
     event_start_time TIMESTAMP,
     event_end_time TIMESTAMP,
+    is_game_activity BOOLEAN NOT NULL DEFAULT FALSE,
     is_redemption_code BOOLEAN NOT NULL DEFAULT FALSE,
     code VARCHAR(255),
     reward VARCHAR(255),

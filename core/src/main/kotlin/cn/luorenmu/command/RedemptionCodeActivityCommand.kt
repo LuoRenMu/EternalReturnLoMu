@@ -3,13 +3,17 @@ package cn.luorenmu.command
 import cn.luorenmu.Adapter
 import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
+import cn.luorenmu.command.entity.RedemptionCodeActivityPage
 import cn.luorenmu.common.annotation.BotCommand
+import cn.luorenmu.common.util.PathUtils
+import cn.luorenmu.render.RenderScreenshotPipeline
 import cn.luorenmu.repository.NewsRepository
 import cn.luorenmu.repository.entity.EternalReturnNewsRecord
 import cn.luorenmu.service.GameActivityVisibility.displayStatus
 import cn.luorenmu.service.GameActivityVisibility.isVisibleOn
 import love.forte.simbot.component.qguild.message.QGMarkdown
 import love.forte.simbot.message.Message
+import love.forte.simbot.message.OfflineImage
 import org.koin.java.KoinJavaComponent.inject
 import java.time.LocalDate
 
@@ -18,14 +22,14 @@ import java.time.LocalDate
  * Date 2026/8/9
  */
 @BotCommand(
-    name = "兑换码",
-    alias = "兑换码",
+    name = "游戏活动",
+    alias = "游戏活动",
     value = "<limit>",
     adapter = [Adapter.QG_BOT, Adapter.ONE_BOT],
 )
-class RedemptionCodeCommand : CommandEvent {
-    override val description = "查询最近识别到的永恒轮回兑换码活动"
-    override val example = "/兑换码"
+class RedemptionCodeActivityCommand : CommandEvent {
+    override val description = "以活动页图片展示可用游戏活动"
+    override val example = "/游戏活动"
     override val optionals = listOf(
         CommandOptional("limit", "返回数量，默认 5，最多 10", required = false)
     )
@@ -35,35 +39,38 @@ class RedemptionCodeCommand : CommandEvent {
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         val limit = command["limit"]?.toIntOrNull()?.coerceIn(MIN_LIMIT, MAX_LIMIT) ?: DEFAULT_LIMIT
         val today = LocalDate.now()
-        val records = newsRepository.findLatestRedemptionCodes(LOOKUP_LIMIT)
+        val records = newsRepository.findLatestGameActivities(LOOKUP_LIMIT)
             .filter { it.isVisibleOn(today) }
             .take(limit)
 
         if (records.isEmpty()) {
-            return QGMarkdown.create("## 暂无可用兑换码\n仅显示有效期内或刚过期一天的兑换码活动。")
+            return QGMarkdown.create("## 暂无可用游戏活动\n仅显示有效期内或刚过期一天的游戏活动。")
         }
 
-        return QGMarkdown.create(buildString {
-            appendLine("## 可用兑换码")
-            records.forEachIndexed { index, record ->
-                appendLine()
-                appendLine("${index + 1}. **${record.title}**")
-                appendLine("兑换码: ${record.code.displayCode()}")
-                appendLine("状态: ${record.displayStatus(today)}")
-                record.reward?.takeIf { it.isNotBlank() }?.let {
-                    appendLine("奖励: ${it.compact()}")
-                }
-                record.note?.takeIf { it.isNotBlank() && it != record.reward }?.let {
-                    appendLine("说明: ${it.compact()}")
-                }
-                appendLine("有效期: ${record.displayPeriod()}")
-            }
-        })
+        val outputPath = PathUtils.resourcesPathResolve("render", "redemption_code_activity.png")
+        RenderScreenshotPipeline.renderHtmlAndScreenshot(
+            "redemption_code_activity.ftl",
+            RedemptionCodeActivityPage(
+                generatedDate = today.toString(),
+                items = records.map { it.toPageItem(today) },
+            ),
+            outputPath,
+            "#activity-page",
+            "() => Array.from(document.images).every((img) => img.complete)",
+        )
+        return OfflineImage.fileOfflineImage(outputPath.toString())
     }
 
-    private fun String?.displayCode(): String {
-        val code = this?.trim()
-        return if (code.isNullOrBlank()) "详见活动页面" else "`$code`"
+    private fun EternalReturnNewsRecord.toPageItem(today: LocalDate): RedemptionCodeActivityPage.Item {
+        return RedemptionCodeActivityPage.Item(
+            title = title,
+            code = code?.trim()?.takeIf { it.isNotBlank() },
+            reward = reward?.compact() ?: "",
+            note = note?.takeIf { it.isNotBlank() && it != reward }?.compact() ?: "",
+            period = displayPeriod(),
+            status = displayStatus(today),
+            thumbnailUrl = thumbnailUrl?.trim()?.takeIf { it.isNotBlank() },
+        )
     }
 
     private fun EternalReturnNewsRecord.displayPeriod(): String {
@@ -72,7 +79,7 @@ class RedemptionCodeCommand : CommandEvent {
         return "$start 至 $end"
     }
 
-    private fun String.compact(maxLength: Int = 120): String {
+    private fun String.compact(maxLength: Int = 140): String {
         val normalized = lineSequence()
             .map { it.trim() }
             .filter { it.isNotEmpty() }

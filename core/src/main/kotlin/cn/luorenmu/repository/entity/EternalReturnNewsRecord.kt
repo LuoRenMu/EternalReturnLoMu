@@ -24,6 +24,7 @@ data class EternalReturnNewsRecord(
     val contentText: String = "",
     val eventStartTime: LocalDateTime? = null,
     val eventEndTime: LocalDateTime? = null,
+    val isGameActivity: Boolean = false,
     val isRedemptionCode: Boolean = false,
     val code: String? = null,
     val reward: String? = null,
