@@ -73,6 +73,7 @@ object EternalReturnNews : Table<Nothing>("eternal_return_news") {
     val contentText = text("content_text")
     val eventStartTime = datetime("event_start_time")
     val eventEndTime = datetime("event_end_time")
+    val isGameActivity = boolean("is_game_activity")
     val isRedemptionCode = boolean("is_redemption_code")
     val code = varchar("code")
     val reward = varchar("reward")

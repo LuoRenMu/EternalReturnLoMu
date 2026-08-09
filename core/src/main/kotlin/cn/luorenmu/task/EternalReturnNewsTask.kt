@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * 定时拉取官方新闻，解析 HTML 内容文本，AI 识别兑换码活动，处理完成后写入数据库。
+ * 定时拉取官方新闻，解析 HTML 内容文本，AI 识别游戏活动，处理完成后写入数据库。
  *
  * @author LoMu
  * Date 2026/5/23 18:31
@@ -120,19 +120,20 @@ class EternalReturnNewsTask(
     }
 
     private fun ParsedNews.toRecord(): EternalReturnNewsRecord {
-        val code = redemptionCode
+        val activity = redemptionCode
         return EternalReturnNewsRecord(
             articleId = articleId,
             title = title,
             thumbnailUrl = thumbnailUrl,
             createdAt = createdAt,
             contentText = contentText,
-            isRedemptionCode = code?.isRedemptionCode == true,
-            code = code?.code,
-            reward = code?.reward,
-            note = code?.note,
-            startDate = code?.startDate,
-            endDate = code?.endDate,
+            isGameActivity = activity?.isGameActivity == true || activity?.isRedemptionCode == true,
+            isRedemptionCode = activity?.isRedemptionCode == true,
+            code = activity?.code,
+            reward = activity?.reward,
+            note = activity?.note,
+            startDate = activity?.startDate,
+            endDate = activity?.endDate,
         )
     }
 
