@@ -23,7 +23,6 @@ dependencies {
 
     implementation(libs.playwright)
     implementation(libs.kotlin.logging.jvm)
-    implementation(libs.logback.classic)
     implementation(libs.caffeine)
     implementation(libs.reflections)
     implementation(libs.ktorm.core)

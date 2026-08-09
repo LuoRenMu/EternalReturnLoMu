@@ -1,12 +1,13 @@
 package cn.luorenmu
 import cn.luorenmu.ai.AIConfig
 import cn.luorenmu.ai.KoogLLMClient
-import cn.luorenmu.ai.NewsClassifier
+import cn.luorenmu.ai.news.NewsClassifier
 import cn.luorenmu.api.resourcesRouting
 import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.DatabaseManager
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.request.ApiKeyConfig
+import cn.luorenmu.repository.NewsRepository
 import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.service.CharacterDetailCollector
@@ -24,6 +25,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
+import org.koin.ktor.ext.getKoin
 import org.koin.ktor.plugin.Koin
 import kotlin.system.exitProcess
 
@@ -50,6 +52,11 @@ fun Application.moduleCore(adapter: Adapter) {
     ApiKeyConfig.apiKeyMap = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
     configureRouting()
     configureInstall()
+    // 启动新闻定时任务
+    getKoin()
+        .get<EternalReturnNewsTask>()
+        .start()
+    logger.info { "新闻定时任务已启动" }
     logger.info { "正在启动 PlayWright" }
     BrowserPool.getBrowser()
     logger.info { "PlayWright 已启动" }
@@ -68,7 +75,8 @@ val appModule = module {
     single { TierStatisticsCollector() }
     single { KoogLLMClient(AIConfig(ConfigFile.config.ai.apiKey, ConfigFile.config.ai.model, ConfigFile.config.ai.baseUrl)) }
     single { NewsClassifier(get()) }
-    single { EternalReturnNewsTask(get()) }
+    single { NewsRepository(get()) }
+    single { EternalReturnNewsTask(get(), get()) }
     single { DatabaseManager() }
     single { StatisticsRepository(get()) }
     single { PlayerAliasRepository(get()) }
@@ -146,8 +154,8 @@ object ConfigFile {
         @Serializable
         data class AIConfig(
             var apiKey: String = "",
-            var model: String = "deepseek-chat",
-            var baseUrl: String = "https://api.deepseek.com",
+            var model: String = "Qwen/Qwen3-VL-30B-A3B-Thinking",
+            var baseUrl: String = "https://api.siliconflow.cn/v1",
         )
     }
 }

@@ -29,7 +29,7 @@ allprojects {
 }
 
 dependencies {
-
+    implementation(libs.logback.classic)
     testImplementation(kotlin("test"))
 }
 

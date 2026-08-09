@@ -5,6 +5,7 @@ import ai.koog.prompt.executor.clients.openai.OpenAIClientSettings
 import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 import ai.koog.prompt.executor.llms.MultiLLMPromptExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
+import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.message.MessagePart
@@ -33,7 +34,15 @@ class KoogLLMClient(private val config: AIConfig) {
     }
 
     private val model: LLModel by lazy {
-        LLModel(provider = LLMProvider.DeepSeek, id = config.model, capabilities = emptyList())
+        // Completion: getResponse 无条件下发校验；OpenAIEndpoint.Completions: determineParams 选定 chat 参数路径
+        LLModel(
+            provider = LLMProvider.DeepSeek,
+            id = config.model,
+            capabilities = listOf(
+                LLMCapability.Completion,
+                LLMCapability.OpenAIEndpoint.Completions,
+            ),
+        )
     }
 
     /** 单轮对话，返回拼接后的文本内容；AI 未启用或调用失败时返回 null。 */

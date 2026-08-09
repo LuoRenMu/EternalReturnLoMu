@@ -17,6 +17,7 @@ postgresql = "42.7.3"
 hikari = "5.1.0"
 tinypinyin = "2.0.1"
 koog = "1.0.0"
+jsoup= "1.18.1"
 kotlinx-serialization = "1.10.0"
 
 [libraries]
@@ -41,7 +42,7 @@ caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "c
 playwright = { module = "com.microsoft.playwright:playwright", version.ref = "playwright" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
-mongodb-driver-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
+jsoup-parse = {module="org.jsoup:jsoup",version.ref="jsoup"}
 ktorm-core = { module = "org.ktorm:ktorm-core", version.ref = "ktorm" }
 ktorm-support-postgresql = { module = "org.ktorm:ktorm-support-postgresql", version.ref = "ktorm" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
