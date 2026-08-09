@@ -1,12 +1,13 @@
-package cn.luorenmu.ai
+package cn.luorenmu.ai.news
 
+import cn.luorenmu.ai.KoogLLMClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.jsoup.Jsoup
 
 /**
  * 使用 DeepSeek API 识别新闻中的兑换码活动。
- * 基于 Koog 客户端实现（原 core 模块裸 HttpURLConnection 实现已迁移至此）。
  *
  * @author LoMu
  * Date 2026/8/8
@@ -22,22 +23,27 @@ class NewsClassifier(private val llmClient: KoogLLMClient) {
         val code: String? = null,
         val reward: String? = null,
         val note: String? = null,
+        val startDate: String? = null,
+        val endDate: String? = null,
     )
 
     /**
-     * 调用 DeepSeek 判断是否为兑换码活动。
+     * 调用 AI 判断是否为兑换码活动。
      * AI 未启用时返回 null。
      */
     suspend fun classify(title: String, contentText: String): RedemptionCodeResult? {
         if (!llmClient.isEnabled) return null
 
+        val parse = Jsoup.parse(contentText)
+        val content = parse.select(".er-article-detail__content.er-article-content.fr-view").firstOrNull()?.text() ?: contentText
+        print(content)
         val prompt = buildString {
-            appendLine("判断以下游戏新闻是否为「兑换码/礼包码/补偿码」活动。如果是，提取兑换码、奖励内容和备注。")
-            appendLine("只返回 JSON，不要其他文字。格式：")
-            appendLine("""{"isRedemptionCode":true/false,"code":"兑换码或null","reward":"奖励描述或null","note":"备注或null"}""")
+            appendLine("判断以下游戏新闻是否为「兑换码/礼包码/补偿码/登录奖励/在线奖励/游玩奖励/页面活动」活动。如果是，提取兑换码、奖励内容和活动详细信息(如果存在跳转链接reward则显示前往活动页面查看详情)")
+            appendLine("以中文形式只返回 JSON，不要其他文字包括markdown 。格式：")
+            appendLine("""{"isRedemptionCode":true/false,"code":"兑换码或null","reward":"奖励描述或null","note":"活动详细信息或null","startDate:"yyyy-MM-dd格式日期",endDate:"yyyy-MM-dd格式日期  "}""")
             appendLine()
             appendLine("标题：$title")
-            appendLine("正文：${contentText.take(3000)}")
+            appendLine("正文：${content.take(3000)}")
         }
 
         return try {
@@ -47,14 +53,11 @@ class NewsClassifier(private val llmClient: KoogLLMClient) {
             ) ?: return null
 
             // 模型返回的 content 可能包含 markdown 代码块，提取 JSON
+            println(content)
             val jsonBlock = extractJson(content)
-            json.decodeFromString<RedemptionCodeResult>(jsonBlock).also { result ->
-                if (result.isRedemptionCode) {
-                    log.info { "兑换码识别: code=${result.code}, reward=${result.reward}" }
-                }
-            }
+            json.decodeFromString<RedemptionCodeResult>(jsonBlock)
         } catch (e: Exception) {
-            log.error(e) { "AI 分类失败: ${e.message}" }
+            e.printStackTrace()
             null
         }
     }

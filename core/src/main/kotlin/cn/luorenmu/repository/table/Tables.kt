@@ -1,9 +1,12 @@
 package cn.luorenmu.repository.table
 
 import org.ktorm.schema.Table
-import org.ktorm.schema.long
-import org.ktorm.schema.varchar
+import org.ktorm.schema.boolean
 import org.ktorm.schema.datetime
+import org.ktorm.schema.int
+import org.ktorm.schema.long
+import org.ktorm.schema.text
+import org.ktorm.schema.varchar
 
 /**
  * Ktorm 表定义 —— 命令使用记录
@@ -51,4 +54,30 @@ object PlayerAliases : Table<Nothing>("player_aliases") {
     val userId = varchar("user_id")
     val createdBy = varchar("created_by")
     val createdAt = datetime("created_at")
+}
+
+/**
+ * Ktorm 表定义 —— 官方新闻记录
+ *
+ * article_id 唯一，用于拉取去重
+ *
+ * @author LoMu
+ * Date 2026/8/9
+ */
+object EternalReturnNews : Table<Nothing>("eternal_return_news") {
+    val id = long("id").primaryKey()
+    val articleId = int("article_id")
+    val title = varchar("title")
+    val thumbnailUrl = varchar("thumbnail_url")
+    val createdAt = datetime("created_at")
+    val contentText = text("content_text")
+    val eventStartTime = datetime("event_start_time")
+    val eventEndTime = datetime("event_end_time")
+    val isRedemptionCode = boolean("is_redemption_code")
+    val code = varchar("code")
+    val reward = varchar("reward")
+    val note = text("note")
+    val startDate = varchar("start_date")
+    val endDate = varchar("end_date")
+    val processedAt = datetime("processed_at")
 }

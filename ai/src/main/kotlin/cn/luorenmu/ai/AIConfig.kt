@@ -10,6 +10,6 @@ package cn.luorenmu.ai
  */
 data class AIConfig(
     val apiKey: String = "",
-    val model: String = "deepseek-chat",
-    val baseUrl: String = "https://api.deepseek.com",
+    val model: String = "Qwen/Qwen3-Omni-30B-A3B-Instruct",
+    val baseUrl: String = "https://api.siliconflow.cn",
 )

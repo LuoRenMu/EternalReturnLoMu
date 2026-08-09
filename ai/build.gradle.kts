@@ -11,6 +11,7 @@ dependencies {
     implementation(libs.koog.agents)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlin.logging.jvm)
+    implementation(libs.jsoup.parse)
     testImplementation(kotlin("test"))
 }
 
