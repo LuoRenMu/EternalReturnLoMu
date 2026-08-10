@@ -1,60 +1,101 @@
 package cn.luorenmu.ai
 
-import ai.koog.prompt.dsl.prompt
-import ai.koog.prompt.executor.clients.openai.OpenAIClientSettings
-import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
-import ai.koog.prompt.executor.llms.MultiLLMPromptExecutor
-import ai.koog.prompt.executor.model.PromptExecutor
-import ai.koog.prompt.llm.LLMCapability
-import ai.koog.prompt.llm.LLModel
-import ai.koog.prompt.llm.LLMProvider
-import ai.koog.prompt.message.MessagePart
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.time.Duration
 
 /**
- * 基于 JetBrains Koog 的 LLM 客户端封装。
+ * OpenAI-compatible LLM client.
  *
- * 面向 OpenAI 兼容接口（如 DeepSeek），通过 [AIConfig] 的 baseUrl 指向目标服务。
- * AI 未配置（apiKey 为空）时 [complete] 直接返回 null。
- *
- * @author LoMu
- * Date 2026/8/8
+ * The class name is kept for compatibility with existing wiring, but the
+ * implementation avoids Koog so the bot runtime does not pull in Ktor 3.
  */
 class KoogLLMClient(private val config: AIConfig) {
 
-    /** AI 是否启用（apiKey 非空）。 */
+    private val log = KotlinLogging.logger {}
+    private val json = Json { ignoreUnknownKeys = true }
+    private val httpClient: HttpClient by lazy {
+        HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(30))
+            .build()
+    }
+
     val isEnabled: Boolean get() = config.apiKey.isNotBlank()
 
-    private val executor: PromptExecutor by lazy {
-        val client = OpenAILLMClient(
-            apiKey = config.apiKey,
-            settings = OpenAIClientSettings(baseUrl = config.baseUrl),
-        )
-        // 将 OpenAI 兼容客户端注册到 DeepSeek provider 名下，配合自定义模型名使用
-        MultiLLMPromptExecutor(LLMProvider.DeepSeek to client)
-    }
-
-    private val model: LLModel by lazy {
-        // Completion: getResponse 无条件下发校验；OpenAIEndpoint.Completions: determineParams 选定 chat 参数路径
-        LLModel(
-            provider = LLMProvider.DeepSeek,
-            id = config.model,
-            capabilities = listOf(
-                LLMCapability.Completion,
-                LLMCapability.OpenAIEndpoint.Completions,
-            ),
-        )
-    }
-
-    /** 单轮对话，返回拼接后的文本内容；AI 未启用或调用失败时返回 null。 */
     suspend fun complete(system: String, user: String): String? {
         if (!isEnabled) return null
-        val prompt = prompt("chat") {
-            system(system)
-            user(user)
+
+        val requestBody = ChatCompletionRequest(
+            model = config.model,
+            messages = listOf(
+                ChatMessage(role = "system", content = system),
+                ChatMessage(role = "user", content = user),
+            ),
+        )
+        val request = HttpRequest.newBuilder(chatCompletionsUri())
+            .timeout(Duration.ofSeconds(120))
+            .header("Authorization", "Bearer ${config.apiKey}")
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(json.encodeToString(requestBody)))
+            .build()
+
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+            }
+            if (response.statusCode() !in 200..299) {
+                log.warn { "AI request failed: status=${response.statusCode()}" }
+                return null
+            }
+
+            val completion = json.decodeFromString<ChatCompletionResponse>(response.body())
+            completion.choices.firstNotNullOfOrNull { choice ->
+                choice.message?.content?.takeIf { it.isNotBlank() }
+                    ?: choice.text?.takeIf { it.isNotBlank() }
+            }
+        } catch (e: Exception) {
+            log.error(e) { "AI request failed" }
+            null
         }
-        val response = executor.execute(prompt, model)
-        return response.parts
-            .filterIsInstance<MessagePart.Text>()
-            .joinToString("") { it.text }
     }
+
+    private fun chatCompletionsUri(): URI {
+        val baseUrl = config.baseUrl.trimEnd('/')
+        val apiRoot = if (baseUrl.endsWith("/v1")) baseUrl else "$baseUrl/v1"
+        return URI.create("$apiRoot/chat/completions")
+    }
+
+    @Serializable
+    private data class ChatCompletionRequest(
+        val model: String,
+        val messages: List<ChatMessage>,
+        val stream: Boolean = false,
+    )
+
+    @Serializable
+    private data class ChatMessage(
+        val role: String,
+        val content: String,
+    )
+
+    @Serializable
+    private data class ChatCompletionResponse(
+        val choices: List<Choice> = emptyList(),
+    )
+
+    @Serializable
+    private data class Choice(
+        val message: ChatMessage? = null,
+        @SerialName("text")
+        val text: String? = null,
+    )
 }

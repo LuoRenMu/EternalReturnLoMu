@@ -382,10 +382,12 @@
                                     <div class="play_data_label">RP</div>
                                 </div>
                             <#else>
-                                <div class="rp">
-                                    <div class="play_data_title">${match.kda}</div>
-                                    <div class="play_data_label">KDA</div>
-                                </div>
+                                <#if match.type != "钴协议">
+                                    <div class="rp">
+                                        <div class="play_data_title">${match.kda}</div>
+                                        <div class="play_data_label">KDA</div>
+                                    </div>
+                                </#if>
                             </#if>
                             <#if match.type == "钴协议">
                                 <div class="infusion_row">
@@ -401,8 +403,8 @@
                                             </div>
                                         </#list>
                                     </#if>
+                                    <div class="play_data_label">灌注</div>
                                 </div>
-                                <div class="play_data_label">灌注</div>
                             <#else>
                                 <div class="route">
                                     <div class="play_data_title">${match.routeId}</div>

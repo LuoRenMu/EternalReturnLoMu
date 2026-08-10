@@ -1,6 +1,7 @@
 package cn.luorenmu.repository
 
 import cn.luorenmu.common.util.DatabaseManager
+import cn.luorenmu.repository.entity.CommandUsageRecord
 import cn.luorenmu.repository.entity.NicknameQueryRecord
 import cn.luorenmu.repository.table.CommandUsages
 import cn.luorenmu.repository.table.NicknameQueries
@@ -84,6 +85,49 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
                 set(it.timestamp, LocalDateTime.now())
             }
             logger.debug { "记录命令使用: $commandName, nickname: $nickname, group: $groupId, sender: $senderId" }
+        }
+    }
+
+    open fun listCommandUsages(limit: Int = 100): List<CommandUsageRecord> {
+        require(limit > 0) { "limit 必须大于 0" }
+
+        return withDatabase(operationName = "listCommandUsages", defaultValue = emptyList()) { database ->
+            database
+                .from(CommandUsages)
+                .select()
+                .orderBy(CommandUsages.timestamp.desc())
+                .limit(limit)
+                .map { row ->
+                    CommandUsageRecord(
+                        id = row[CommandUsages.id] ?: 0,
+                        commandName = row[CommandUsages.commandName] ?: "",
+                        nickname = row[CommandUsages.nickname],
+                        groupId = row[CommandUsages.groupId],
+                        senderId = row[CommandUsages.senderId],
+                        timestamp = (row[CommandUsages.timestamp] ?: LocalDateTime.now()).toString(),
+                    )
+                }
+        }
+    }
+
+    open fun updateCommandUsage(
+        id: Long,
+        commandName: String,
+        nickname: String?,
+        groupId: String?,
+        senderId: String?,
+    ): Boolean {
+        require(id > 0) { "id 必须大于 0" }
+        require(commandName.isNotBlank()) { "commandName 不能为空" }
+
+        return withDatabase(operationName = "updateCommandUsage", defaultValue = false) { database ->
+            database.update(CommandUsages) {
+                set(it.commandName, commandName)
+                set(it.nickname, nickname)
+                set(it.groupId, groupId)
+                set(it.senderId, senderId)
+                where { it.id eq id }
+            } > 0
         }
     }
 
