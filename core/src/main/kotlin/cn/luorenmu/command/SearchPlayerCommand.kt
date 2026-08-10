@@ -6,7 +6,7 @@ import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.NickNameUtil
 import cn.luorenmu.common.util.PathUtils
-import cn.luorenmu.render.RenderScreenshotPipeline
+import cn.luorenmu.render.BotImageRenderers
 import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.request.api.Api.Companion.ioAsync
@@ -15,6 +15,7 @@ import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharactersResponse
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCurrentSeasonResponse
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGProfileResponse
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGTiersResponse
+import cn.luorenmu.request.api.entity.response.dakgg.DakGGInfusionsResponse
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.MatchingMode
@@ -23,6 +24,10 @@ import cn.luorenmu.service.ResourcesDownloadService
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.LocalDate
@@ -67,6 +72,7 @@ class SearchPlayerCommand : CommandEvent {
         .build<String, String>()
 
     private val keyMutexes = ConcurrentHashMap<String, Mutex>()
+    private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         val inputName = command["nickname"]
@@ -91,11 +97,9 @@ class SearchPlayerCommand : CommandEvent {
             cache.getIfPresent(cacheKey)?.let { return@withLock OfflineImage.fileOfflineImage(it) }
             val preheated = preheatRequest(actualNickname)
             val outputPath = PathUtils.resourcesPathResolve("render", "player", "$actualNickname-${mode.value}.png")
-            RenderScreenshotPipeline.renderAndScreenshot(
-                "search_player.ftl",
-                playerRenderAssembler.assemble(preheated.profile, preheated.games, preheated.characters, preheated.tiers, preheated.season, mode, actualNickname),
+            BotImageRenderers.get().renderSearchPlayer(
+                playerRenderAssembler.assemble(preheated.profile, preheated.games, preheated.characters, preheated.tiers, preheated.season, preheated.infusions, mode, actualNickname),
                 outputPath,
-                "#content-container",
             )
             cache.put(cacheKey, outputPath.toString())
             keyMutexes.remove(cacheKey)
@@ -110,23 +114,29 @@ class SearchPlayerCommand : CommandEvent {
         val characters: DakGGCharactersResponse,
         val tiers: DakGGTiersResponse,
         val season: DakGGCurrentSeasonResponse,
+        val infusions: DakGGInfusionsResponse,
     )
 
     private suspend fun preheatRequest(nickname: String): PreheatedData {
         return coroutineScope {
-            ioLaunch { EternalReturnDakGGApi.User.Sync(nickname).execute() }
+            // DAK.GG sync is advisory: the previous implementation launched it as a child
+            // and still waited at coroutineScope exit. Refresh in the background so a slow
+            // sync endpoint cannot delay the current cached/profile response.
+            refreshScope.launch { runCatching { EternalReturnDakGGApi.User.Sync(nickname).execute() } }
 
             val gamesDF = ioAsync { EternalReturnDakGGApi.Game.GetGame(nickname).execute() }
             val profileDF = ioAsync { EternalReturnDakGGApi.User.GetProfile(nickname).execute() }
             val charactersDF = ioAsync { EternalReturnDakGGApi.Data.GetCharacters.execute() }
             val tiersDF = ioAsync { EternalReturnDakGGApi.Data.GetTiers.execute() }
             val seasonDF = ioAsync { EternalReturnDakGGApi.Data.GetCurrentSeason.execute() }
+            val infusionsDF = ioAsync { EternalReturnDakGGApi.Data.GetInfusions.execute() }
 
             val games = gamesDF.await()
             val profile = profileDF.await()
             val characters = charactersDF.await()
             val tiers = tiersDF.await()
             val season = seasonDF.await()
+            val infusions = infusionsDF.await()
 
             ioLaunch {
                 resourcesDownloadService.gameDataDownload(games.matches)
@@ -137,7 +147,7 @@ class SearchPlayerCommand : CommandEvent {
                 log.debug { "downloadProfileData 预备请求数据已完成" }
             }
 
-            PreheatedData(profile, games.matches, characters, tiers, season)
+            PreheatedData(profile, games.matches, characters, tiers, season, infusions)
         }
     }
 }

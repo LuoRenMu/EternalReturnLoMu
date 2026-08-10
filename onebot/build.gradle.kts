@@ -8,6 +8,7 @@ version = "1.0-SNAPSHOT"
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":nutdraw"))
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.netty)
     implementation(libs.simbot.core)

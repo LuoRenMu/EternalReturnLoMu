@@ -9,7 +9,6 @@ import cn.luorenmu.common.util.ReflectionUtil
 import cn.luorenmu.currentAdapter
 import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.repository.StatisticsRepository
-import com.microsoft.playwright.TimeoutError
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.*
 import io.ktor.utils.io.*
@@ -77,9 +76,6 @@ class CommandRouter {
             return found.eventObj.listen(messageSender, found.commandParse)
         } catch (e: MessageReplyException) {
             return e.returnMsg.toText()
-        } catch (e: TimeoutError) {
-            log.error { e.printStack() }
-            return "任务超时,非常抱歉!请稍后再试。".toText()
         } catch (e: HttpRequestTimeoutException) {
             log.error { e.printStack() }
             return "已尽力向目标发送请求，但仍然无法到达 这绝对不是'LoMu'的问题。".toText()

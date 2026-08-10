@@ -5,6 +5,8 @@ import cn.luorenmu.ConfigFile.config
 import cn.luorenmu.command.CommandRouter
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.moduleCore
+import cn.luorenmu.nutdraw.NutDrawBotImageRenderer
+import cn.luorenmu.render.BotImageRenderers
 import io.ktor.http.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -30,6 +32,7 @@ import kotlin.system.exitProcess
 
 private val commandRouter = CommandRouter()
 suspend fun main() {
+    BotImageRenderers.install(NutDrawBotImageRenderer())
     config.other = mapOf(
             "one_bot_http" to "http://192.168.1.108:9191",
             "one_bot_ws" to "ws://192.168.1.108:5752"

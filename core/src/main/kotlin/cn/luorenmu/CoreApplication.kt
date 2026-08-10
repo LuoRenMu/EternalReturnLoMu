@@ -3,7 +3,6 @@ import cn.luorenmu.ai.AIConfig
 import cn.luorenmu.ai.KoogLLMClient
 import cn.luorenmu.ai.news.NewsClassifier
 import cn.luorenmu.api.resourcesRouting
-import cn.luorenmu.common.util.BrowserPool
 import cn.luorenmu.common.util.DatabaseManager
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.request.ApiKeyConfig
@@ -16,10 +15,8 @@ import cn.luorenmu.service.PlayerRenderAssembler
 import cn.luorenmu.service.TierStatisticsCollector
 import cn.luorenmu.service.ResourcesDownloadService
 import cn.luorenmu.task.EternalReturnNewsTask
-import freemarker.cache.ClassTemplateLoader
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
-import io.ktor.server.freemarker.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -60,9 +57,6 @@ fun Application.moduleCore(adapter: Adapter) {
         .get<EternalReturnNewsTask>()
         .start()
     logger.info { "新闻定时任务已启动" }
-    logger.info { "正在启动 PlayWright" }
-    BrowserPool.getBrowser()
-    logger.info { "PlayWright 已启动" }
     environment.config.port.let {
         SERVER_PORT = it
     }
@@ -87,10 +81,6 @@ val appModule = module {
 
 
 fun Application.configureInstall() {
-    install(FreeMarker) {
-        templateLoader = ClassTemplateLoader(this::class.java.classLoader, "static/templates")
-    }
-
     install(Koin) {
         modules(appModule)
     }
@@ -123,7 +113,7 @@ object ConfigFile {
             println(file.toPath())
             exitProcess(0)
         }
-        val json = Json.decodeFromString<BotConfig>(file.readText())
+        val json = Json { ignoreUnknownKeys = true }.decodeFromString<BotConfig>(file.readText())
         return json
     }
 
@@ -133,16 +123,9 @@ object ConfigFile {
         var port: Int = 8080,
         var apiKey: String = "非必要",
         var other: Map<String, String> = mapOf(),
-        var browser: BrowserConfig = BrowserConfig(),
         var postgres: PostgresConfig = PostgresConfig(),
         var ai: AIConfig = AIConfig(),
     ) {
-        @Serializable
-        data class BrowserConfig(
-            var headless: Boolean = false,
-            var pool: Int = 1,
-        )
-
         @Serializable
         data class PostgresConfig(
             var enabled: Boolean = true,

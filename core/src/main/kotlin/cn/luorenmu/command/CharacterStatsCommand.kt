@@ -6,7 +6,7 @@ import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.extensions.toPinYin
 import cn.luorenmu.common.util.PathUtils
-import cn.luorenmu.render.RenderScreenshotPipeline
+import cn.luorenmu.render.BotImageRenderers
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGRank
@@ -80,12 +80,7 @@ class CharacterStatsCommand : CommandEvent {
         )
 
         val outputPath = PathUtils.resourcesPathResolve("render", "character_stats_${tier}_${mode}_${rank}.png")
-        RenderScreenshotPipeline.renderContentAndScreenshot(
-            "character_stats.ftl",
-            stats,
-            outputPath,
-            "#content-container"
-        )
+        BotImageRenderers.get().renderCharacterStats(stats, outputPath)
         return OfflineImage.fileOfflineImage(outputPath.toString())
     }
 

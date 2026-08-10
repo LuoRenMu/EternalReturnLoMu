@@ -7,7 +7,7 @@ import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.PathUtils
-import cn.luorenmu.render.RenderScreenshotPipeline
+import cn.luorenmu.render.BotImageRenderers
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 
@@ -23,7 +23,7 @@ class HelpCommand : CommandEvent {
     override val optionals: List<CommandOptional> = emptyList()
     override val description = "查询命令列表"
 
-    private val outputPath by lazy {
+    private fun helpData(): CommandHelp {
         val commandEvent = COMMANDS.values.map {
             CommandHelp.CommandHelpItem(
                 name = it.command.name,
@@ -33,19 +33,14 @@ class HelpCommand : CommandEvent {
             )
         }
 
-        val outputPath = PathUtils.resourcesPathResolve( "render", "help.png")
-        RenderScreenshotPipeline.renderContentAndScreenshot(
-            "help.ftl",
-            CommandHelp(commandEvent),
-            outputPath,
-            "#content-container"
-        )
-        outputPath
+        return CommandHelp(commandEvent)
     }
     override suspend fun listen(
         sender: MessageSender,
         command: Map<String, String>,
     ): Message {
+        val outputPath = PathUtils.resourcesPathResolve("render", "help.png")
+        BotImageRenderers.get().renderHelp(helpData(), outputPath)
         return OfflineImage.fileOfflineImage(outputPath.toString())
     }
 
