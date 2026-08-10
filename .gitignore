@@ -51,3 +51,4 @@ bin/
 /config.json
 **/logs/
 /AGENTS.md
+/resources/
