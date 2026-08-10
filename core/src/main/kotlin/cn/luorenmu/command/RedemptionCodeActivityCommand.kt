@@ -6,7 +6,7 @@ import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.command.entity.RedemptionCodeActivityPage
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.PathUtils
-import cn.luorenmu.render.RenderScreenshotPipeline
+import cn.luorenmu.render.BotImageRenderers
 import cn.luorenmu.repository.NewsRepository
 import cn.luorenmu.repository.entity.EternalReturnNewsRecord
 import cn.luorenmu.service.GameActivityVisibility.displayStatus
@@ -48,15 +48,12 @@ class RedemptionCodeActivityCommand : CommandEvent {
         }
 
         val outputPath = PathUtils.resourcesPathResolve("render", "redemption_code_activity.png")
-        RenderScreenshotPipeline.renderHtmlAndScreenshot(
-            "redemption_code_activity.ftl",
+        BotImageRenderers.get().renderRedemptionCodeActivities(
             RedemptionCodeActivityPage(
                 generatedDate = today.toString(),
                 items = records.map { it.toPageItem(today) },
             ),
             outputPath,
-            "#activity-page",
-            "() => Array.from(document.images).every((img) => img.complete)",
         )
         return OfflineImage.fileOfflineImage(outputPath.toString())
     }

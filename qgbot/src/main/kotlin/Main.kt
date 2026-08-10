@@ -5,6 +5,8 @@ import cn.luorenmu.ConfigFile
 import cn.luorenmu.api.qqBotRouting
 import cn.luorenmu.qqbot.listen.GroupAtMessageCreateListen
 import cn.luorenmu.moduleCore
+import cn.luorenmu.nutdraw.NutDrawBotImageRenderer
+import cn.luorenmu.render.BotImageRenderers
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -34,6 +36,7 @@ const val SERVER_PORT = 8080
 lateinit var simbotApplication: love.forte.simbot.application.Application
 
 suspend fun main(args: Array<String>) {
+    BotImageRenderers.install(NutDrawBotImageRenderer())
     simbotApplication = launchSimbot()
     embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0") {
         module()

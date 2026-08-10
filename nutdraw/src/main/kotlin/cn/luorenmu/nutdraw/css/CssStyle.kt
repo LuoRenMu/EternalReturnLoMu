@@ -1,0 +1,38 @@
+package cn.luorenmu.nutdraw.css
+
+import org.jetbrains.skia.Color
+
+data class CssStyle(
+    val display: Display = Display.FLEX,
+    val direction: FlexDirection = FlexDirection.COLUMN,
+    val wrap: FlexWrap = FlexWrap.NOWRAP,
+    val justifyContent: JustifyContent = JustifyContent.START,
+    val alignItems: AlignItems = AlignItems.STRETCH,
+    val width: CssSize = CssSize.Auto,
+    val height: CssSize = CssSize.Auto,
+    val minWidth: Float = 0f,
+    val minHeight: Float = 0f,
+    val maxWidth: Float = Float.POSITIVE_INFINITY,
+    val maxHeight: Float = Float.POSITIVE_INFINITY,
+    val flexGrow: Float = 0f,
+    val gap: Float = 0f,
+    val padding: Edges = Edges(),
+    val margin: Edges = Edges(),
+    val background: Int = Color.TRANSPARENT,
+    val backgroundImage: String? = null,
+    val border: Border = Border(),
+    val borderRadius: Float = 0f,
+    val cornerRadii: CornerRadii? = null,
+    val color: Int = Color.makeRGB(225, 228, 237),
+    val fontSize: Float = 16f,
+    val fontWeight: Int = 400,
+    val lineHeight: Float = 1.35f,
+    val textAlign: TextAlign = TextAlign.START,
+    val verticalAlign: VerticalAlign = VerticalAlign.START,
+    val objectFit: ObjectFit = ObjectFit.COVER,
+    val position: Position = Position.STATIC,
+    val top: Float? = null,
+    val right: Float? = null,
+    val bottom: Float? = null,
+    val left: Float? = null,
+)

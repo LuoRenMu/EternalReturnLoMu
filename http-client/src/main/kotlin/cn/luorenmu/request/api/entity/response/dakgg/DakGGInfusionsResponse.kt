@@ -1,7 +1,5 @@
 package cn.luorenmu.request.api.entity.response.dakgg
 
-import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 /**
@@ -21,9 +19,6 @@ data class DakGGInfusionsResponse(
     )
 
     fun getInfusionById(id: Long): Infusion? {
-        return this.infusions.firstOrNull { it.id == id } ?: runBlocking {
-            EternalReturnDakGGApi.Data.GetInfusions.refresh()
-            EternalReturnDakGGApi.Data.GetInfusions.execute().infusions.firstOrNull { it.id == id }
-        }
+        return infusions.firstOrNull { it.id == id }
     }
 }

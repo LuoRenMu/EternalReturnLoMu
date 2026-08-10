@@ -1,15 +1,12 @@
 package cn.luorenmu.service
 
 import cn.luorenmu.exception.MessageReplyException
-import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.api.entity.response.dakgg.*
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
 import cn.luorenmu.request.entity.module.MatchingMode
-import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.service.entity.EternalReturnEquip
 import cn.luorenmu.service.entity.EternalReturnPlayRender
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -28,9 +25,10 @@ open class PlayerRenderAssembler {
         characters: DakGGCharactersResponse,
         tiers: DakGGTiersResponse,
         season: DakGGCurrentSeasonResponse,
+        infusions: DakGGInfusionsResponse,
         matchingMode: MatchingMode,
         nickname: String,
-    ): EternalReturnPlayRender = buildRender(profile, games, characters, tiers, season, matchingMode, nickname)
+    ): EternalReturnPlayRender = buildRender(profile, games, characters, tiers, season, infusions, matchingMode, nickname)
 
     private fun buildRender(
         profile: DakGGProfileResponse,
@@ -38,6 +36,7 @@ open class PlayerRenderAssembler {
         characters: DakGGCharactersResponse,
         tiers: DakGGTiersResponse,
         season: DakGGCurrentSeasonResponse,
+        infusions: DakGGInfusionsResponse,
         matchingMode: MatchingMode,
         nickname: String,
     ): EternalReturnPlayRender {
@@ -200,9 +199,6 @@ open class PlayerRenderAssembler {
             } else null
         } else null
 
-        // 灌注引用：钴协议对局 boughtInfusion 的 key 是 infusionId，需要通过 infusions API 映射到 productId。
-        val infusionsResponse = runBlocking { ioAsync { EternalReturnDakGGApi.Data.GetInfusions.execute() }.await() }
-
         // banner 路径基于当前赛季ID推导,与 Search.tsx 中保持一致逻辑。
         val seasonId = season.id.takeIf { it > 0 } ?: 39
         val bannerId = (seasonId - 1) / 2 * 2 - 27
@@ -214,7 +210,7 @@ open class PlayerRenderAssembler {
             profileImageUrl = profileImageUrl,
             level = accountLevel,
             data = eternalReturnPlayerData,
-            matches = games.map { gameConvertMatcher(it, characters, infusionsResponse) },
+            matches = games.map { gameConvertMatcher(it, characters, infusions) },
             recentPlayers = recentPlays,
             characterUseStats = characterUseStats,
             season = season.name,
