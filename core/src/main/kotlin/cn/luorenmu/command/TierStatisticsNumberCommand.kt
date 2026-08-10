@@ -5,7 +5,7 @@ import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.PathUtils
-import cn.luorenmu.render.RenderScreenshotPipeline
+import cn.luorenmu.render.BotImageRenderers
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGServerName
@@ -42,12 +42,7 @@ class TierStatisticsNumberCommand : CommandEvent {
         preheatRequest(serverName)
         val cutoffsAndTierNumber = tierStatisticsCollector.collect(serverName)
         val outputPath = PathUtils.resourcesPathResolve("render", "tier", "tierStatisticsNumber.png")
-        RenderScreenshotPipeline.renderAndScreenshot(
-            "tier_statistics_number.ftl",
-            cutoffsAndTierNumber,
-            outputPath,
-            "#app"
-        )
+        BotImageRenderers.get().renderTierStatistics(cutoffsAndTierNumber, outputPath)
 
         return OfflineImage.fileOfflineImage(outputPath.toString())
     }

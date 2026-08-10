@@ -74,7 +74,9 @@ data class DakGGLeaderboardResponse(
  * size=1 两者相同，size=2 时 [1]=eternal [0]=demigod，其他返回 null。
  */
 fun ArrayList<DakGGLeaderboardResponse.Cutoffs>.resolveCutoffs(): Pair<DakGGLeaderboardResponse.Cutoffs, DakGGLeaderboardResponse.Cutoffs>? =
-    when (size) {
+    firstOrNull { it.tierType == 8 }?.let { eternal ->
+        eternal to (firstOrNull { it.tierType == 7 } ?: eternal)
+    } ?: when (size) {
         1 -> get(0) to get(0)
         2 -> get(1) to get(0)
         else -> null

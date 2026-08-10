@@ -3,7 +3,6 @@ package cn.luorenmu.api
 import cn.luorenmu.command.CommandRouter
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.util.PathUtils
-import cn.luorenmu.render.FreemarkerRenderer
 import cn.luorenmu.repository.StatisticsRepository
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -40,7 +39,8 @@ fun Route.adminRouting() {
 
     get("/admin") {
         call.respondText(
-            FreemarkerRenderer.render("admin_dashboard.ftl", emptyMap<String, String>()),
+            checkNotNull(AdminApiMarker::class.java.getResource("/static/admin_dashboard.html"))
+                .readText(),
             ContentType.Text.Html,
         )
     }
@@ -94,6 +94,8 @@ fun Route.adminRouting() {
         call.respondJson(AdminResponse(data = MessagePreview.from(message)))
     }
 }
+
+private object AdminApiMarker
 
 private fun idOf(value: String): ID {
     return StringID::class.java.getMethod("valueOf", String::class.java).invoke(null, value) as ID

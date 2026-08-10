@@ -5,7 +5,7 @@ import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.PathUtils
-import cn.luorenmu.render.RenderScreenshotPipeline
+import cn.luorenmu.render.BotImageRenderers
 import cn.luorenmu.request.entity.module.DakGGRank
 import cn.luorenmu.service.CharacterDetailCollector
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -57,12 +57,7 @@ class CharacterDetailCommand : CommandEvent {
         )
 
         val outputPath = PathUtils.resourcesPathResolve("render", "character_detail_${detail.id}.png")
-        RenderScreenshotPipeline.renderContentAndScreenshot(
-            "character_detail.ftl",
-            detail,
-            outputPath,
-            "#content-container",
-        )
+        BotImageRenderers.get().renderCharacterDetail(detail, outputPath)
         return OfflineImage.fileOfflineImage(outputPath.toString())
     }
 }
