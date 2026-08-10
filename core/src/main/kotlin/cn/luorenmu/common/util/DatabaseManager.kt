@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.ktorm.database.Database
+import java.nio.charset.StandardCharsets
 
 /**
  * PostgreSQL + Ktorm 数据库管理器，替代原有的 MongoDBManager。
@@ -31,6 +32,12 @@ open class DatabaseManager {
 
     open fun isEnabled(): Boolean = ConfigFile.config.postgres.enabled
 
+    open fun initialize() {
+        if (isEnabled()) {
+            database
+        }
+    }
+
     private fun createDataSource(): HikariDataSource {
         val pg = ConfigFile.config.postgres
         val config = HikariConfig().apply {
@@ -48,7 +55,30 @@ open class DatabaseManager {
             validationTimeout = 5000
         }
         logger.info { "PostgreSQL 连接池已初始化: ${pg.host}:${pg.port}/${pg.database}?currentSchema=${pg.schema}" }
-        return HikariDataSource(config)
+        return HikariDataSource(config).also { dataSource ->
+            executeInitScript(dataSource)
+        }
+    }
+
+    private fun executeInitScript(dataSource: HikariDataSource) {
+        val sql = loadInitSql()
+        dataSource.connection.use { connection ->
+            connection.createStatement().use { statement ->
+                statement.execute(sql)
+            }
+        }
+        logger.info { "PostgreSQL 初始化脚本已执行: $INIT_SQL_RESOURCE" }
+    }
+
+    private fun loadInitSql(): String {
+        val classLoader = Thread.currentThread().contextClassLoader ?: this::class.java.classLoader
+        val stream = classLoader.getResourceAsStream(INIT_SQL_RESOURCE)
+            ?: error("未找到 PostgreSQL 初始化脚本: $INIT_SQL_RESOURCE")
+        return stream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+    }
+
+    private companion object {
+        const val INIT_SQL_RESOURCE = "sql/init_postgresql.sql"
     }
 
     fun close() {

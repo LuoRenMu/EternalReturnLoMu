@@ -5,11 +5,11 @@ plugins {
 group = "cn.luorenmu"
 version = "1.0-SNAPSHOT"
 
-
 dependencies {
     implementation(project(":core"))
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.netty)
+    implementation(libs.ktor.client.content.negotiation)
     implementation(libs.simbot.core)
     implementation(libs.simbot.component.qq)
     implementation(libs.logback.classic)

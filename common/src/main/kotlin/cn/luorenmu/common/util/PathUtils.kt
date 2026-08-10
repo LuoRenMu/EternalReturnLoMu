@@ -2,6 +2,7 @@ package cn.luorenmu.common.util
 
 import java.io.File
 import java.nio.file.Path
+import java.nio.file.Paths
 
 /**
  *
@@ -12,11 +13,18 @@ object PathUtils {
     val currentDirectory: Path by lazy {
         val jarPath = this::class.java.protectionDomain.codeSource.location.toURI()
         val jarFile = File(jarPath)
-        if (jarFile.isDirectory) {
+        if (jarFile.isDirectory && jarFile.toPath().isBuildClassesPath()) {
+            Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize()
+        } else if (jarFile.isDirectory) {
             jarFile.toPath()
         } else {
             jarFile.parentFile.toPath()
         }
+    }
+
+    private fun Path.isBuildClassesPath(): Boolean {
+        val normalized = toAbsolutePath().normalize().toString().replace('\\', '/')
+        return "/build/classes/" in normalized
     }
 
 

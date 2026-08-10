@@ -8,8 +8,8 @@ version = "1.0-SNAPSHOT"
 
 
 dependencies {
-    implementation(libs.koog.agents)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlin.logging.jvm)
     implementation(libs.jsoup.parse)
     testImplementation(kotlin("test"))
