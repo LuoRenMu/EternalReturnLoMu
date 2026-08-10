@@ -28,7 +28,7 @@ import java.time.LocalDate
     adapter = [Adapter.QG_BOT, Adapter.ONE_BOT],
 )
 class RedemptionCodeActivityCommand : CommandEvent {
-    override val description = "以活动页图片展示可用游戏活动"
+    override val description = "展示可用游戏活动"
     override val example = "/游戏活动"
     override val optionals = listOf(
         CommandOptional("limit", "返回数量，默认 5，最多 10", required = false)

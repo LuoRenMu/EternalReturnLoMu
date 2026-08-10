@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="51" height="32" viewBox="0 0 51 32">
+  <defs>
+    <linearGradient id="ico_itemgradebg_01-a" x1="50%" x2="50%" y1="16.754%" y2="92.415%">
+      <stop offset="0%" stop-color="#67696C"/>
+      <stop offset="100%" stop-color="#A8ADB4"/>
+    </linearGradient>
+  </defs>
+  <rect width="51" height="32" fill="url(#ico_itemgradebg_01-a)" fill-rule="evenodd" rx="4"/>
+</svg>
