@@ -55,7 +55,6 @@ class NewsClassifier(private val llmClient: KoogLLMClient) {
                 user = prompt,
             ) ?: return null
 
-            // 模型返回的 content 可能包含 markdown 代码块，提取 JSON
             val jsonBlock = extractJson(content)
             json.decodeFromString<RedemptionCodeResult>(jsonBlock)
         } catch (e: Exception) {
@@ -63,14 +62,13 @@ class NewsClassifier(private val llmClient: KoogLLMClient) {
             null
         }
     }
-
-    /** 从 AI 返回的文本中提取 JSON（可能被 ```json ... ``` 包裹）。 */
+    // 由于使用的是硅基流动较老的模型 请求参数尚未找到和deepseek强制要求返回 json object
     private fun extractJson(text: String): String {
         val jsonRegex = Regex("""```(?:json)?\s*([\s\S]*?)\s*```""")
         jsonRegex.find(text)?.let { return it.groupValues[1] }
         val trimmed = text.trim().trimStart('`').trimEnd('`')
         val start = trimmed.indexOf('{')
         val end = trimmed.lastIndexOf('}')
-        return if (start >= 0 && end >= start) trimmed.substring(start, end + 1) else trimmed
+        return if (start in 0..end) trimmed.substring(start, end + 1) else trimmed
     }
 }

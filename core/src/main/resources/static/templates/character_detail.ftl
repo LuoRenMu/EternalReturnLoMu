@@ -74,6 +74,26 @@
             </div>
         </section>
 
+        <#-- 各部位最高选择率装备 -->
+        <#if weapon.topEquipments?has_content>
+            <section class="section">
+                <h3 class="section-title">各部位最高选择率装备</h3>
+                <div class="equipment-slots">
+                    <#list weapon.topEquipments as eq>
+                        <div class="equipment-slot">
+                            <div class="equipment-slot-label">${eq.slot}</div>
+                            <div class="equipment-icon">
+                                <#if eq.bgUrl?has_content><div class="equipment-icon-bg" style="background-image:url('${httpServer}${eq.bgUrl}')"></div></#if>
+                                <img class="equipment-icon-img" src="${httpServer}${eq.iconUrl}" alt="${eq.name}">
+                            </div>
+                            <div class="equipment-name">${eq.name}</div>
+                            <div class="equipment-rate">${eq.pickRate?string("0.0")}%</div>
+                        </div>
+                    </#list>
+                </div>
+            </section>
+        </#if>
+
         <#-- 技能学习顺序 -->
         <#if weapon.skillBuilds?has_content>
             <section class="section">

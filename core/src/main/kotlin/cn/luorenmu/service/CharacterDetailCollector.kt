@@ -40,12 +40,13 @@ open class CharacterDetailCollector(
     companion object {
         private const val TOP_PLAYER_LIMIT = 10
         private const val SKILL_BUILD_LIMIT = 3
-        private const val ITEM_BUILD_LIMIT = 10
+        private const val ITEM_BUILD_LIMIT = 3
         private const val TACTICAL_LIMIT = 3
         private const val AUGMENT_CORE_LIMIT = 3
         private const val AUGMENT_SUB_LIMIT = 6
         private const val INFUSION_LIMIT = 12
         private val SKILL_SLOTS = listOf("Q", "W", "E", "R", "T")
+        private val ITEM_SLOTS = listOf("武器", "胸甲", "头部", "手臂", "腿部")
 
         private val MATCHING_MODE_LABELS = mapOf(2L to "普通", 3L to "排位", 6L to "钴协议")
         private val TEAM_MODE_LABELS = mapOf(1L to "单人", 2L to "双人", 3L to "三人", 4L to "钴协议")
@@ -137,6 +138,12 @@ open class CharacterDetailCollector(
                     resourcesDownloadService.downloadItemImage(item)
                     resourcesDownloadService.downloadItemBgImage(itemGradeNum(item.grade))
                 }
+            }
+        }
+        weapon.topEquipments.forEach { pick ->
+            refs.items.items.firstOrNull { it.id == pick.id }?.let { item ->
+                resourcesDownloadService.downloadItemImage(item)
+                resourcesDownloadService.downloadItemBgImage(itemGradeNum(item.grade))
             }
         }
 
@@ -267,6 +274,8 @@ open class CharacterDetailCollector(
                 )
             }
 
+        val topEquipments = buildTopEquipments(weapon.itemBuildStats, count, refs)
+
         val tacticals = weapon.tacticalSkillStats
             .sortedByDescending { it.count }
             .take(TACTICAL_LIMIT)
@@ -322,11 +331,39 @@ open class CharacterDetailCollector(
             skills = skills,
             skillBySlot = skills.associateBy { it.slot },
             skillBuilds = skillBuilds,
+            topEquipments = topEquipments,
             itemBuilds = itemBuilds,
             tacticals = tacticals,
             augments = augments,
             infusions = infusions,
         )
+    }
+
+    private fun buildTopEquipments(
+        itemBuildStats: List<CharacterAnalysisResponse.ItemBuildStat>,
+        total: Long,
+        refs: AnalysisRefs,
+    ): List<CharacterDetail.EquipmentSlotPick> {
+        return ITEM_SLOTS.mapIndexedNotNull { slotIndex, slot ->
+            val countsByItem = mutableMapOf<Long, Long>()
+            itemBuildStats.forEach { build ->
+                val itemId = build.key.getOrNull(slotIndex) ?: return@forEach
+                countsByItem[itemId] = (countsByItem[itemId] ?: 0L) + build.count
+            }
+
+            val (itemId, count) = countsByItem.maxByOrNull { it.value } ?: return@mapIndexedNotNull null
+            val item = refs.items.items.firstOrNull { it.id == itemId }
+            CharacterDetail.EquipmentSlotPick(
+                slot = slot,
+                id = itemId,
+                name = item?.name ?: "",
+                iconUrl = item?.let { ImageResourcesType.Item.getGeneralPath(it.id.toString()) } ?: "",
+                bgUrl = item?.let {
+                    ImageResourcesType.ItemBg.getGeneralPath(itemGradeNum(it.grade).toString())
+                } ?: "",
+                pickRate = rate(count, total),
+            )
+        }
     }
 
     private fun traitPick(

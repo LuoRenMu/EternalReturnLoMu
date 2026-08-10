@@ -63,6 +63,7 @@ data class CharacterDetail(
         /** 技能槽 → 图鉴 快速查找（供 FTL 按槽位取图标） */
         val skillBySlot: Map<String, SkillSlot>,
         val skillBuilds: List<SkillBuild>,
+        val topEquipments: List<EquipmentSlotPick>,
         val itemBuilds: List<ItemBuild>,
         val tacticals: List<Pick>,
         val augments: List<Augment>,
@@ -84,6 +85,15 @@ data class CharacterDetail(
         val order: List<String>,
         val pickRate: Double,
         val winRate: Double,
+    )
+
+    data class EquipmentSlotPick(
+        val slot: String,
+        val id: Long,
+        val name: String,
+        val iconUrl: String,
+        val bgUrl: String,
+        val pickRate: Double,
     )
 
     data class ItemBuild(

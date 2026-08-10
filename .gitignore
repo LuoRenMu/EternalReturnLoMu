@@ -48,4 +48,6 @@ bin/
 /.proxyai/
 /docs/agents/
 /logs/
+/config.json
+**/logs/
 /AGENTS.md

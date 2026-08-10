@@ -52,6 +52,9 @@ fun Application.moduleCore(adapter: Adapter) {
     ApiKeyConfig.apiKeyMap = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
     configureRouting()
     configureInstall()
+    getKoin()
+        .get<DatabaseManager>()
+        .initialize()
     // 启动新闻定时任务
     getKoin()
         .get<EternalReturnNewsTask>()

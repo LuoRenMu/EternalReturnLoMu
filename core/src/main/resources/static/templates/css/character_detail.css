@@ -202,6 +202,76 @@
 }
 
 /* --- 方案列表（技能加点 / 出装） --- */
+/* --- Top equipment by slot --- */
+.equipment-slots {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    padding: 14px 18px 16px;
+}
+
+.equipment-slot {
+    background: #f7f8fb;
+    border: 1px solid #e8ebf2;
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    min-width: 0;
+}
+
+.equipment-slot-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #7880a0;
+    margin-bottom: 8px;
+}
+
+.equipment-icon {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e2e5ee;
+    margin: 0 auto;
+}
+
+.equipment-icon-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.equipment-icon-img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 82%;
+    height: 82%;
+    transform: translate(-50%, -50%);
+    object-fit: contain;
+}
+
+.equipment-name {
+    margin-top: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #2a2e3a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.equipment-rate {
+    margin-top: 3px;
+    font-size: 13px;
+    font-weight: 900;
+    color: #1aaa55;
+    font-variant-numeric: tabular-nums;
+}
+
 .build-list {
     padding: 14px 18px;
     display: flex;
