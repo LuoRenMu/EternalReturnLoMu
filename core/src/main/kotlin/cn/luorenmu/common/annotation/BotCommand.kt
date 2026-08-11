@@ -14,5 +14,6 @@ annotation class BotCommand(
     val name: String,
     val alias: String,
     val value: String,
+    val aliases: Array<String> = [],
     val adapter: Array<Adapter> = [Adapter.ONE_BOT, Adapter.QG_BOT],
 )

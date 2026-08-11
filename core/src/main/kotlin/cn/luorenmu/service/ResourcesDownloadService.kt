@@ -52,6 +52,14 @@ open class ResourcesDownloadService {
                     downloadCharacterImage(characterById, skin)
                 }
             }
+            profile.playerSeasonOverviews.flatMap { it.duoStats }.flatMap { it.characterStats }
+                .distinctBy { it.key }
+                .forEach { character ->
+                    ioLaunch {
+                        val characterById = charactersResponse.getCharacterById(character.key)
+                        downloadCharacterImage(characterById, characterById.skins.first().id)
+                    }
+                }
         }
     }
 
@@ -71,6 +79,14 @@ open class ResourcesDownloadService {
                     downloadCharacterImage(characterById, skin)
                 }
             }
+            profile.playerSeasonOverviews.flatMap { it.duoStats }.flatMap { it.characterStats }
+                .distinctBy { it.key }
+                .forEach { character ->
+                    ioLaunch {
+                        val characterById = charactersResponse.getCharacterById(character.key)
+                        downloadCharacterImage(characterById, characterById.skins.first().id)
+                    }
+                }
         }
     }
 

@@ -8,7 +8,7 @@ package cn.luorenmu.request.entity.module
 enum class MatchingMode(val value: Int, val modeName: String,val dakGGMode: String) {
     Normal(2, "匹配","NORMAL"),
     Rank(3, "排位","RANK"),
-    Cobalt(6, "钴协议","Cobalt"),
+    Cobalt(6, "钴协议","COBALT"),
 
     Union(8, "联盟","UNION"),
 

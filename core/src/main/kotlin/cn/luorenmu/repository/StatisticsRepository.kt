@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 /**
  * 统计信息仓储层，负责命令使用记录和昵称查询记录的持久化操作。
  *
- * 使用 Ktorm + PostgreSQL 替代原有的 MongoDB 实现。所有公开方法均通过
+ * 使用 Ktorm 数据库实现。所有公开方法均通过
  * [withDatabase] 统一处理数据库启用状态检查和异常处理。
  *
  * @author LoMu
@@ -51,12 +51,12 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
         block: (Database) -> T,
     ): T {
         if (!dbManager.isEnabled()) {
-            logger.debug { "PostgreSQL 未启用，跳过操作: $operationName" }
+            logger.debug { "${dbManager.displayName()} 未启用，跳过操作: $operationName" }
             return defaultValue
         }
         val database = dbManager.database
         if (database == null) {
-            logger.warn { "PostgreSQL Database 实例为 null，跳过操作: $operationName" }
+            logger.warn { "${dbManager.displayName()} Database 实例为 null，跳过操作: $operationName" }
             return defaultValue
         }
         return try {

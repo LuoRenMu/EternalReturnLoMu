@@ -52,3 +52,7 @@ bin/
 **/logs/
 /AGENTS.md
 /resources/
+/core/node_modules/
+/plugins/*.jar
+/plugins/.cache/
+/plugins/plugin-state.properties

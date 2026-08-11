@@ -44,3 +44,13 @@ CREATE TABLE IF NOT EXISTS eternal_return_news (
     end_date VARCHAR(20),
     processed_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS exception_logs (
+    id BIGSERIAL PRIMARY KEY,
+    source VARCHAR(100) NOT NULL,
+    exception_type VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL DEFAULT '',
+    context TEXT NOT NULL DEFAULT '',
+    stack_trace TEXT NOT NULL,
+    occurred_at TIMESTAMP NOT NULL DEFAULT NOW()
+);

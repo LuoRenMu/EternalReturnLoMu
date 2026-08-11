@@ -39,10 +39,10 @@ open class CharacterDetailCollector(
 
     companion object {
         private const val TOP_PLAYER_LIMIT = 10
-        private const val SKILL_BUILD_LIMIT = 3
-        private const val ITEM_BUILD_LIMIT = 3
-        private const val TACTICAL_LIMIT = 3
-        private const val AUGMENT_CORE_LIMIT = 3
+        private const val SKILL_BUILD_LIMIT = 4
+        private const val ITEM_BUILD_LIMIT = 4
+        private const val TACTICAL_LIMIT = 4
+        private const val AUGMENT_CORE_LIMIT = 4
         private const val AUGMENT_SUB_LIMIT = 6
         private const val INFUSION_LIMIT = 12
         private val SKILL_SLOTS = listOf("Q", "W", "E", "R", "T")

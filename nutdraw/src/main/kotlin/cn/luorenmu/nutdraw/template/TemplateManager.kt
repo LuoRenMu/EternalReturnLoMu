@@ -1,7 +1,6 @@
 package cn.luorenmu.nutdraw.template
 
 import cn.luorenmu.nutdraw.render.SkiaDocumentRenderer
-import cn.luorenmu.nutdraw.templates.ImageTemplate
 import java.nio.file.Path
 
 /** Build -> resolve resources -> layout -> draw lifecycle, matching Shinobu's Template boundary. */

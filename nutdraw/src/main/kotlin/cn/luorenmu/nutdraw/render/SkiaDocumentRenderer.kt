@@ -86,7 +86,13 @@ class SkiaDocumentRenderer(
     private fun drawImage(canvas: Canvas, node: NutImage, box: LayoutBox) {
         imageLoader.load(node.source)?.use { image ->
             canvas.save()
-            canvas.clipRRect(RRect.makeXYWH(box.bounds.left, box.bounds.top, box.bounds.width, box.bounds.height, node.style.borderRadius), true)
+            val shape = node.style.cornerRadii?.let { radii ->
+                RRect.makeComplexLTRB(box.bounds.left, box.bounds.top, box.bounds.right, box.bounds.bottom, floatArrayOf(
+                    radii.topLeft, radii.topLeft, radii.topRight, radii.topRight,
+                    radii.bottomRight, radii.bottomRight, radii.bottomLeft, radii.bottomLeft,
+                ))
+            } ?: RRect.makeXYWH(box.bounds.left, box.bounds.top, box.bounds.width, box.bounds.height, node.style.borderRadius)
+            canvas.clipRRect(shape, true)
             drawLoadedImage(canvas, image, box.bounds, node.style.objectFit)
             canvas.restore()
         }

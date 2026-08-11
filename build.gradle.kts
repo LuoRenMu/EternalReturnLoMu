@@ -36,3 +36,21 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+val commandPluginProjects = listOf(
+    project(":plugins:character"),
+    project(":plugins:player"),
+    project(":plugins:tier"),
+    project(":plugins:news"),
+)
+
+tasks.register<Sync>("stageCommandPlugins") {
+    group = "distribution"
+    description = "Builds standalone hot-reloadable command plugin jars."
+    commandPluginProjects.forEach { pluginProject ->
+        val pluginJar = pluginProject.tasks.named("jar")
+        dependsOn(pluginJar)
+        from(pluginJar)
+    }
+    into(layout.buildDirectory.dir("command-plugins"))
+}

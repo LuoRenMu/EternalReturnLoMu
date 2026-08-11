@@ -37,7 +37,7 @@ open class CharacterStatsCollector {
             stats = statsDF.await()
         }
 
-        val snapshot = stats.characterStatSnapshot
+        val snapshot = stats.requireSnapshot()
         // 当 tierOrCharacter 为角色id时 按角色筛选 否则按评级筛选
         val filterCharacterId = tierOrCharacter.toLongOrNull()
         val flat = snapshot.characterStats
@@ -92,3 +92,6 @@ open class CharacterStatsCollector {
         )
     }
 }
+
+internal fun DakGGCharacterStatsResponse.requireSnapshot(): DakGGCharacterStatsResponse.CharacterStatSnapshot =
+    characterStatSnapshot ?: throw MessageReplyException("数据统计中..")

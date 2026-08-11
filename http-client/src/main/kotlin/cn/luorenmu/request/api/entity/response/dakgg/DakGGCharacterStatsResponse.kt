@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class DakGGCharacterStatsResponse (
-    val characterStatSnapshot: CharacterStatSnapshot,
+    val characterStatSnapshot: CharacterStatSnapshot? = null,
 
 ){
     @Serializable

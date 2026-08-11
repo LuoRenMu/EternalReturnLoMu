@@ -5,13 +5,10 @@ import cn.luorenmu.ConfigFile
 import cn.luorenmu.api.qqBotRouting
 import cn.luorenmu.qqbot.listen.GroupAtMessageCreateListen
 import cn.luorenmu.moduleCore
-import cn.luorenmu.nutdraw.NutDrawBotImageRenderer
-import cn.luorenmu.render.BotImageRenderers
-import io.ktor.http.*
+import cn.luorenmu.plugins.BuiltinCommandPlugins
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import love.forte.simbot.application.listeners
 import love.forte.simbot.common.function.ConfigurerFunction
@@ -31,14 +28,12 @@ import love.forte.simbot.qguild.event.EventIntents
 
 
 
-const val SERVER_PORT = 8080
-
 lateinit var simbotApplication: love.forte.simbot.application.Application
 
 suspend fun main(args: Array<String>) {
-    BotImageRenderers.install(NutDrawBotImageRenderer())
+    BuiltinCommandPlugins.installAll()
     simbotApplication = launchSimbot()
-    embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0") {
+    embeddedServer(Netty, port = ConfigFile.config.port, host = "0.0.0.0") {
         module()
         moduleCore(Adapter.QG_BOT)
     }.start(wait = true)
@@ -55,10 +50,17 @@ suspend fun launchSimbot(): love.forte.simbot.application.Application {
 }
 
 suspend fun love.forte.simbot.application.Application.configure() {
+    val appId = ConfigFile.config.other["app_id"].orEmpty()
+    val secret = ConfigFile.config.other["secret"].orEmpty()
+    if (appId.isBlank() || secret.isBlank()) {
+        println("QQ Guild 凭据未配置，已跳过机器人连接。请访问 / 完成配置后重启。")
+        return
+    }
+
     val botManager = botManagers.firstQQGuildBotManager()
     val bot = botManager.register(
-        appId = ConfigFile.config.other["app_id"]!!,
-        secret = ConfigFile.config.other["secret"]!!,
+        appId = appId,
+        secret = secret,
         token = ConfigFile.config.other["token"] ?: "",
     ) {
         botConfigure = ConfigurerFunction {
@@ -84,10 +86,6 @@ fun Application.module() {
 
 fun Application.configureRouting() {
     routing {
-        get("/") {
-            call.respondText("Biu biu ~", ContentType.Text.Html)
-            return@get
-        }
         qqBotRouting()
     }
 }

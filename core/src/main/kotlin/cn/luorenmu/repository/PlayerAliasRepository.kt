@@ -49,7 +49,7 @@ open class PlayerAliasRepository(private val dbManager: DatabaseManager) {
         block: (Database) -> T,
     ): T {
         if (!dbManager.isEnabled()) {
-            logger.debug { "PostgreSQL 未启用，跳过操作: $operationName" }
+            logger.debug { "${dbManager.displayName()} 未启用，跳过操作: $operationName" }
             return defaultValue
         }
         val database = dbManager.database ?: run {

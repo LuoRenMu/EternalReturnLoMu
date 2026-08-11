@@ -82,3 +82,14 @@ object EternalReturnNews : Table<Nothing>("eternal_return_news") {
     val endDate = varchar("end_date")
     val processedAt = datetime("processed_at")
 }
+
+/** Runtime exceptions captured from command and service boundaries. */
+object ExceptionLogs : Table<Nothing>("exception_logs") {
+    val id = long("id").primaryKey()
+    val source = varchar("source")
+    val exceptionType = varchar("exception_type")
+    val message = text("message")
+    val context = text("context")
+    val stackTrace = text("stack_trace")
+    val occurredAt = datetime("occurred_at")
+}

@@ -78,7 +78,7 @@
     <!-- 根日志记录器 -->
     <logger name="love.forte.simbot.qguild.api" level="INFO"/>
 
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ERROR_FILE"/>
     </root>

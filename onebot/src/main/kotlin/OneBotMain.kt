@@ -5,8 +5,7 @@ import cn.luorenmu.ConfigFile.config
 import cn.luorenmu.command.CommandRouter
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.moduleCore
-import cn.luorenmu.nutdraw.NutDrawBotImageRenderer
-import cn.luorenmu.render.BotImageRenderers
+import cn.luorenmu.plugins.BuiltinCommandPlugins
 import io.ktor.http.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -20,7 +19,6 @@ import love.forte.simbot.event.ChatGroupMessageEvent
 import love.forte.simbot.event.process
 import java.net.ConnectException
 import java.util.*
-import kotlin.system.exitProcess
 
 /**
  *
@@ -31,29 +29,33 @@ import kotlin.system.exitProcess
  */
 
 private val commandRouter = CommandRouter()
-suspend fun main() {
-    BotImageRenderers.install(NutDrawBotImageRenderer())
-    config.other = mapOf(
-            "one_bot_http" to "http://192.168.1.108:9191",
-            "one_bot_ws" to "ws://192.168.1.108:5752"
-        )
-
+suspend fun main(args: Array<String>) {
+    val adminPort = AdminServerPort.resolve(args)
+    BuiltinCommandPlugins.installAll()
     val app = launchSimpleApplication {
         useOneBot11()
     }
     app.configure()
-    embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
-        moduleCore(Adapter.ONE_BOT)
+    println("管理后台地址: http://127.0.0.1:$adminPort/")
+    embeddedServer(Netty, port = adminPort, host = "0.0.0.0") {
+        moduleCore(Adapter.ONE_BOT, adminPort)
     }.start(wait = true)
 }
 
 suspend fun Application.configure() {
+    val httpUrl = config.other["one_bot_http"].orEmpty()
+    val webSocketUrl = config.other["one_bot_ws"].orEmpty()
+    if (httpUrl.isBlank() || webSocketUrl.isBlank()) {
+        println("OneBot 地址未配置，已跳过机器人连接。请访问 / 完成配置后重启。")
+        return
+    }
+
     val botManager = botManagers.firstOneBotBotManager()
     val bot = botManager.register(
         OneBotBotConfiguration().apply {
             botUniqueId = UUID.randomUUID().toString()
-            apiServerHost = Url(config.other["one_bot_http"]!!)
-            eventServerHost = Url(config.other["one_bot_ws"]!!)
+            apiServerHost = Url(httpUrl)
+            eventServerHost = Url(webSocketUrl)
         }
     )
     listeners {
@@ -78,7 +80,6 @@ suspend fun Application.configure() {
         println("================")
         println("请先启动OneBot服务")
         println("================")
-        exitProcess(0)
     }
 
 }

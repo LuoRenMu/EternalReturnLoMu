@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    application
 }
 
 group = "cn.luorenmu"
@@ -7,7 +8,7 @@ version = "1.0-SNAPSHOT"
 
 dependencies {
     implementation(project(":core"))
-    implementation(project(":nutdraw"))
+    implementation(project(":plugins:builtin"))
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.netty)
     implementation(libs.ktor.client.content.negotiation)
@@ -22,6 +23,14 @@ tasks.test {
 }
 kotlin {
     jvmToolchain(17)
+}
+application {
+    mainClass.set("cn.luorenmu.qqbot.MainKt")
+}
+
+tasks.named<JavaExec>("run") {
+    workingDir = rootProject.projectDir
+    systemProperty("lomu.development", "true")
 }
 tasks.jar {
     manifest {

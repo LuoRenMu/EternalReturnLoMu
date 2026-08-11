@@ -12,5 +12,5 @@ import io.ktor.server.routing.*
 fun Route.resourcesRouting() {
     adminRouting()
     staticFiles("/resources", PathUtils.resourcesPathResolve().toFile())
-    staticResources("/static/images", "static/images")
+    staticResources("/static", "static")
 }

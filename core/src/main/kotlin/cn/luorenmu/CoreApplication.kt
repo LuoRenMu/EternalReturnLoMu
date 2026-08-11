@@ -4,27 +4,36 @@ import cn.luorenmu.ai.KoogLLMClient
 import cn.luorenmu.ai.news.NewsClassifier
 import cn.luorenmu.api.resourcesRouting
 import cn.luorenmu.common.util.DatabaseManager
+import cn.luorenmu.common.util.DatabaseBackend
 import cn.luorenmu.common.util.PathUtils
+import cn.luorenmu.command.plugin.CommandPlugins
 import cn.luorenmu.request.ApiKeyConfig
 import cn.luorenmu.repository.NewsRepository
+import cn.luorenmu.repository.ExceptionRepository
 import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.service.CharacterDetailCollector
 import cn.luorenmu.service.CharacterStatsCollector
+import cn.luorenmu.service.AdminConfigService
+import cn.luorenmu.service.AdminDatabaseService
+import cn.luorenmu.service.AdminSystemService
 import cn.luorenmu.service.PlayerRenderAssembler
 import cn.luorenmu.service.TierStatisticsCollector
 import cn.luorenmu.service.ResourcesDownloadService
 import cn.luorenmu.task.EternalReturnNewsTask
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
+import io.ktor.server.freemarker.FreeMarker
 import io.ktor.server.routing.*
+import freemarker.cache.ClassTemplateLoader
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import org.koin.ktor.ext.getKoin
 import org.koin.ktor.plugin.Koin
-import kotlin.system.exitProcess
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 /**
  *
@@ -44,8 +53,10 @@ enum class Adapter {
 lateinit var currentAdapter: Adapter
 
 private val logger = KotlinLogging.logger {}
-fun Application.moduleCore(adapter: Adapter) {
+fun Application.moduleCore(adapter: Adapter, serverPort: Int = ConfigFile.config.port) {
     currentAdapter = adapter
+    SERVER_PORT = serverPort
+    CommandPlugins.initialize(adapter, PathUtils.pathResolve(paths = arrayOf("plugins")))
     ApiKeyConfig.apiKeyMap = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
     configureRouting()
     configureInstall()
@@ -57,9 +68,6 @@ fun Application.moduleCore(adapter: Adapter) {
         .get<EternalReturnNewsTask>()
         .start()
     logger.info { "新闻定时任务已启动" }
-    environment.config.port.let {
-        SERVER_PORT = it
-    }
 }
 
 
@@ -74,15 +82,26 @@ val appModule = module {
     single { NewsClassifier(get()) }
     single { NewsRepository(get()) }
     single { EternalReturnNewsTask(get(), get()) }
-    single { DatabaseManager() }
+    single {
+        DatabaseManager(
+            if (currentAdapter == Adapter.ONE_BOT) DatabaseBackend.SQLITE else DatabaseBackend.POSTGRESQL
+        )
+    }
     single { StatisticsRepository(get()) }
+    single { ExceptionRepository(get()) }
     single { PlayerAliasRepository(get()) }
+    single { AdminConfigService(get()) }
+    single { AdminDatabaseService(get()) }
+    single { AdminSystemService(get()) }
 }
 
 
 fun Application.configureInstall() {
     install(Koin) {
         modules(appModule)
+    }
+    install(FreeMarker) {
+        templateLoader = ClassTemplateLoader(CoreApplication::class.java.classLoader, "templates")
     }
 
 }
@@ -95,26 +114,41 @@ fun Application.configureRouting() {
 
 
 object ConfigFile {
-    val config: BotConfig = initConfig()
+    private val json = Json {
+        prettyPrint = true
+        encodeDefaults = true
+        ignoreUnknownKeys = true
+    }
+
+    @Volatile
+    var config: BotConfig = initConfig()
+        private set
+
     fun initConfig(): BotConfig {
         val file = PathUtils.pathResolve(paths = arrayOf("config.json")).toFile()
         println(file)
         if (!file.exists()) {
-            file.createNewFile()
-            val json = Json {
-                prettyPrint = true
-                encodeDefaults = true
-            }
             val botConfig = BotConfig()
-            file.writeText(
-                json.encodeToString(botConfig)
-            )
-            println("初次运行, 请填写 config.json 文件.(first run, please fill in config.json file)")
-            println(file.toPath())
-            exitProcess(0)
+            file.parentFile?.mkdirs()
+            file.writeText(json.encodeToString(botConfig))
+            println("已创建默认 config.json，请手动编辑后重启服务。")
+            return botConfig
         }
-        val json = Json { ignoreUnknownKeys = true }.decodeFromString<BotConfig>(file.readText())
-        return json
+        return json.decodeFromString<BotConfig>(file.readText())
+    }
+
+    @Synchronized
+    fun save(next: BotConfig) {
+        val file = PathUtils.pathResolve(paths = arrayOf("config.json"))
+        val temporary = file.resolveSibling("${file.fileName}.tmp")
+        Files.writeString(temporary, json.encodeToString(next))
+        runCatching {
+            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+        }.getOrElse {
+            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING)
+        }
+        config = next
+        ApiKeyConfig.apiKeyMap = mutableMapOf("x-api-key" to next.apiKey)
     }
 
 
@@ -122,13 +156,14 @@ object ConfigFile {
     data class BotConfig(
         var port: Int = 8080,
         var apiKey: String = "非必要",
+        var adminToken: String = "",
         var other: Map<String, String> = mapOf(),
         var postgres: PostgresConfig = PostgresConfig(),
         var ai: AIConfig = AIConfig(),
     ) {
         @Serializable
         data class PostgresConfig(
-            var enabled: Boolean = true,
+            var enabled: Boolean = false,
             var host: String = "localhost",
             var port: Int = 5432,
             var database: String = "bot_db",

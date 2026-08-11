@@ -7,7 +7,8 @@ import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.PathUtils
-import cn.luorenmu.render.BotImageRenderers
+import cn.luorenmu.nutdraw.NutDraw
+import cn.luorenmu.command.template.HelpTemplate
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 
@@ -24,7 +25,7 @@ class HelpCommand : CommandEvent {
     override val description = "查询命令列表"
 
     private fun helpData(): CommandHelp {
-        val commandEvent = COMMANDS.values.map {
+        val commandEvent = COMMANDS.values.distinct().map {
             CommandHelp.CommandHelpItem(
                 name = it.command.name,
                 description = it.commandEvent.description,
@@ -40,7 +41,7 @@ class HelpCommand : CommandEvent {
         command: Map<String, String>,
     ): Message {
         val outputPath = PathUtils.resourcesPathResolve("render", "help.png")
-        BotImageRenderers.get().renderHelp(helpData(), outputPath)
+        NutDraw.render(HelpTemplate(), helpData(), outputPath)
         return OfflineImage.fileOfflineImage(outputPath.toString())
     }
 
