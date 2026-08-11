@@ -75,7 +75,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                     text(data.data.rpName, textStyle(12f, ink, 20f).copy(textAlign = TextAlign.CENTER))
                 }
             }
-            element(CssStyle(direction = FlexDirection.ROW, wrap = FlexWrap.WRAP, width = percent(100), height = px(178), padding = Edges(10f), gap = 5f, justifyContent = JustifyContent.CENTER)) {
+            element(CssStyle(direction = FlexDirection.ROW, wrap = FlexWrap.WRAP, width = percent(100), height = px(178), padding = Edges(10f), gap = 5f, justifyContent = JustifyContent.CENTER), id = "rank_overview") {
                 val records = listOf("平均TK" to data.data.avgTk, "TOP 1" to data.data.top1, "游戏场次" to data.data.play,
                     "平均击杀" to data.data.avgKill, "TOP 2" to data.data.top2, "平均伤害" to data.data.avgDmg,
                     "平均助攻" to data.data.avgAssists, "TOP 3" to data.data.top3, "平均排名" to data.data.avgRank,
@@ -83,7 +83,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                 records.forEach { (label, value) -> element(CssStyle(width = px(105), height = px(40), padding = Edges(3f), background = Color.makeRGB(240,233,233), borderRadius = 5f, alignItems = AlignItems.CENTER)) { text(label, textStyle(11f, ink, 16f).copy(textAlign = TextAlign.CENTER)); text(value, textStyle(13f, orange, 18f).copy(textAlign = TextAlign.CENTER)) } }
             }
             data.mmrStats?.let { mmr ->
-                element(CssStyle(width = percent(100), height = px(115), padding = Edges(12f), border = Border(1f, line)), id = "rank_stats") {
+                element(CssStyle(width = percent(100), height = px(115), margin = Edges(top = 10f), padding = Edges(12f), border = Border(1f, line)), id = "rank_stats") {
                     lineChart(mmr.mmrDate, mmr.mmr, Color.makeRGB(202,164,40), CssStyle(width = percent(100), height = percent(100)), id = "rank_canvas")
                 }
             }
@@ -91,6 +91,8 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     }
 
     private fun ElementBuilder.matchCard(match: EternalReturnPlayRender.EternalReturnPlayerMatchData, base: String) {
+        val isRank = match.type == "排位"
+        val isCobalt = match.type == "钴协议"
         val accent = when (match.rank) {
             1 -> Color.makeRGB(17,178,136)
             2 -> Color.makeRGB(32,122,199)
@@ -126,8 +128,11 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
             element(CssStyle(direction = FlexDirection.ROW, width = px(350), height = px(75), justifyContent = JustifyContent.SPACE_BETWEEN, alignItems = AlignItems.CENTER)) {
                 metric("${match.tk} / ${match.kill} / ${match.assist}", "TK / K / A")
                 metric(match.dmg, "DMG")
-                metric(if (match.type == "排位") "${match.rp} (${if (match.rpChange >= 0) "+" else ""}${match.rpChange})" else String.format("%.2f", match.kda), if (match.type == "排位") "RP" else "KDA")
-                metric(match.routeId, "路径ID")
+                when {
+                    isRank -> metric("${match.rp} (${if (match.rpChange >= 0) "+" else ""}${match.rpChange})", "RP")
+                    !isCobalt -> metric(String.format("%.2f", match.kda), "KDA")
+                }
+                if (isCobalt) infusionMetric(match, base) else metric(match.routeId, "路径ID")
             }
             element(CssStyle(direction = FlexDirection.ROW, wrap = FlexWrap.WRAP, width = px(128), height = px(55), gap = 2f, justifyContent = JustifyContent.CENTER)) {
                 match.equips.take(5).forEach { equip ->
@@ -158,6 +163,23 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
 
     private fun ElementBuilder.summaryStat(label: String, value: Any?) { element(CssStyle(width = px(140), height = px(55), alignItems = AlignItems.CENTER)) { text(label, textStyle(14f, muted, 22f).copy(textAlign = TextAlign.CENTER)); text(value, textStyle(20f, ink, 28f).copy(textAlign = TextAlign.CENTER)) } }
     private fun ElementBuilder.metric(value: Any?, label: String) { element(CssStyle(width = px(72), height = px(48), alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER)) { text(value, recordTextStyle(14f, ink, 22f).copy(textAlign = TextAlign.CENTER)); text(label, recordTextStyle(12f, muted, 18f).copy(textAlign = TextAlign.CENTER)) } }
+    private fun ElementBuilder.infusionMetric(match: EternalReturnPlayRender.EternalReturnPlayerMatchData, base: String) {
+        element(CssStyle(width = px(72), height = px(55), alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER), id = "infusions-${match.gameId}") {
+            element(CssStyle(direction = FlexDirection.ROW, wrap = FlexWrap.WRAP, width = px(60), height = px(38), gap = 2f, justifyContent = JustifyContent.CENTER)) {
+                match.infusions.orEmpty().take(3).forEachIndexed { index, infusion ->
+                    element(CssStyle(width = px(18), height = px(18), background = Color.makeRGB(240, 241, 246), borderRadius = 3f), id = "infusion-${match.gameId}-$index") {
+                        if (infusion.imageUrl.isNotBlank()) {
+                            image(infusion.imageUrl.resolve(base), CssStyle(width = percent(100), height = percent(100), borderRadius = 3f, objectFit = ObjectFit.COVER))
+                        }
+                        if (infusion.count > 1) {
+                            text(infusion.count, CssStyle(position = Position.ABSOLUTE, right = 0f, bottom = 0f, width = px(10), height = px(10), fontSize = 8f, fontWeight = 700, color = white, background = Color.makeARGB(190, 0, 0, 0), textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER))
+                        }
+                    }
+                }
+            }
+            text("灌注", recordTextStyle(12f, muted, 17f).copy(textAlign = TextAlign.CENTER))
+        }
+    }
     private fun panel(height: Float, width: Float) = CssStyle(width = px(width), height = px(height), background = white, border = Border(1f, line), borderRadius = 10f, gap = 0f)
     private fun textStyle(size: Float, color: Int, height: Float) = CssStyle(width = percent(100), height = px(height), fontSize = size, color = color)
     private fun recordTextStyle(size: Float, color: Int, height: Float) = textStyle(size, color, height).copy(verticalAlign = VerticalAlign.CENTER)

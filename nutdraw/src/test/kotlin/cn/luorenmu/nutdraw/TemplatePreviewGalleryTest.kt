@@ -99,15 +99,33 @@ class TemplatePreviewGalleryTest {
         matches = listOf(
             match(1, "阿雅", 12, 6, 8, 31540, 28),
             match(3, "妮琪", 8, 3, 11, 24210, 12),
-            match(7, "艾玛", 5, 2, 6, 18760, -9),
+            match(
+                2, "艾玛", 5, 2, 6, 18760, -9, type = "钴协议",
+                infusions = listOf(
+                    EternalReturnPlayRender.EternalReturnPlayerMatchData.EternalReturnPlayerInfusion("/resources/images/trait/skill/7000201.png", 3),
+                    EternalReturnPlayRender.EternalReturnPlayerMatchData.EternalReturnPlayerInfusion("/resources/images/trait/skill/7010501.png", 2),
+                    EternalReturnPlayRender.EternalReturnPlayerMatchData.EternalReturnPlayerInfusion("/resources/images/trait/skill/7310401.png", 1),
+                ),
+            ),
         ),
     )
 
-    private fun match(rank: Int, character: String, tk: Int, kill: Int, assist: Int, damage: Long, change: Int) =
+    private fun match(
+        rank: Int,
+        character: String,
+        tk: Int,
+        kill: Int,
+        assist: Int,
+        damage: Long,
+        change: Int,
+        type: String = "排位",
+        infusions: List<EternalReturnPlayRender.EternalReturnPlayerMatchData.EternalReturnPlayerInfusion>? = null,
+    ) =
         EternalReturnPlayRender.EternalReturnPlayerMatchData(
-            rank = rank, characterName = character, type = "排位", dateMonth = "8月10日", dateHour = "20:30",
+            rank = rank, characterName = character, type = type, dateMonth = "8月10日", dateHour = "20:30",
             tk = tk, kill = kill, assist = assist, dmg = damage, rp = 6800, rpChange = change,
             equips = MutableList(5) { EternalReturnEquip("", "") }, gameId = "123456", version = "1.42.0",
+            infusions = infusions,
         )
 
     private fun preview(name: String) = outputDir.resolve(name)
