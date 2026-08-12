@@ -1,8 +1,8 @@
 package cn.luorenmu.plugins
 
 import cn.luorenmu.request.entity.module.DakGGServerName
-import cn.luorenmu.service.CharacterStatsCollector
-import cn.luorenmu.service.TierStatisticsCollector
+import cn.luorenmu.plugins.character.CharacterStatsCollector
+import cn.luorenmu.plugins.tier.TierStatisticsCollector
 import cn.luorenmu.nutdraw.NutDraw
 import cn.luorenmu.plugins.character.CharacterStatsTemplate
 import cn.luorenmu.plugins.tier.TierStatisticsTemplate

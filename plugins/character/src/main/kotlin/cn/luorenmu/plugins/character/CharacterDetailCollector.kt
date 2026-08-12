@@ -1,4 +1,4 @@
-package cn.luorenmu.service
+package cn.luorenmu.plugins.character
 
 import cn.luorenmu.common.extensions.toPinYin
 import cn.luorenmu.exception.MessageReplyException
@@ -18,6 +18,7 @@ import cn.luorenmu.request.api.entity.response.dakgg.DakGGWeaponResponse
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGRank
 import cn.luorenmu.service.entity.CharacterDetail
+import cn.luorenmu.service.ResourcesDownloadService
 import kotlinx.coroutines.coroutineScope
 
 /**

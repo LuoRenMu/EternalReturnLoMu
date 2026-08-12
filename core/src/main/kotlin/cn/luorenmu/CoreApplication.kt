@@ -12,13 +12,10 @@ import cn.luorenmu.repository.NewsRepository
 import cn.luorenmu.repository.ExceptionRepository
 import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.StatisticsRepository
-import cn.luorenmu.service.CharacterDetailCollector
-import cn.luorenmu.service.CharacterStatsCollector
 import cn.luorenmu.service.AdminConfigService
 import cn.luorenmu.service.AdminDatabaseService
 import cn.luorenmu.service.AdminSystemService
 import cn.luorenmu.service.PlayerRenderAssembler
-import cn.luorenmu.service.TierStatisticsCollector
 import cn.luorenmu.service.ResourcesDownloadService
 import cn.luorenmu.task.EternalReturnNewsTask
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -75,9 +72,6 @@ val appModule = module {
 
     single { ResourcesDownloadService() }
     single { PlayerRenderAssembler() }
-    single { CharacterStatsCollector() }
-    single { CharacterDetailCollector(get()) }
-    single { TierStatisticsCollector() }
     single { KoogLLMClient(AIConfig(ConfigFile.config.ai.apiKey, ConfigFile.config.ai.model, ConfigFile.config.ai.baseUrl)) }
     single { NewsClassifier(get()) }
     single { NewsRepository(get()) }

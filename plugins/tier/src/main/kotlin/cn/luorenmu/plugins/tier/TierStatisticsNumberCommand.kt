@@ -11,7 +11,6 @@ import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGServerName
 import cn.luorenmu.request.entity.module.DakGGTeamMode
-import cn.luorenmu.service.TierStatisticsCollector
 import cn.luorenmu.service.ResourcesDownloadService
 import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.Message
@@ -34,9 +33,7 @@ class TierStatisticsNumberCommand : CommandEvent {
     override val description = "永恒/半身分段统计"
 
     private val resourcesDownloadService: ResourcesDownloadService by inject(ResourcesDownloadService::class.java)
-    private val tierStatisticsCollector: TierStatisticsCollector by inject(
-        TierStatisticsCollector::class.java
-    )
+    private val tierStatisticsCollector = TierStatisticsCollector()
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         val serverName = command["server"]?.let { DakGGServerName.convert(it) } ?: DakGGServerName.Asia

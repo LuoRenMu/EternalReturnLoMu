@@ -12,6 +12,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.io.InputStream
 import java.util.Properties
+import java.util.ServiceLoader
 import java.util.concurrent.atomic.AtomicReference
 import java.util.jar.JarFile
 import kotlin.io.path.extension
@@ -27,12 +28,14 @@ object CommandPlugins {
     private val disabledRegistry = AtomicReference<Map<String, DisabledCommand>>(emptyMap())
     private val slots = linkedMapOf<String, PluginSlot>()
     private val builtinFactories = linkedMapOf<String, CommandPluginFactory>()
+    private var builtinsConfigured = false
     private var adapter: Adapter? = null
     private var pluginDirectory: Path? = null
     private val savedStates = linkedMapOf<String, SavedPluginState>()
 
     @Synchronized
     fun configureBuiltins(factories: List<CommandPluginFactory>) {
+        builtinsConfigured = true
         builtinFactories.clear()
         (listOf(CommandPluginFactory(::CoreCommandPlugin)) + factories).forEach { factory ->
             val plugin = factory.create()
@@ -46,6 +49,7 @@ object CommandPlugins {
         closeSlots()
         this.adapter = adapter
         pluginDirectory = directory.toAbsolutePath().normalize()
+        if (!builtinsConfigured) discoverBuiltins()
         builtinFactories.putIfAbsent(CORE_PLUGIN_ID, CommandPluginFactory(::CoreCommandPlugin))
         Files.createDirectories(pluginDirectory)
         Files.createDirectories(cacheDirectory())
@@ -66,6 +70,23 @@ object CommandPlugins {
         }
         publish()
         log.info { "Loaded command plugins: ${slots.keys}" }
+    }
+
+    /** Discovers command plugins contributed by jars on the application classpath. */
+    private fun discoverBuiltins() {
+        builtinFactories.clear()
+        builtinFactories[CORE_PLUGIN_ID] = CommandPluginFactory(::CoreCommandPlugin)
+        ServiceLoader.load(CommandPlugin::class.java, CommandPlugin::class.java.classLoader).forEach { plugin ->
+            require(plugin.id.isValidPluginId()) { "Invalid plugin id: ${plugin.id}" }
+            require(plugin.id != CORE_PLUGIN_ID) { "Classpath plugin cannot replace core" }
+            val pluginClass = plugin.javaClass
+            val factory = CommandPluginFactory {
+                pluginClass.getDeclaredConstructor().newInstance()
+            }
+            require(builtinFactories.put(plugin.id, factory) == null) {
+                "Duplicate plugin id discovered on classpath: ${plugin.id}"
+            }
+        }
     }
 
     fun commands(): Map<String, CommandInfo> = registry.get()

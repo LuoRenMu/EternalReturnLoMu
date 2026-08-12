@@ -37,13 +37,9 @@ tasks.test {
     useJUnitPlatform()
 }
 
-val commandPluginProjects = listOf(
-    project(":plugins:character"),
-    project(":plugins:player"),
-    project(":plugins:tier"),
-    project(":plugins:news"),
-    project(":plugins:query-statistics"),
-)
+val commandPluginProjects = subprojects.filter {
+    it.path.startsWith(":plugins:") && it.path != ":plugins:builtin"
+}
 
 tasks.register<Sync>("stageCommandPlugins") {
     group = "distribution"

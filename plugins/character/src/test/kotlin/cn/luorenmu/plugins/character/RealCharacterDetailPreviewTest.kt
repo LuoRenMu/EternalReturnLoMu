@@ -1,6 +1,5 @@
 package cn.luorenmu.plugins.character
 
-import cn.luorenmu.service.CharacterDetailCollector
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Files
 import java.nio.file.Path

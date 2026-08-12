@@ -8,12 +8,10 @@ import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.nutdraw.NutDraw
 import cn.luorenmu.request.entity.module.DakGGRank
-import cn.luorenmu.service.CharacterDetailCollector
 import io.github.oshai.kotlinlogging.KotlinLogging
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import love.forte.simbot.message.toText
-import org.koin.java.KoinJavaComponent.inject
 
 /**
  * 角色详情分析命令。
@@ -35,7 +33,7 @@ class CharacterDetailCommand : CommandEvent {
     override val description = "查询角色详情分析(武器流派/技能加点/出装/潜能)"
 
     private val log = KotlinLogging.logger {}
-    private val characterDetailCollector: CharacterDetailCollector by inject(CharacterDetailCollector::class.java)
+    private val characterDetailCollector = CharacterDetailCollector()
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         val query = command["character"]?.trim() ?: return "请指定角色名(支持中文/拼音)或角色ID".toText()

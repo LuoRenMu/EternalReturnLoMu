@@ -5,7 +5,6 @@ import cn.luorenmu.ConfigFile
 import cn.luorenmu.api.qqBotRouting
 import cn.luorenmu.qqbot.listen.GroupAtMessageCreateListen
 import cn.luorenmu.moduleCore
-import cn.luorenmu.plugins.BuiltinCommandPlugins
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -31,7 +30,6 @@ import love.forte.simbot.qguild.event.EventIntents
 lateinit var simbotApplication: love.forte.simbot.application.Application
 
 suspend fun main(args: Array<String>) {
-    BuiltinCommandPlugins.installAll()
     simbotApplication = launchSimbot()
     embeddedServer(Netty, port = ConfigFile.config.port, host = "0.0.0.0") {
         module()

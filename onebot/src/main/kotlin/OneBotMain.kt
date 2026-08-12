@@ -5,7 +5,6 @@ import cn.luorenmu.ConfigFile.config
 import cn.luorenmu.command.CommandRouter
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.moduleCore
-import cn.luorenmu.plugins.BuiltinCommandPlugins
 import io.ktor.http.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -31,7 +30,6 @@ import java.util.*
 private val commandRouter = CommandRouter()
 suspend fun main(args: Array<String>) {
     val adminPort = AdminServerPort.resolve(args)
-    BuiltinCommandPlugins.installAll()
     val app = launchSimpleApplication {
         useOneBot11()
     }

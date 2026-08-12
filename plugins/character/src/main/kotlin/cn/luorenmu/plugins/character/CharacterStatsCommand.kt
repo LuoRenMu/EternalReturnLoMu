@@ -13,7 +13,6 @@ import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGRank
 import cn.luorenmu.request.entity.module.DakGGTeamMode
 import cn.luorenmu.request.entity.module.MatchingMode
-import cn.luorenmu.service.CharacterStatsCollector
 import cn.luorenmu.service.ResourcesDownloadService
 import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.Message
@@ -49,7 +48,7 @@ class CharacterStatsCommand : CommandEvent {
     override val description =
         "角色数据统计评分排行(因全部图片过大而作筛选 默认s) 如果要直接查询指定段位 需要传递前者参数"
 
-    private val characterStatsCollector: CharacterStatsCollector by inject(CharacterStatsCollector::class.java)
+    private val characterStatsCollector = CharacterStatsCollector()
     private val resourcesDownloadService: ResourcesDownloadService by inject(ResourcesDownloadService::class.java)
 
     private val tiers = listOf("s", "a", "b", "c", "d")

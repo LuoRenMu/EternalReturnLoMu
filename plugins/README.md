@@ -10,4 +10,9 @@ Artifacts are written to `build/command-plugins`. Copy a jar into the runtime `p
 
 Plugin ids currently available: `character`, `player`, `tier`, `news`, and `query-statistics`. The `core` plugin contains `help` and cannot be disabled or replaced.
 
+Classpath plugins are discovered automatically with `ServiceLoader`. A plugin module contributes itself by adding
+`src/main/resources/META-INF/services/cn.luorenmu.command.plugin.CommandPlugin`, containing the fully qualified
+plugin implementation class name. No central Kotlin registry needs updating. Projects below `plugins:*` are also
+automatically included by the builtin aggregator and `stageCommandPlugins` task (except `plugins:builtin`).
+
 The admin plugin page can upload a jar directly, enable/disable it, reload it, and configure the reply returned when one of its disabled commands is called. Enabled state and disabled replies are persisted in `plugins/plugin-state.properties`.

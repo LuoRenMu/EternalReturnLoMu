@@ -1,4 +1,4 @@
-package cn.luorenmu.service
+package cn.luorenmu.plugins.tier
 
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
