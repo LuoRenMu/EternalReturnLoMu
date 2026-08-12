@@ -42,6 +42,7 @@ val commandPluginProjects = listOf(
     project(":plugins:player"),
     project(":plugins:tier"),
     project(":plugins:news"),
+    project(":plugins:query-statistics"),
 )
 
 tasks.register<Sync>("stageCommandPlugins") {

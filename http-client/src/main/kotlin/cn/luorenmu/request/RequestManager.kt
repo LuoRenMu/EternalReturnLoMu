@@ -27,10 +27,12 @@ import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import java.io.FileOutputStream
 import java.net.ConnectException
 import java.net.SocketException
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.util.UUID
 
 /**
  *
@@ -181,30 +183,41 @@ object RequestManager {
     }
 
     suspend fun callStream(api: PakeResourceApi, path: Path, maxRetries: Int = 3) {
-        // only first check io
-        if (ResourceCheckUtil.checkResource(path)) {
-            return
-        }
-        val file = path.toFile()
-        file.parentFile?.let { if (!it.exists()) it.mkdirs() }
-        var lastException: Exception? = null
-        repeat(maxRetries) { attempt ->
+        val target = path.toAbsolutePath().normalize()
+        if (ResourceCheckUtil.checkResource(target)) return
+
+        withKeyLock("resource:$target") {
+            if (ResourceCheckUtil.checkResource(target)) return@withKeyLock
+            Files.createDirectories(target.parent)
+            val temporary = target.resolveSibling(".${target.fileName}.${UUID.randomUUID()}.part")
+            var lastException: Exception? = null
             try {
-                val readBytes = call(api).readBytes()
-                withContext(Dispatchers.IO) {
-                    FileOutputStream(file).use { it.write(readBytes) }
+                repeat(maxRetries) { attempt ->
+                    try {
+                        val readBytes = call(api).readBytes()
+                        require(readBytes.isNotEmpty()) { "Downloaded resource is empty: $target" }
+                        withContext(Dispatchers.IO) {
+                            Files.write(temporary, readBytes)
+                            try {
+                                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+                            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+                                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING)
+                            }
+                        }
+                        ResourceCheckUtil.markResourceValid(target)
+                        return@withKeyLock
+                    } catch (e: Exception) {
+                        lastException = e
+                        Files.deleteIfExists(temporary)
+                        log.warn { "callStream retry ${attempt + 1}/$maxRetries: $target => $e" }
+                    }
                 }
-                return
-            } catch (e: Exception) {
-                lastException = e
-                log.warn { "callStream retry ${attempt + 1}/$maxRetries: $path => $e" }
-                if (file.exists() && file.length() == 0L) {
-                    file.delete()
-                    ResourceCheckUtil.removeResource(path)
-                }
+                ResourceCheckUtil.markResourceInvalid(target)
+                log.error(lastException) { "Failed to download file: $target from ${api.baseUrl}${api.url}" }
+                throw checkNotNull(lastException)
+            } finally {
+                Files.deleteIfExists(temporary)
             }
         }
-        log.error(lastException) { "Failed to download file: $path from ${api.baseUrl}${api.url}" }
-        throw lastException!!
     }
 }

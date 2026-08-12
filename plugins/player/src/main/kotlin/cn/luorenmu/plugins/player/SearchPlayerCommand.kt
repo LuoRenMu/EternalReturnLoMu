@@ -92,11 +92,17 @@ class SearchPlayerCommand : CommandEvent {
         val mode = MatchingMode.convert(command["mode"])
         val cacheKey = "$actualNickname:${mode.value}"
 
-        cache.getIfPresent(cacheKey)?.let { return OfflineImage.fileOfflineImage(it) }
+        cache.getIfPresent(cacheKey)?.let {
+            statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
+            return OfflineImage.fileOfflineImage(it)
+        }
 
         val mutex = keyMutexes.computeIfAbsent(cacheKey) { Mutex() }
         return mutex.withLock {
-            cache.getIfPresent(cacheKey)?.let { return@withLock OfflineImage.fileOfflineImage(it) }
+            cache.getIfPresent(cacheKey)?.let {
+                statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
+                return@withLock OfflineImage.fileOfflineImage(it)
+            }
             val preheated = preheatRequest(actualNickname)
             val outputPath = PathUtils.resourcesPathResolve("render", "player", "$actualNickname-${mode.value}.png")
             NutDraw.render(
@@ -106,7 +112,7 @@ class SearchPlayerCommand : CommandEvent {
             )
             cache.put(cacheKey, outputPath.toString())
             keyMutexes.remove(cacheKey)
-            statisticsService.incrementNicknameQueryCount(actualNickname)
+            statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
             OfflineImage.fileOfflineImage(outputPath.toString())
         }
     }
@@ -142,7 +148,12 @@ class SearchPlayerCommand : CommandEvent {
             val infusions = infusionsDF.await()
 
             ioLaunch {
-                resourcesDownloadService.gameDataDownload(games.matches)
+                resourcesDownloadService.gameDataDownload(
+                    games = games.matches,
+                    characterResponse = characters,
+                    tiers = tiers,
+                    infusionsResponse = infusions,
+                )
                 log.debug { "gameDataDownload 预备请求数据已完成" }
             }
             ioLaunch {

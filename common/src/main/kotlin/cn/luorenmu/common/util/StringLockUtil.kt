@@ -3,6 +3,7 @@ package cn.luorenmu.common.util
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  *
@@ -10,16 +11,18 @@ import java.util.concurrent.ConcurrentHashMap
  * Date 2025/11/23 23:17
  */
 object StringLockUtil {
-    private val lockMap = ConcurrentHashMap<String, Mutex>()
+    private data class LockEntry(val mutex: Mutex = Mutex(), val users: AtomicInteger = AtomicInteger())
+
+    private val lockMap = ConcurrentHashMap<String, LockEntry>()
 
     suspend fun <T> withKeyLock(key: String, block: suspend () -> T): T {
-        val mutex = lockMap.compute(key) { _, v -> v ?: Mutex() }!!
+        val entry = lockMap.compute(key) { _, current ->
+            (current ?: LockEntry()).also { it.users.incrementAndGet() }
+        }!!
         return try {
-            mutex.withLock {
-                block()
-            }
+            entry.mutex.withLock { block() }
         } finally {
-            lockMap.remove(key, mutex)
+            if (entry.users.decrementAndGet() == 0) lockMap.remove(key, entry)
         }
     }
 }

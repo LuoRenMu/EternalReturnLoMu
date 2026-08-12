@@ -37,6 +37,16 @@ object NicknameQueries : Table<Nothing>("nickname_queries") {
     val lastQueryAt = datetime("last_query_at")
 }
 
+/** Aggregated successful player queries made by each bot user. */
+object PlayerQueryHistory : Table<Nothing>("player_query_history") {
+    val id = long("id").primaryKey()
+    val senderId = varchar("sender_id")
+    val nickname = varchar("nickname")
+    val queryCount = long("query_count")
+    val firstQueryAt = datetime("first_query_at")
+    val lastQueryAt = datetime("last_query_at")
+}
+
 /**
  * Ktorm 表定义 —— 玩家别名
  *

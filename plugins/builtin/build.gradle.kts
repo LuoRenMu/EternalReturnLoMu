@@ -3,6 +3,7 @@ dependencies {
     api(project(":core"))
     implementation(project(":plugins:character")); implementation(project(":plugins:player"))
     implementation(project(":plugins:tier")); implementation(project(":plugins:news"))
+    implementation(project(":plugins:query-statistics"))
     testImplementation(project(":http-client"))
     testImplementation(project(":nutdraw"))
     testImplementation(kotlin("test"))

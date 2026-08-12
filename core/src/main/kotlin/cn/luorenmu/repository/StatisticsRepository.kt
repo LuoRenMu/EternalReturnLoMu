@@ -3,11 +3,14 @@ package cn.luorenmu.repository
 import cn.luorenmu.common.util.DatabaseManager
 import cn.luorenmu.repository.entity.CommandUsageRecord
 import cn.luorenmu.repository.entity.NicknameQueryRecord
+import cn.luorenmu.repository.entity.PlayerQueryHistoryRecord
 import cn.luorenmu.repository.table.CommandUsages
 import cn.luorenmu.repository.table.NicknameQueries
+import cn.luorenmu.repository.table.PlayerQueryHistory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.ktorm.database.Database
 import org.ktorm.dsl.desc
+import org.ktorm.dsl.and
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.from
 import org.ktorm.dsl.insert
@@ -170,6 +173,73 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
             }
 
             logger.debug { "更新昵称查询计数: $nickname" }
+        }
+    }
+
+    /** Records one successful player lookup globally and for the querying user. */
+    open fun recordPlayerQuery(nickname: String, senderId: String) {
+        require(nickname.isNotBlank()) { "nickname must not be blank" }
+        require(senderId.isNotBlank()) { "senderId must not be blank" }
+
+        incrementNicknameQueryCount(nickname)
+        withDatabase(operationName = "recordPlayerQuery", defaultValue = Unit) { database ->
+            val now = LocalDateTime.now()
+            val updatedRows = database.update(PlayerQueryHistory) {
+                set(it.queryCount, it.queryCount + 1)
+                set(it.lastQueryAt, now)
+                where { (it.senderId eq senderId) and (it.nickname eq nickname) }
+            }
+            if (updatedRows == 0) {
+                try {
+                    database.insert(PlayerQueryHistory) {
+                        set(it.senderId, senderId)
+                        set(it.nickname, nickname)
+                        set(it.queryCount, 1)
+                        set(it.firstQueryAt, now)
+                        set(it.lastQueryAt, now)
+                    }
+                } catch (_: Exception) {
+                    database.update(PlayerQueryHistory) {
+                        set(it.queryCount, it.queryCount + 1)
+                        set(it.lastQueryAt, now)
+                        where { (it.senderId eq senderId) and (it.nickname eq nickname) }
+                    }
+                }
+            }
+        }
+    }
+
+    /** Most recently queried players for one bot user. */
+    open fun getPlayerQueryHistory(senderId: String, limit: Int = 20): List<PlayerQueryHistoryRecord> {
+        require(senderId.isNotBlank()) { "senderId must not be blank" }
+        require(limit > 0) { "limit must be greater than zero" }
+
+        return withDatabase(operationName = "getPlayerQueryHistory", defaultValue = emptyList()) { database ->
+            database.from(PlayerQueryHistory)
+                .select()
+                .where { PlayerQueryHistory.senderId eq senderId }
+                .orderBy(PlayerQueryHistory.lastQueryAt.desc())
+                .limit(limit)
+                .map { row ->
+                    PlayerQueryHistoryRecord(
+                        nickname = row[PlayerQueryHistory.nickname] ?: "",
+                        queryCount = row[PlayerQueryHistory.queryCount] ?: 0,
+                        firstQueryAt = row[PlayerQueryHistory.firstQueryAt] ?: LocalDateTime.now(),
+                        lastQueryAt = row[PlayerQueryHistory.lastQueryAt] ?: LocalDateTime.now(),
+                    )
+                }
+        }
+    }
+
+    open fun getPlayerQueryCount(senderId: String, nickname: String): Long {
+        require(senderId.isNotBlank()) { "senderId must not be blank" }
+        require(nickname.isNotBlank()) { "nickname must not be blank" }
+        return withDatabase(operationName = "getPlayerQueryCount", defaultValue = 0L) { database ->
+            database.from(PlayerQueryHistory)
+                .select(PlayerQueryHistory.queryCount)
+                .where { (PlayerQueryHistory.senderId eq senderId) and (PlayerQueryHistory.nickname eq nickname) }
+                .map { row -> row[PlayerQueryHistory.queryCount] ?: 0L }
+                .firstOrNull() ?: 0L
         }
     }
 

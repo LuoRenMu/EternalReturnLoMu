@@ -15,6 +15,16 @@ CREATE TABLE IF NOT EXISTS nickname_queries (
     last_query_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS player_query_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_id TEXT NOT NULL,
+    nickname TEXT NOT NULL,
+    query_count INTEGER NOT NULL DEFAULT 0,
+    first_query_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_query_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(sender_id, nickname)
+);
+
 CREATE TABLE IF NOT EXISTS player_aliases (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     alias_name TEXT NOT NULL,

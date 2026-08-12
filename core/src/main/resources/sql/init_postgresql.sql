@@ -15,6 +15,16 @@ CREATE TABLE IF NOT EXISTS nickname_queries (
     last_query_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS player_query_history (
+    id BIGSERIAL PRIMARY KEY,
+    sender_id VARCHAR(255) NOT NULL,
+    nickname VARCHAR(255) NOT NULL,
+    query_count BIGINT NOT NULL DEFAULT 0,
+    first_query_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_query_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(sender_id, nickname)
+);
+
 CREATE TABLE IF NOT EXISTS player_aliases (
     id BIGSERIAL PRIMARY KEY,
     alias_name VARCHAR(255) NOT NULL,
