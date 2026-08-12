@@ -5,6 +5,7 @@ import cn.luorenmu.ConfigFile
 import cn.luorenmu.api.qqBotRouting
 import cn.luorenmu.qqbot.listen.GroupAtMessageCreateListen
 import cn.luorenmu.moduleCore
+import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -64,10 +65,17 @@ suspend fun love.forte.simbot.application.Application.configure() {
         botConfigure = ConfigurerFunction {
             intents += EventIntents.GroupAndC2CEvent.intents
             disableWs = true
+            apiClientAdditionalConfiguration {
+                install(HttpRequestRetry) {
+                    maxRetries = 3
+                    retryOnServerErrors()
+                }
+            }
         }
         cacheConfig = null
     }
     bot.start()
+
     val groupAtMessageCreateListen = GroupAtMessageCreateListen()
     listeners {
         listen<ChatGroupMessageEvent> { event ->

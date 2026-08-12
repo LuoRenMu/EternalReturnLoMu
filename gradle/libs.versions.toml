@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.3.21"
 simbot-core = "4.14.0"
-simbot-qq = "4.2.2"
+simbot-qq = "4.5.0"
 simbot-onebot = "1.9.0"
 ktor = "2.3.12"
 koin = "3.5.5"
