@@ -33,6 +33,7 @@ jobs:
           use-caches: true
           post-pr-comment: true
           use-annotations: true
+          github-token: ${{ secrets.LOMU }}
           # Upload Qodana results (SARIF, other artifacts, logs) as an artifact to the job
           upload-result: false
           # quick-fixes available in Ultimate and Ultimate Plus plans
