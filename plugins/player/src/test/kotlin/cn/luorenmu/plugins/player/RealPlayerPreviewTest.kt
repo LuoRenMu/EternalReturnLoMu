@@ -20,14 +20,18 @@ class RealPlayerPreviewTest {
         val queryStarted = System.nanoTime()
         val renderData = coroutineScope {
             val sync = async { EternalReturnDakGGApi.User.Sync(nickname).execute() }
-            val games = async { EternalReturnDakGGApi.Game.GetGame(nickname).execute() }
-            val profile = async { EternalReturnDakGGApi.User.GetProfile(nickname).execute() }
+            val profile = EternalReturnDakGGApi.User.GetProfile(nickname).execute()
+            val latestSeasonId = profile.playerSeasons.first().seasonId
+            val seasons = async { EternalReturnDakGGApi.Data.GetGameDataBySeason.execute() }
+            val games = async {
+                EternalReturnDakGGApi.Game.GetGame(nickname, seasons.await().getSeasonById(latestSeasonId).key).execute()
+            }
             val characters = async { EternalReturnDakGGApi.Data.GetCharacters.execute() }
             val tiers = async { EternalReturnDakGGApi.Data.GetTiers.execute() }
             val season = async { EternalReturnDakGGApi.Data.GetCurrentSeason.execute() }
             val infusions = async { EternalReturnDakGGApi.Data.GetInfusions.execute() }
             PlayerRenderAssembler().assemble(
-                profile.await(), games.await().matches, characters.await(), tiers.await(), season.await(), infusions.await(), MatchingMode.Rank, nickname,
+                profile, games.await().matches, characters.await(), tiers.await(), season.await(), infusions.await(), MatchingMode.Rank, nickname,
             )
                 .also { sync.cancel() }
         }

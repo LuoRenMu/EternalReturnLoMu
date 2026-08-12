@@ -7,6 +7,7 @@ import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.NickNameUtil
 import cn.luorenmu.common.util.PathUtils
+import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.nutdraw.NutDraw
 import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.StatisticsRepository
@@ -126,21 +127,27 @@ class SearchPlayerCommand : CommandEvent {
     )
 
     private suspend fun preheatRequest(nickname: String): PreheatedData {
+        val profile = EternalReturnDakGGApi.User.GetProfile(nickname).execute()
+        val latestSeasonId = profile.playerSeasons.firstOrNull()?.seasonId
+            ?: throw MessageReplyException("该玩家无任何赛季有游玩数据")
+
         return coroutineScope {
             // DAK.GG sync is advisory: the previous implementation launched it as a child
             // and still waited at coroutineScope exit. Refresh in the background so a slow
             // sync endpoint cannot delay the current cached/profile response.
             refreshScope.launch { runCatching { EternalReturnDakGGApi.User.Sync(nickname).execute() } }
 
-            val gamesDF = ioAsync { EternalReturnDakGGApi.Game.GetGame(nickname).execute() }
-            val profileDF = ioAsync { EternalReturnDakGGApi.User.GetProfile(nickname).execute() }
+            val seasonsDF = ioAsync { EternalReturnDakGGApi.Data.GetGameDataBySeason.execute() }
+            val gamesDF = ioAsync {
+                val seasonKey = seasonsDF.await().getSeasonById(latestSeasonId).key
+                EternalReturnDakGGApi.Game.GetGame(nickname, seasonKey).execute()
+            }
             val charactersDF = ioAsync { EternalReturnDakGGApi.Data.GetCharacters.execute() }
             val tiersDF = ioAsync { EternalReturnDakGGApi.Data.GetTiers.execute() }
             val seasonDF = ioAsync { EternalReturnDakGGApi.Data.GetCurrentSeason.execute() }
             val infusionsDF = ioAsync { EternalReturnDakGGApi.Data.GetInfusions.execute() }
 
             val games = gamesDF.await()
-            val profile = profileDF.await()
             val characters = charactersDF.await()
             val tiers = tiersDF.await()
             val season = seasonDF.await()
