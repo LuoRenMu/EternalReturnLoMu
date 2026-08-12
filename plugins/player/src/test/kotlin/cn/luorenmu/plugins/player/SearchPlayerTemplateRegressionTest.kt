@@ -15,6 +15,27 @@ import kotlin.test.assertTrue
 
 class SearchPlayerTemplateRegressionTest {
     @Test
+    fun `summary content is vertically centered in panel`() {
+        val data = player(matchType = "排位").copy(
+            summary = EternalReturnPlayRender.EternalReturnSummary(
+                count = 5,
+                avgRank = "2.4",
+                wins = "2",
+                avgTk = "7.2",
+                ranks = listOf(1, 2, 4, 3, 2),
+                avgDmg = "10420.0",
+            )
+        )
+        val document = SearchPlayerTemplate().build(data)
+        val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+        val panel = assertNotNull(layout.findById("summary-panel"))
+        val title = assertNotNull(layout.findById("summary-title"))
+        val ranks = assertNotNull(layout.findById("summary-ranks"))
+
+        assertEquals(title.bounds.top - panel.bounds.top, panel.bounds.bottom - ranks.bounds.bottom)
+    }
+
+    @Test
     fun `rank chart keeps spacing below overview data`() {
         val document = SearchPlayerTemplate().build(player(matchType = "排位"))
         val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
@@ -46,13 +67,25 @@ class SearchPlayerTemplateRegressionTest {
         assertEquals(10f, profile.node.style.cornerRadii?.topLeft)
 
         val nameHeader = assertNotNull(layout.findById("recent-name-header"))
+        val recentHeaderRow = assertNotNull(layout.findById("recent-header-row"))
         val nameCell = assertNotNull(layout.findById("recent-name-0"))
+        val characterNameCell = assertNotNull(layout.findById("character-name-0"))
         val winRateHeader = assertNotNull(layout.findById("recent-win-rate-header"))
         val winRateCell = assertNotNull(layout.findById("recent-win-rate-0"))
         assertEquals(nameCell.bounds.left, nameHeader.bounds.left)
         assertEquals(winRateCell.bounds.left, winRateHeader.bounds.left)
+        assertEquals(
+            (recentHeaderRow.bounds.top + recentHeaderRow.bounds.bottom) / 2f,
+            (nameHeader.bounds.top + nameHeader.bounds.bottom) / 2f,
+        )
+        assertEquals(10f, recentHeaderRow.node.style.cornerRadii?.topLeft)
+        assertEquals(10f, recentHeaderRow.node.style.cornerRadii?.topRight)
         assertTrue("Friend" in nameCell.node.textValues())
         assertTrue("3 场游戏" in nameCell.node.textValues())
+        assertTrue("Jackie" in characterNameCell.node.textValues())
+        assertTrue("3 场游戏(33.3%)" in characterNameCell.node.textValues())
+        assertEquals(nameCell.node.style.height, characterNameCell.node.style.height)
+        assertEquals(nameCell.node.style.justifyContent, characterNameCell.node.style.justifyContent)
         assertNotNull((assertNotNull(layout.findById("recent-avatar-0")).node as NutImage).source)
         val match = assertNotNull(layout.findById("match-game-1"))
         assertTrue(match.bounds.left < document.width)

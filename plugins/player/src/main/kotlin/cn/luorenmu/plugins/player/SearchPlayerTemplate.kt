@@ -50,13 +50,13 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                 }
                 element(CssStyle(width = px(860), height = px(bodyHeight), padding = Edges(20f), gap = 22f), id = "right") {
                     data.summary?.let { summary ->
-                        element(panel(170f, 820f)) {
-                            text("近期 ${summary.count} 场对局(排位)", textStyle(18f, ink, 50f).copy(padding = Edges(0f, 10f), border = Border(1f, line)))
-                            element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(75), justifyContent = JustifyContent.CENTER, gap = 30f, alignItems = AlignItems.CENTER)) {
+                        element(panel(170f, 820f).copy(justifyContent = JustifyContent.CENTER), id = "summary-panel") {
+                            text("近期 ${summary.count} 场对局(排位)", textStyle(18f, ink, 50f).copy(padding = Edges(0f, 10f), border = Border(1f, line)), id = "summary-title")
+                            element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(75), justifyContent = JustifyContent.CENTER, gap = 30f, alignItems = AlignItems.CENTER), id = "summary-stats") {
                                 summaryStat("对局获胜数", summary.wins); summaryStat("平均排名", summary.avgRank)
                                 summaryStat("平均团队击杀", summary.avgTk); summaryStat("平均伤害", summary.avgDmg)
                             }
-                            element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(35), justifyContent = JustifyContent.CENTER, gap = 5f, alignItems = AlignItems.CENTER)) {
+                            element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(35), justifyContent = JustifyContent.CENTER, gap = 5f, alignItems = AlignItems.CENTER), id = "summary-ranks") {
                                 summary.ranks.forEach { rank -> text(if (rank == 99) "逃" else rank, rankChip(rank)) }
                             }
                         }
@@ -150,21 +150,29 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     private fun ElementBuilder.characterTable(data: EternalReturnPlayRender, base: String) {
         val height = 40f + data.characterUseStats.size * 52f
         element(panel(height, 370f)) {
-            element(tableRowStyle(40f, darkHeader)) {
+            element(tableHeaderRowStyle(), id = "character-header-row") {
                 text("", tableCellStyle(40f, white))
                 text("角色", tableCellStyle(115f, white))
                 text("RP", tableCellStyle(42f, white))
                 text("平均排名", tableCellStyle(62f, white))
                 text("平均伤害", tableCellStyle(59f, white))
             }
-            data.characterUseStats.forEach { c -> element(tableRowStyle(52f)) { image(c.imgUrl.resolve(base), CssStyle(width = px(40), height = px(40), borderRadius = 20f)); text("${c.characterName}\n${c.characterPlay} 游戏(${c.winRate})", tableCellStyle(115f, ink)); text(c.getRP, tableCellStyle(42f, if (c.getRP >= 0) Color.RED else Color.makeRGB(83,147,202))); text(c.avgRank, tableCellStyle(62f, ink)); text(c.avgDmg, tableCellStyle(59f, muted)) } }
+            data.characterUseStats.forEachIndexed { index, c ->
+                element(tableRowStyle(52f)) {
+                    image(c.imgUrl.resolve(base), CssStyle(width = px(40), height = px(40), borderRadius = 20f))
+                    playerIdentityCell(c.characterName, "${c.characterPlay} 场游戏(${c.winRate})", 115f, "character-name-$index")
+                    text(c.getRP, tableCellStyle(42f, if (c.getRP >= 0) Color.RED else Color.makeRGB(83,147,202)))
+                    text(c.avgRank, tableCellStyle(62f, ink))
+                    text(c.avgDmg, tableCellStyle(59f, muted))
+                }
+            }
         }
     }
 
     private fun ElementBuilder.recentPlayersTable(data: EternalReturnPlayRender, base: String) {
         val height = 40f + data.recentPlayers.size * 52f
         element(panel(height, 370f)) {
-            element(tableRowStyle(40f, darkHeader)) {
+            element(tableHeaderRowStyle(), id = "recent-header-row") {
                 text("", tableCellStyle(40f, white))
                 text("一起游玩的玩家", tableCellStyle(170f, white), id = "recent-name-header")
                 text("胜率", tableCellStyle(48f, white), id = "recent-win-rate-header")
@@ -173,10 +181,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
             data.recentPlayers.forEachIndexed { index, p ->
                 element(tableRowStyle(52f)) {
                     image((p.imageWrapperUrl.takeIf(String::isNotBlank) ?: "/static/images/character-null.png").resolve(base), CssStyle(width = px(40), height = px(40), borderRadius = 20f, objectFit = ObjectFit.COVER), id = "recent-avatar-$index")
-                    element(CssStyle(width = px(170), height = px(40), justifyContent = JustifyContent.CENTER), id = "recent-name-$index") {
-                        text(p.nickname, textStyle(12f, ink, 20f).copy(verticalAlign = VerticalAlign.CENTER))
-                        text("${p.plays} 场游戏", textStyle(10f, muted, 18f).copy(verticalAlign = VerticalAlign.CENTER))
-                    }
+                    playerIdentityCell(p.nickname, "${p.plays} 场游戏", 170f, "recent-name-$index")
                     text(p.winRate, tableCellStyle(48f, ink), id = "recent-win-rate-$index")
                     text(p.avgRank, tableCellStyle(68f, ink), id = "recent-rank-$index")
                 }
@@ -184,7 +189,18 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
         }
     }
 
+    private fun ElementBuilder.playerIdentityCell(primary: String, secondary: String, width: Float, id: String) {
+        element(CssStyle(width = px(width), height = px(40), justifyContent = JustifyContent.CENTER), id = id) {
+            text(primary, textStyle(12f, ink, 20f).copy(verticalAlign = VerticalAlign.CENTER))
+            text(secondary, textStyle(10f, muted, 18f).copy(verticalAlign = VerticalAlign.CENTER))
+        }
+    }
+
     private fun tableRowStyle(height: Float, background: Int = Color.TRANSPARENT) = CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(height), padding = Edges(5f, 10f), alignItems = AlignItems.CENTER, gap = 8f, background = background, border = Border(1f, line))
+    private fun tableHeaderRowStyle() = tableRowStyle(40f, darkHeader).copy(
+        padding = Edges(0f, 10f),
+        cornerRadii = CornerRadii(10f, 10f, 0f, 0f),
+    )
     private fun tableCellStyle(width: Float, color: Int) = textStyle(12f, color, 40f).copy(width = px(width), verticalAlign = VerticalAlign.CENTER)
 
     private fun ElementBuilder.summaryStat(label: String, value: Any?) { element(CssStyle(width = px(140), height = px(55), alignItems = AlignItems.CENTER)) { text(label, textStyle(14f, muted, 22f).copy(textAlign = TextAlign.CENTER)); text(value, textStyle(20f, ink, 28f).copy(textAlign = TextAlign.CENTER)) } }
