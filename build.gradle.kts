@@ -38,7 +38,7 @@ tasks.test {
 }
 
 val commandPluginProjects = subprojects.filter {
-    it.path.startsWith(":plugins:") && it.path != ":plugins:builtin"
+    it.path.startsWith(":plugins:")
 }
 
 tasks.register<Sync>("stageCommandPlugins") {

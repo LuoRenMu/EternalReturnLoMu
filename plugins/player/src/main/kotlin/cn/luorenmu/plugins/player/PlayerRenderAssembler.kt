@@ -1,4 +1,4 @@
-package cn.luorenmu.service
+package cn.luorenmu.plugins.player
 
 import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.request.api.entity.module.ImageResourcesType

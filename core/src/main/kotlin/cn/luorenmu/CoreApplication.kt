@@ -15,7 +15,6 @@ import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.service.AdminConfigService
 import cn.luorenmu.service.AdminDatabaseService
 import cn.luorenmu.service.AdminSystemService
-import cn.luorenmu.service.PlayerRenderAssembler
 import cn.luorenmu.service.ResourcesDownloadService
 import cn.luorenmu.task.EternalReturnNewsTask
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -71,7 +70,6 @@ fun Application.moduleCore(adapter: Adapter, serverPort: Int = ConfigFile.config
 val appModule = module {
 
     single { ResourcesDownloadService() }
-    single { PlayerRenderAssembler() }
     single { KoogLLMClient(AIConfig(ConfigFile.config.ai.apiKey, ConfigFile.config.ai.model, ConfigFile.config.ai.baseUrl)) }
     single { NewsClassifier(get()) }
     single { NewsRepository(get()) }

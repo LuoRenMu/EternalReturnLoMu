@@ -8,7 +8,9 @@ version = "1.0-SNAPSHOT"
 
 dependencies {
     implementation(project(":core"))
-    implementation(project(":plugins:builtin"))
+    rootProject.subprojects
+        .filter { it.path.startsWith(":plugins:") }
+        .forEach { implementation(it) }
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.netty)
     implementation(libs.ktor.client.content.negotiation)

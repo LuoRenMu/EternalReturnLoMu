@@ -20,7 +20,6 @@ import cn.luorenmu.request.api.entity.response.dakgg.DakGGInfusionsResponse
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.MatchingMode
-import cn.luorenmu.service.PlayerRenderAssembler
 import cn.luorenmu.service.ResourcesDownloadService
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -64,7 +63,7 @@ class SearchPlayerCommand : CommandEvent {
 
     private val log = KotlinLogging.logger {}
     private val resourcesDownloadService: ResourcesDownloadService by inject(ResourcesDownloadService::class.java)
-    private val playerRenderAssembler: PlayerRenderAssembler by inject(PlayerRenderAssembler::class.java)
+    private val playerRenderAssembler = PlayerRenderAssembler()
     private val statisticsService: StatisticsRepository by inject(StatisticsRepository::class.java)
     private val aliasRepository: PlayerAliasRepository by inject(PlayerAliasRepository::class.java)
 
