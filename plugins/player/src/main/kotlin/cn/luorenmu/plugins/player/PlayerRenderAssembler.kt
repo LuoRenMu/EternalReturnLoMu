@@ -86,7 +86,8 @@ open class PlayerRenderAssembler {
         val eternalReturnPlayerData = EternalReturnPlayRender.EternalReturnPlayerData()
         var tier: DakGGTiersResponse.EternalReturnTier = tiers.getUnRank()
 
-        val latestPlaySeason = profile.playerSeasons.firstOrNull() ?: run {
+        // 最近游玩的赛季
+        val latestPlaySeason = profile.playerSeasons?.firstOrNull() ?: run {
             throw MessageReplyException("该玩家无任何赛季有游玩数据")
         }
 

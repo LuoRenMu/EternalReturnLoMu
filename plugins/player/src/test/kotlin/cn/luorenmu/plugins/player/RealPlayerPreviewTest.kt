@@ -1,5 +1,6 @@
 package cn.luorenmu.plugins.player
 
+import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.MatchingMode
 import kotlinx.coroutines.async
@@ -21,7 +22,8 @@ class RealPlayerPreviewTest {
         val renderData = coroutineScope {
             val sync = async { EternalReturnDakGGApi.User.Sync(nickname).execute() }
             val profile = EternalReturnDakGGApi.User.GetProfile(nickname).execute()
-            val latestSeasonId = profile.playerSeasons.first().seasonId
+            val latestSeasonId = profile.playerSeasons?.firstOrNull()?.seasonId
+                ?: throw MessageReplyException("该玩家无任何赛季有游玩数据")
             val seasons = async { EternalReturnDakGGApi.Data.GetGameDataBySeason.execute() }
             val games = async {
                 EternalReturnDakGGApi.Game.GetGame(nickname, seasons.await().getSeasonById(latestSeasonId).key).execute()

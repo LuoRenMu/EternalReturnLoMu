@@ -14,7 +14,7 @@ data class DakGGProfileResponse(
     val meta: ProfileMeta,
     val player: ProfilePlayer,
     val playerSeasonOverviews: List<ProfilePlayerSeasonOverviews> = listOf(),
-    val playerSeasons: List<ProfilePlayerSeason> = listOf(),
+    val playerSeasons: List<ProfilePlayerSeason>? = null,
 ){
 
     @Serializable

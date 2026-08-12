@@ -128,7 +128,7 @@ class SearchPlayerCommand : CommandEvent {
 
     private suspend fun preheatRequest(nickname: String): PreheatedData {
         val profile = EternalReturnDakGGApi.User.GetProfile(nickname).execute()
-        val latestSeasonId = profile.playerSeasons.firstOrNull()?.seasonId
+        val latestSeasonId = profile.playerSeasons?.firstOrNull()?.seasonId
             ?: throw MessageReplyException("该玩家无任何赛季有游玩数据")
 
         return coroutineScope {
