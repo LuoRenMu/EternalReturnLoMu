@@ -83,6 +83,19 @@ open class ResourcesDownloadService {
     suspend fun downloadWeaponImage(weapon: DakGGWeaponResponse.Weapon) =
         downloadIfAbsent(weapon.iconUrl, ImageResourcesType.Weapon, weapon.id.toString())
 
+    open suspend fun downloadCharacterTierIcons(tiers: Iterable<String>) {
+        val grades = tiers.map { it.trim().uppercase() }
+            .filter { it in CHARACTER_TIER_GRADES }
+            .distinct()
+        downloadAll(grades) { grade ->
+            downloadIfAbsent(
+                "$CHARACTER_TIER_ICON_BASE_URL$grade.svg",
+                ImageResourcesType.CharacterTier,
+                "character-tier-$grade",
+            )
+        }
+    }
+
     suspend fun downloadTacticalSkillImage(tacticalSkill: DakGGTacticalSkillResponse.TacticalSkill) =
         downloadIfAbsent(tacticalSkill.imageUrl, ImageResourcesType.TacticalSkill, tacticalSkill.id.toString())
 
@@ -284,6 +297,9 @@ open class ResourcesDownloadService {
     }
 
     private companion object {
+        private const val CHARACTER_TIER_ICON_BASE_URL =
+            "https://cdn.dak.gg/er/images/character/tier/character-tier-"
+        private val CHARACTER_TIER_GRADES = setOf("S", "A", "B", "C", "D")
         const val MAX_CONCURRENT_DOWNLOADS = 8
     }
 }

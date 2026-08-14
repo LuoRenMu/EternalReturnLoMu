@@ -32,6 +32,11 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
     Character("/character/", ".png"),
 
     /**
+     * character-tier-{S/A/B/C/D}
+     */
+    CharacterTier("/character/tier/", ".svg"),
+
+    /**
      * ID
      */
     Item("/item/", ".png"),

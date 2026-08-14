@@ -21,24 +21,27 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
     private val accentSoft = Color.makeRGB(240, 237, 255)
     private val skillAccent = Color.makeRGB(244, 103, 79)
     private val green = Color.makeRGB(24, 161, 108)
+    private val red = Color.makeRGB(224, 82, 82)
     private val white = Color.WHITE
 
     override fun build(data: CharacterDetail): TemplateDocument {
         val analysis = data.analysis
         if (analysis == null || analysis.weapons.isEmpty()) return emptyDocument(data)
         val weapon = analysis.weapons.first()
+        val otherWeapons = analysis.weapons.drop(1).take(4)
         val skillPlans = weapon.skillBuilds.take(4)
         val tacticals = weapon.tacticals.take(4)
         val augments = weapon.augments.take(4)
         val itemBuilds = weapon.itemBuilds.take(4)
-        val equipments = weapon.topEquipments.take(5)
-        val skillHeight = 58 + 18 + skillPlans.size * 64
-        val guideHeight = if (tacticals.isNotEmpty() || augments.isNotEmpty()) 228 else 0
-        val loadoutHeight = if (itemBuilds.isNotEmpty() || equipments.isNotEmpty()) 282 else 0
+        val equipmentGroups = weapon.topEquipments.groupBy { it.slot }.entries.take(5)
+        val otherWeaponsHeight = if (otherWeapons.isNotEmpty()) 104 else 0
+        val skillHeight = if (skillPlans.isNotEmpty()) 58 + 18 + skillPlans.size * 64 else 0
+        val guideHeight = if (tacticals.isNotEmpty() || augments.isNotEmpty()) 244 else 0
+        val loadoutHeight = if (itemBuilds.isNotEmpty() || equipmentGroups.isNotEmpty()) 322 else 0
         val infusionHeight = if (weapon.infusions.isNotEmpty()) 122 else 0
         val playerHeight = if (analysis.topPlayers.isNotEmpty()) 88 else 0
-        val blocks = listOf(skillHeight, guideHeight, loadoutHeight, infusionHeight, playerHeight).count { it > 0 }
-        val height = 28 + 150 + skillHeight + guideHeight + loadoutHeight + infusionHeight + playerHeight + (blocks * 16) + 28
+        val blocks = listOf(otherWeaponsHeight, skillHeight, guideHeight, loadoutHeight, infusionHeight, playerHeight).count { it > 0 }
+        val height = 28 + 150 + otherWeaponsHeight + skillHeight + guideHeight + loadoutHeight + infusionHeight + playerHeight + (blocks * 16) + 28
         val base = data.httpServer
 
         return TemplateDocument(
@@ -46,6 +49,10 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
             height,
             document(CssStyle(width = px(1180), height = px(height), padding = Edges(28f), gap = 16f, background = pageBg, color = ink)) {
                 hero(data, analysis, weapon, base)
+
+                if (otherWeapons.isNotEmpty()) {
+                    otherWeaponsPanel(otherWeapons, base)
+                }
 
                 if (skillPlans.isNotEmpty()) {
                     element(cardStyle(skillHeight.toFloat()).copy(border = Border(2f, accent))) {
@@ -59,13 +66,13 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
                 if (guideHeight > 0) {
                     element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(guideHeight), gap = 16f)) {
                         element(cardStyle(guideHeight.toFloat()).copy(width = px(430))) {
-                            sectionHeader("推荐战术技能")
+                            sectionHeader("推荐战术技能", "tactical-header")
                             element(CssStyle(direction = FlexDirection.ROW, wrap = FlexWrap.WRAP, width = percent(100), flexGrow = 1f, padding = Edges(10f, 14f, 14f, 14f), gap = 8f)) {
                                 tacticals.forEachIndexed { index, pick -> tacticalCard(index, pick, base) }
                             }
                         }
-                        element(cardStyle(guideHeight.toFloat()).copy(flexGrow = 1f)) {
-                            sectionHeader("推荐潜能")
+                        element(cardStyle(guideHeight.toFloat()).copy(width = px(678)), id = "augment-panel") {
+                            sectionHeader("推荐潜能", "augment-header")
                             element(CssStyle(width = percent(100), flexGrow = 1f, padding = Edges(8f, 14f, 14f, 14f), gap = 6f)) {
                                 augments.forEachIndexed { index, augment -> augmentRow(index, augment, base) }
                             }
@@ -76,15 +83,17 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
                 if (loadoutHeight > 0) {
                     element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(loadoutHeight), gap = 16f)) {
                         element(cardStyle(loadoutHeight.toFloat()).copy(width = px(710))) {
-                            sectionHeader("最终装备方案")
+                            sectionHeader("最终装备方案", "loadout-header")
                             element(CssStyle(width = percent(100), flexGrow = 1f, padding = Edges(8f, 14f, 14f, 14f), gap = 6f)) {
                                 itemBuilds.forEachIndexed { index, build -> loadoutRow(index, build, base) }
                             }
                         }
-                        element(cardStyle(loadoutHeight.toFloat()).copy(flexGrow = 1f)) {
-                            sectionHeader("物品选择统计")
+                        element(cardStyle(loadoutHeight.toFloat()).copy(width = px(398)), id = "equipment-panel") {
+                            sectionHeader("物品选择统计", "equipment-header")
                             element(CssStyle(width = percent(100), flexGrow = 1f, padding = Edges(8f, 12f, 12f, 12f), gap = 4f)) {
-                                equipments.forEach { equipmentCard(it, base) }
+                                equipmentGroups.forEachIndexed { slotIndex, (slot, equipments) ->
+                                    equipmentSlotRow(slotIndex, slot, equipments.take(5), base)
+                                }
                             }
                         }
                     }
@@ -127,8 +136,8 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
             image(data.imageUrl.resolve(base), CssStyle(width = px(112), height = px(112), borderRadius = 14f, border = Border(2f, Color.makeRGB(77, 82, 108)), objectFit = ObjectFit.COVER))
             element(CssStyle(width = px(275), height = px(112), gap = 4f)) {
                 element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(34), gap = 10f, alignItems = AlignItems.CENTER)) {
-                    text(data.name, txt(27f, white, 34f, 700).copy(width = px(190)))
-                    text(analysis.characterTier, tierBadge(analysis.characterTier))
+                    image(characterTierIconUrl(analysis.characterTier).resolve(base), CssStyle(width = px(34), height = px(34), objectFit = ObjectFit.CONTAIN), id = "detail-tier-icon")
+                    text(data.name, txt(27f, white, 34f, 700).copy(width = px(231)), id = "detail-character-name")
                 }
                 text(data.title, txt(12f, Color.makeRGB(184, 189, 210), 19f))
                 element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(24), gap = 5f)) {
@@ -141,16 +150,20 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
             }
             element(CssStyle(direction = FlexDirection.ROW, width = px(224), height = px(112), padding = Edges(10f), gap = 10f, alignItems = AlignItems.CENTER, background = Color.makeRGB(45, 49, 70), borderRadius = 13f)) {
                 image(weapon.iconUrl.resolve(base), CssStyle(width = px(58), height = px(58), padding = Edges(6f), background = Color.makeRGB(16, 18, 27), borderRadius = 12f, objectFit = ObjectFit.CONTAIN))
-                element(CssStyle(flexGrow = 1f, height = px(72), gap = 3f, justifyContent = JustifyContent.CENTER)) {
-                    text(weapon.weapon, txt(17f, white, 24f, 700))
-                    text("${weapon.tier}  ·  ${"%.1f".format(weapon.tierScore)} 分", txt(11f, Color.makeRGB(205, 199, 244), 18f, 600))
+                element(CssStyle(flexGrow = 1f, height = px(92), gap = 2f, justifyContent = JustifyContent.CENTER)) {
+                    element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(24), gap = 5f, alignItems = AlignItems.CENTER)) {
+                        image(characterTierIconUrl(weapon.tier).resolve(base), CssStyle(width = px(23), height = px(23), objectFit = ObjectFit.CONTAIN), id = "main-weapon-tier-icon")
+                        text(weapon.weapon, txt(15f, white, 24f, 700).copy(flexGrow = 1f), id = "main-weapon-name")
+                    }
+                    text("${"%.1f".format(weapon.tierScore)} 分", txt(11f, Color.makeRGB(205, 199, 244), 18f, 600))
+                    text("RP变动 ${signed(weapon.rpChange)}", txt(10f, rpColor(weapon.rpChange), 16f, 700), id = "main-weapon-rp")
                     text("热门 #${weapon.rank}/${weapon.rankSize}", txt(10f, Color.makeRGB(151, 158, 185), 16f))
                 }
             }
             element(CssStyle(direction = FlexDirection.ROW, wrap = FlexWrap.WRAP, flexGrow = 1f, height = px(112), gap = 7f)) {
                 heroStat("登场率", pct(weapon.pickRate))
                 heroStat("胜率", pct(weapon.winRate), green)
-                heroStat("前三率", pct(weapon.top3Rate))
+                heroStat("TOP3", pct(weapon.top3Rate))
                 heroStat("平均名次", "#${"%.1f".format(weapon.avgRank)}")
                 heroStat("平均击杀", "%.1f".format(weapon.avgKills))
                 heroStat("对局数", weapon.games)
@@ -203,7 +216,12 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
             image(augment.core.iconUrl.resolve(base), CssStyle(width = px(30), height = px(30), borderRadius = 7f, border = Border(2f, accent), objectFit = ObjectFit.CONTAIN))
             text(augment.core.name, txt(10f, ink, 22f, 700).copy(width = px(96)))
             element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(30), gap = 5f, alignItems = AlignItems.CENTER)) {
-                augment.subs.take(6).forEach { sub -> image(sub.iconUrl.resolve(base), CssStyle(width = px(27), height = px(27), borderRadius = 6f, objectFit = ObjectFit.CONTAIN)) }
+                augment.subs.take(6).forEachIndexed { subIndex, sub ->
+                    element(CssStyle(width = px(58), height = px(30), alignItems = AlignItems.CENTER)) {
+                        image(sub.iconUrl.resolve(base), CssStyle(width = px(19), height = px(19), borderRadius = 5f, objectFit = ObjectFit.CONTAIN))
+                        text(sub.name, txt(6f, ink, 10f, 600).copy(width = px(58), textAlign = TextAlign.CENTER), id = "augment-sub-name-$index-$subIndex")
+                    }
+                }
             }
             text(pct(augment.core.pickRate), txt(9f, muted, 20f, 600).copy(width = px(52), textAlign = TextAlign.END))
         }
@@ -229,13 +247,46 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
         }
     }
 
-    private fun ElementBuilder.equipmentCard(equipment: CharacterDetail.EquipmentSlotPick, base: String) {
-        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(38), padding = Edges(4f, 6f), gap = 6f, alignItems = AlignItems.CENTER, background = soft, border = Border(1f, line), borderRadius = 8f)) {
-            element(CssStyle(width = px(30), height = px(30), padding = Edges(2f), background = card, backgroundImage = equipment.bgUrl.resolve(base), borderRadius = 6f)) {
-                image(equipment.iconUrl.resolve(base), CssStyle(width = percent(100), height = percent(100), objectFit = ObjectFit.CONTAIN))
+    private fun ElementBuilder.equipmentSlotRow(
+        slotIndex: Int,
+        slot: String,
+        equipments: List<CharacterDetail.EquipmentSlotPick>,
+        base: String,
+    ) {
+        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(46), gap = 4f, alignItems = AlignItems.CENTER), id = "equipment-slot-$slotIndex") {
+            text(slot, txt(9f, muted, 22f, 600).copy(width = px(32), textAlign = TextAlign.CENTER))
+            equipments.forEachIndexed { itemIndex, equipment ->
+                element(CssStyle(direction = FlexDirection.ROW, width = px(64), height = px(42), padding = Edges(3f), gap = 2f, alignItems = AlignItems.CENTER, background = soft, border = Border(1f, line), borderRadius = 8f), id = "equipment-item-$slotIndex-$itemIndex") {
+                    element(CssStyle(width = px(24), height = px(24), padding = Edges(2f), background = card, backgroundImage = equipment.bgUrl.resolve(base), borderRadius = 6f)) {
+                        image(equipment.iconUrl.resolve(base), CssStyle(width = percent(100), height = percent(100), objectFit = ObjectFit.CONTAIN))
+                    }
+                    element(CssStyle(width = px(32), height = px(34), justifyContent = JustifyContent.CENTER)) {
+                        text(equipment.name, txt(6f, ink, 11f, 600).copy(width = px(32), textAlign = TextAlign.CENTER), id = "equipment-name-$slotIndex-$itemIndex")
+                        text("选${pct(equipment.pickRate)}", txt(6f, muted, 11f, 600).copy(width = px(32), textAlign = TextAlign.CENTER), id = "equipment-pick-rate-$slotIndex-$itemIndex")
+                        text("胜${pct(equipment.winRate)}", txt(6f, green, 11f, 700).copy(width = px(32), textAlign = TextAlign.CENTER), id = "equipment-win-rate-$slotIndex-$itemIndex")
+                    }
+                }
             }
-            text(equipment.slot, txt(9f, muted, 20f, 600).copy(width = px(38)))
-            text("${equipment.name}  ·  ${pct(equipment.pickRate)}", txt(10f, green, 20f, 700).copy(flexGrow = 1f))
+        }
+    }
+
+    private fun ElementBuilder.otherWeaponsPanel(
+        weapons: List<CharacterDetail.WeaponBuild>,
+        base: String,
+    ) {
+        element(cardStyle(104f).copy(direction = FlexDirection.ROW, padding = Edges(12f, 14f), gap = 8f, alignItems = AlignItems.CENTER), id = "other-weapons-panel") {
+            text("其他武器", txt(12f, ink, 24f, 700).copy(width = px(72), textAlign = TextAlign.CENTER))
+            weapons.forEachIndexed { index, weapon ->
+                element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(78), padding = Edges(7f), gap = 7f, alignItems = AlignItems.CENTER, background = soft, borderRadius = 10f), id = "other-weapon-$index") {
+                    image(weapon.iconUrl.resolve(base), CssStyle(width = px(40), height = px(40), padding = Edges(4f), background = card, borderRadius = 9f, objectFit = ObjectFit.CONTAIN))
+                    image(characterTierIconUrl(weapon.tier).resolve(base), CssStyle(width = px(28), height = px(28), objectFit = ObjectFit.CONTAIN), id = "other-weapon-tier-icon-$index")
+                    element(CssStyle(flexGrow = 1f, height = px(62), justifyContent = JustifyContent.CENTER)) {
+                        text(weapon.weapon, txt(11f, ink, 17f, 700), id = "other-weapon-name-$index")
+                        text("${"%.1f".format(weapon.tierScore)} 分 · 登场 ${pct(weapon.pickRate)}", txt(8f, muted, 14f, 600))
+                        text("胜率 ${pct(weapon.winRate)} · RP ${signed(weapon.rpChange)}", txt(8f, rpColor(weapon.rpChange), 14f, 600), id = "other-weapon-rp-$index")
+                    }
+                }
+            }
         }
     }
 
@@ -256,11 +307,12 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
         }
     }
 
-    private fun ElementBuilder.sectionHeader(title: String) {
-        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px( 48), padding = Edges( 11f, 16f), justifyContent = JustifyContent.SPACE_BETWEEN, alignItems = AlignItems.CENTER, border = Border(1f, line))) {
+    private fun ElementBuilder.sectionHeader(title: String, id: String? = null) {
+        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px( 48), padding = Edges( 11f, 16f), justifyContent = JustifyContent.SPACE_BETWEEN, alignItems = AlignItems.CENTER), id = id) {
             element(CssStyle(flexGrow = 1f, height = px(  28f), justifyContent = JustifyContent.CENTER)) {
                 text(title, txt( 15f, ink,  20f, 700))
             }
+            element(CssStyle(position = Position.ABSOLUTE, left = 0f, bottom = 0f, width = percent(100), height = px(1), background = line), id = id?.let { "$it-divider" })
         }
     }
 
@@ -276,14 +328,12 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
 
     private fun cardStyle(height: Float) = CssStyle(width = percent(100), height = px(height), background = card, border = Border(1f, line), borderRadius = 15f)
     private fun txt(size: Float, color: Int, height: Float, weight: Int = 400) = CssStyle(width = percent(100), height = px(height), fontSize = size, fontWeight = weight, color = color)
-    private fun tierBadge(tier: String) = CssStyle(width = px(34), height = px(28), padding = Edges(4f), fontSize = 14f, fontWeight = 700, color = white, textAlign = TextAlign.CENTER, background = when (tier.uppercase()) {
-        "S" -> Color.makeRGB(218, 67, 77)
-        "A" -> Color.makeRGB(238, 126, 54)
-        "B" -> Color.makeRGB(24, 161, 108)
-        "C" -> Color.makeRGB(69, 118, 211)
-        else -> Color.makeRGB(104, 112, 137)
-    }, borderRadius = 8f)
-
     private fun pct(value: Double) = "%.1f%%".format(value)
+    private fun signed(value: Double) = if (value > 0.0) "+%.1f".format(value) else "%.1f".format(value)
+    private fun rpColor(value: Double) = when {
+        value > 0.0 -> green
+        value < 0.0 -> red
+        else -> muted
+    }
     private fun String?.resolve(base: String) = this?.takeIf(String::isNotBlank)?.let { if (it.startsWith("http") || it.startsWith("file:")) it else base.trimEnd('/') + "/" + it.trimStart('/') }
 }

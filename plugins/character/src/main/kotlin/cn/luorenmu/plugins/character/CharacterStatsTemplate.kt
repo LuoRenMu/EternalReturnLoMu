@@ -27,21 +27,21 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
             }
             element(CssStyle(width = percent(100), flexGrow = 1f, background = white, border = Border(1f,line), borderRadius = 16f, gap = 0f)) {
                 element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(52), padding = Edges(0f,14f), alignItems = AlignItems.CENTER, background = Color.makeRGB(248,249,252), border = Border(1f,Color.makeRGB(232,235,242)))) {
-                    listOf("#" to 64f, "CHARACTER" to 250f, "TIER" to 72f, "RP" to 80f, "PICK RATE" to 135f, "WIN RATE" to 135f, "TOP3 RATE" to 130f, "AVG.RANK" to 105f, "AVG.DMG" to 105f, "PLAY COUNT" to 120f).forEach { (label,w) -> text(label, headerCell(w)) }
+                    listOf("#" to 64f, "CHARACTER" to 322f, "RP" to 80f, "PICK RATE" to 135f, "WIN RATE" to 135f, "TOP3 RATE" to 130f, "AVG.RANK" to 105f, "AVG.DMG" to 105f, "PLAY COUNT" to 120f).forEach { (label,w) -> text(label, headerCell(w)) }
                 }
                 data.players.forEach { player ->
                     element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(81), padding = Edges(14f), alignItems = AlignItems.CENTER, border = Border(1f,Color.makeRGB(240,241,246)))) {
                         text(player.rank, CssStyle(width = px(64), height = px(38), padding = Edges(9f), fontSize = 14f, color = white, textAlign = TextAlign.CENTER, background = rankColor(player.rank), borderRadius = 19f))
-                        element(CssStyle(direction = FlexDirection.ROW, width = px(250), height = px(53), alignItems = AlignItems.CENTER, gap = 14f)) {
+                        element(CssStyle(direction = FlexDirection.ROW, width = px(322), height = px(53), alignItems = AlignItems.CENTER, gap = 10f)) {
                             element(CssStyle(width=px(58),height=px(58))) {
                                 image(player.characterImgUrl.resolve(base), CssStyle(width = px(52), height = px(52), borderRadius = 26f, border = Border(2f,line), objectFit = ObjectFit.COVER))
                                 element(CssStyle(width=px(22),height=px(22),padding=Edges(3f),position=Position.ABSOLUTE,right=0f,bottom=0f,background=Color.BLACK,border=Border(2f,line),borderRadius=11f)) {
                                     image(player.weaponImgUrl.resolve(base),CssStyle(width=percent(100),height=percent(100),objectFit=ObjectFit.CONTAIN))
                                 }
                             }
-                            text(player.characterName, cell(14f, ink, 180f).copy(textAlign = TextAlign.START))
+                            image(characterTierIconUrl(player.tier).resolve(base), CssStyle(width = px(32), height = px(32), objectFit = ObjectFit.CONTAIN), id = "stats-tier-icon-${player.rank}")
+                            text(player.characterName, cell(14f, ink, 212f).copy(textAlign = TextAlign.START), id = "stats-character-name-${player.rank}")
                         }
-                        text(player.tier, CssStyle(width = px(72), height = px(36), padding = Edges(8f), fontSize = 16f, color = white, textAlign = TextAlign.CENTER, background = tierColor(player.tier), borderRadius = 8f))
                         text(player.rp, cell(15f, Color.makeRGB(42,46,58),80f))
                         text(player.pick, barCell(135f, Color.makeARGB(80,100,140,240)))
                         text(player.winRate, barCell(135f, Color.makeARGB(95,80,200,120)))
@@ -59,6 +59,5 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
     private fun cell(size: Float, color: Int, width: Float) = CssStyle(width = px(width), height = px(28), fontSize = size, color = color, textAlign = TextAlign.CENTER)
     private fun barCell(width: Float, color: Int) = cell(12f,Color.makeRGB(58,62,74),width).copy(height = px(26), padding = Edges(5f), background = color, borderRadius = 13f)
     private fun rankColor(rank: Int) = when(rank) { 1 -> Color.makeRGB(246,168,0); 2 -> Color.makeRGB(160,168,184); 3 -> Color.makeRGB(205,127,50); else -> Color.makeRGB(240,241,246) }
-    private fun tierColor(tier: String) = when(tier.uppercase()) { "S" -> Color.makeRGB(214,48,49); "A" -> Color.makeRGB(240,100,12); "B" -> Color.makeRGB(26,170,85); "C" -> Color.makeRGB(46,111,214); else -> Color.makeRGB(93,107,130) }
     private fun String?.resolve(base: String) = this?.takeIf(String::isNotBlank)?.let { if (it.startsWith("http")) it else base.trimEnd('/') + "/" + it.trimStart('/') }
 }

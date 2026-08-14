@@ -49,6 +49,8 @@ data class CharacterDetail(
         val iconUrl: String,
         val tier: String,
         val tierScore: Double,
+        /** 平均每局 RP 变动 */
+        val rpChange: Double,
         val games: Long,
         val pickRate: Double,
         val winRate: Double,
@@ -94,6 +96,7 @@ data class CharacterDetail(
         val iconUrl: String,
         val bgUrl: String,
         val pickRate: Double,
+        val winRate: Double,
     )
 
     data class ItemBuild(

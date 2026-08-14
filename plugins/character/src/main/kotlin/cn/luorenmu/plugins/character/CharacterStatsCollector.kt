@@ -11,13 +11,16 @@ import cn.luorenmu.request.entity.module.DakGGTeamMode
 import cn.luorenmu.request.entity.module.DakGGRank
 import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.service.entity.CharacterStats
+import cn.luorenmu.service.ResourcesDownloadService
 import kotlinx.coroutines.coroutineScope
 
 /**
  * @author LoMu
  * Date 2026/5/24
  */
-open class CharacterStatsCollector {
+open class CharacterStatsCollector(
+    private val resourcesDownloadService: ResourcesDownloadService = ResourcesDownloadService(),
+) {
 
     suspend fun collect(
         teamMode: DakGGTeamMode = DakGGTeamMode.Squad,
@@ -82,6 +85,8 @@ open class CharacterStatsCollector {
                 avgRank =  if (wp.count > 0) "${String.format("%.1f", wp.place.toDouble() / wp.count)}%" else "0%",
             )
         }
+
+        resourcesDownloadService.downloadCharacterTierIcons(players.map { it.tier })
 
         return CharacterStats(
             totalGames = snapshot.tierGameCount,

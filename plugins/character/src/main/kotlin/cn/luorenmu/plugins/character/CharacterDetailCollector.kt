@@ -42,6 +42,7 @@ open class CharacterDetailCollector(
         private const val TOP_PLAYER_LIMIT = 10
         private const val SKILL_BUILD_LIMIT = 4
         private const val ITEM_BUILD_LIMIT = 4
+        private const val EQUIPMENT_PER_SLOT_LIMIT = 5
         private const val TACTICAL_LIMIT = 4
         private const val AUGMENT_CORE_LIMIT = 4
         private const val AUGMENT_SUB_LIMIT = 6
@@ -105,11 +106,17 @@ open class CharacterDetailCollector(
             analysis = snapshotData?.let { buildAnalysis(it, refs) },
         )
 
-        // 预热下载：角色头像、段位图标与最热武器流派用到的全部图片
+        // 预热下载：评级图、角色头像、展示武器图标与最热武器流派用到的全部图片
         detail.analysis?.let { analysis ->
             resourcesDownloadService.downloadTiers(refs.tiers)
+            resourcesDownloadService.downloadCharacterTierIcons(analysis.weapons.map { it.tier })
             analysis.weapons.firstOrNull()?.let { topWeapon ->
                 downloadWeaponImages(topWeapon, character, refs)
+            }
+            analysis.weapons.drop(1).take(4).forEach { weapon ->
+                refs.weapons.masteries.firstOrNull { it.id == weapon.weaponId.toInt() }?.let {
+                    resourcesDownloadService.downloadWeaponImage(it)
+                }
             }
         }
         return detail
@@ -321,6 +328,7 @@ open class CharacterDetailCollector(
             } ?: "",
             tier = weapon.tier,
             tierScore = weapon.tierScore ?: 0.0,
+            rpChange = avg(weapon.mmrGain, count),
             games = count,
             pickRate = rate(count, totalGames),
             winRate = rate(weapon.win, count),
@@ -345,24 +353,19 @@ open class CharacterDetailCollector(
         total: Long,
         refs: AnalysisRefs,
     ): List<CharacterDetail.EquipmentSlotPick> {
-        return ITEM_SLOTS.mapIndexedNotNull { slotIndex, slot ->
-            val countsByItem = mutableMapOf<Long, Long>()
-            itemBuildStats.forEach { build ->
-                val itemId = build.key.getOrNull(slotIndex) ?: return@forEach
-                countsByItem[itemId] = (countsByItem[itemId] ?: 0L) + build.count
-            }
-
-            val (itemId, count) = countsByItem.maxByOrNull { it.value } ?: return@mapIndexedNotNull null
+        return topEquipmentCounts(itemBuildStats, ITEM_SLOTS, EQUIPMENT_PER_SLOT_LIMIT).map { selection ->
+            val itemId = selection.itemId
             val item = refs.items.items.firstOrNull { it.id == itemId }
             CharacterDetail.EquipmentSlotPick(
-                slot = slot,
+                slot = selection.slot,
                 id = itemId,
                 name = item?.name ?: "",
                 iconUrl = item?.let { ImageResourcesType.Item.getGeneralPath(it.id.toString()) } ?: "",
                 bgUrl = item?.let {
                     ImageResourcesType.ItemBg.getGeneralPath(itemGradeNum(it.grade).toString())
                 } ?: "",
-                pickRate = rate(count, total),
+                pickRate = rate(selection.count, total),
+                winRate = rate(selection.win, selection.count),
             )
         }
     }
@@ -471,4 +474,28 @@ open class CharacterDetailCollector(
         val traits: DakGGTraitSkillsResponse,
         val skills: DakGGSkillsResponse,
     )
+}
+
+internal data class EquipmentSlotCount(
+    val slot: String,
+    val itemId: Long,
+    val count: Long,
+    val win: Long,
+)
+
+internal fun topEquipmentCounts(
+    itemBuildStats: List<CharacterAnalysisResponse.ItemBuildStat>,
+    slots: List<String>,
+    limitPerSlot: Int,
+): List<EquipmentSlotCount> = slots.flatMapIndexed { slotIndex, slot ->
+    itemBuildStats
+        .mapNotNull { build -> build.key.getOrNull(slotIndex)?.let { itemId -> itemId to (build.count to build.win) } }
+        .groupingBy { it.first }
+        .fold(0L to 0L) { total, (_, countAndWin) ->
+            (total.first + countAndWin.first) to (total.second + countAndWin.second)
+        }
+        .entries
+        .sortedByDescending { it.value.first }
+        .take(limitPerSlot)
+        .map { (itemId, totals) -> EquipmentSlotCount(slot, itemId, totals.first, totals.second) }
 }
