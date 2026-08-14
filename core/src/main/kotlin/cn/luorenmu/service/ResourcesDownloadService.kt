@@ -149,6 +149,7 @@ open class ResourcesDownloadService {
         characterResponse: DakGGCharactersResponse? = null,
         tiers: DakGGTiersResponse? = null,
         infusionsResponse: DakGGInfusionsResponse? = null,
+        bannerFallbackSeasonId: Int = 39,
     ) {
         lateinit var resolvedCharacters: DakGGCharactersResponse
         lateinit var weaponResponse: DakGGWeaponResponse
@@ -223,7 +224,7 @@ open class ResourcesDownloadService {
             downloadItemBgImage(id)
         }
         log.debug { "gameDataDownload 开始下载 banner" }
-        downloadBanner(games)
+        downloadBanner(games, bannerFallbackSeasonId)
         log.debug { "gameDataDownload 全部已完成" }
     }
 
@@ -246,11 +247,11 @@ open class ResourcesDownloadService {
     }
 
     /**
-     * 与 Search.tsx 一致的 banner 公式：bannerId = floor((seasonId - 1) / 2) * 2 - 27
+     * 与 DAK.GG 玩家查询页一致：bannerId = seasonId - 29。
      * 初次按需下载 dak.gg 的 bg-landing-search-v{bannerId}.jpg 到本地 resources/images/bg/。
      */
-    private suspend fun downloadBanner(games: List<UserGame>) {
-        val seasonId = games.maxOfOrNull { it.seasonId }?.toInt()?.takeIf { it > 0 } ?: 39
+    private suspend fun downloadBanner(games: List<UserGame>, fallbackSeasonId: Int) {
+        val seasonId = ImageResourcesType.resolveBannerSeasonId(games.map { it.seasonId }, fallbackSeasonId)
         val name = ImageResourcesType.bannerNameForSeason(seasonId)
         val path = ImageResourcesType.bannerPathForSeason(seasonId).toPath()
         if (ResourceCheckUtil.checkResource(path)) return

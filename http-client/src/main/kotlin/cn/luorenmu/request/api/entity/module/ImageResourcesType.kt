@@ -90,12 +90,17 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
             "//cdn.dak.gg/er/images/common/img-placeholder-wilson-round.png"
 
         fun bannerNameForSeason(seasonId: Int): String {
-            val bannerId = (seasonId - 1) / 2 * 2 - 27
+            val bannerId = (seasonId - 29).coerceAtLeast(1)
             return "bg-landing-search-v$bannerId"
         }
 
         fun bannerPathForSeason(seasonId: Int): String =
             Banner.getGeneralPath(bannerNameForSeason(seasonId))
+
+        fun resolveBannerSeasonId(gameSeasonIds: Iterable<Long>, fallbackSeasonId: Int): Int =
+            gameSeasonIds.maxOrNull()?.toInt()?.takeIf { it > 0 }
+                ?: fallbackSeasonId.takeIf { it > 0 }
+                ?: 39
     }
 
     fun getGeneralPath(name: String): String {

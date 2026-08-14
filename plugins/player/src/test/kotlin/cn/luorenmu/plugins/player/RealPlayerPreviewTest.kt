@@ -1,9 +1,12 @@
 package cn.luorenmu.plugins.player
 
 import cn.luorenmu.exception.MessageReplyException
+import cn.luorenmu.common.util.toPath
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.MatchingMode
+import cn.luorenmu.service.ResourcesDownloadService
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Files
@@ -32,11 +35,33 @@ class RealPlayerPreviewTest {
             val tiers = async { EternalReturnDakGGApi.Data.GetTiers.execute() }
             val season = async { EternalReturnDakGGApi.Data.GetCurrentSeason.execute() }
             val infusions = async { EternalReturnDakGGApi.Data.GetInfusions.execute() }
+            val resolvedGames = games.await().matches
+            val resolvedCharacters = characters.await()
+            val resolvedTiers = tiers.await()
+            val resolvedSeason = season.await()
+            val resolvedInfusions = infusions.await()
+            val downloader = ResourcesDownloadService()
+            coroutineScope {
+                listOf(
+                    async { downloader.downloadProfileData(profile) },
+                    async {
+                        downloader.gameDataDownload(
+                            resolvedGames,
+                            resolvedCharacters,
+                            resolvedTiers,
+                            resolvedInfusions,
+                            bannerFallbackSeasonId = resolvedSeason.id,
+                        )
+                    },
+                ).awaitAll()
+            }
             PlayerRenderAssembler().assemble(
-                profile, games.await().matches, characters.await(), tiers.await(), season.await(), infusions.await(), MatchingMode.Rank, nickname,
+                profile, resolvedGames, resolvedCharacters, resolvedTiers, resolvedSeason, resolvedInfusions, MatchingMode.Rank, nickname,
             )
                 .also { sync.cancel() }
         }
+        assertTrue(renderData.profileImageUrl?.toPath()?.let(Files::isRegularFile) == true)
+        assertTrue(Files.isRegularFile(renderData.bannerUrl.toPath()))
         val queryMs = (System.nanoTime() - queryStarted) / 1_000_000
         val output = Path.of(System.getProperty("user.dir"), "build", "previews", "search-player-神圣审判.png")
         Files.createDirectories(output.parent)

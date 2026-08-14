@@ -201,9 +201,7 @@ open class PlayerRenderAssembler {
         } else null
 
         // 下载与渲染必须使用同一场游戏的赛季，否则非当前赛季玩家会引用未下载的 banner。
-        val bannerSeasonId = games.maxOfOrNull { it.seasonId }?.toInt()?.takeIf { it > 0 }
-            ?: season.id.takeIf { it > 0 }
-            ?: 39
+        val bannerSeasonId = ImageResourcesType.resolveBannerSeasonId(games.map { it.seasonId }, season.id)
         val bannerUrl = ImageResourcesType.bannerPathForSeason(bannerSeasonId)
 
         return EternalReturnPlayRender(

@@ -159,6 +159,7 @@ class SearchPlayerCommand : CommandEvent {
                     characterResponse = characters,
                     tiers = tiers,
                     infusionsResponse = infusions,
+                    bannerFallbackSeasonId = season.id,
                 )
                 log.debug { "gameDataDownload 预备请求数据已完成" }
             }
