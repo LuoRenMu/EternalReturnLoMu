@@ -200,10 +200,11 @@ open class PlayerRenderAssembler {
             } else null
         } else null
 
-        // banner 路径基于当前赛季ID推导,与 Search.tsx 中保持一致逻辑。
-        val seasonId = season.id.takeIf { it > 0 } ?: 39
-        val bannerId = (seasonId - 1) / 2 * 2 - 27
-        val bannerUrl = ImageResourcesType.Banner.getGeneralPath("bg-landing-search-v${bannerId}")
+        // 下载与渲染必须使用同一场游戏的赛季，否则非当前赛季玩家会引用未下载的 banner。
+        val bannerSeasonId = games.maxOfOrNull { it.seasonId }?.toInt()?.takeIf { it > 0 }
+            ?: season.id.takeIf { it > 0 }
+            ?: 39
+        val bannerUrl = ImageResourcesType.bannerPathForSeason(bannerSeasonId)
 
         return EternalReturnPlayRender(
             mmrStats = playerMMRStats,

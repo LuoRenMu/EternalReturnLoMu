@@ -3,7 +3,6 @@ package cn.luorenmu.service
 import cn.luorenmu.common.util.ResourceCheckUtil
 import cn.luorenmu.common.util.toPath
 import cn.luorenmu.request.api.Api.Companion.ioAsync
-import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.entity.module.ImageResourcesType
 import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.request.api.entity.response.dakgg.*
@@ -49,22 +48,7 @@ open class ResourcesDownloadService {
                 EternalReturnDakGGApi.Data.GetCharacters.execute()
             }
             val (profile, charactersResponse) = profileDF.await() to charactersDF.await()
-            val characters = profile.playerSeasonOverviews.firstOrNull()?.characterStats
-            characters?.forEach { character ->
-                ioLaunch {
-                    val characterById = charactersResponse.getCharacterById(character.key)
-                    val skin = character.skinStats?.firstOrNull()?.key ?: characterById.skins.first().id
-                    downloadCharacterImage(characterById, skin)
-                }
-            }
-            profile.playerSeasonOverviews.flatMap { it.duoStats }.flatMap { it.characterStats }
-                .distinctBy { it.key }
-                .forEach { character ->
-                    ioLaunch {
-                        val characterById = charactersResponse.getCharacterById(character.key)
-                        downloadCharacterImage(characterById, characterById.skins.first().id)
-                    }
-                }
+            downloadProfileCharacters(profile, charactersResponse)
         }
     }
 
@@ -76,22 +60,16 @@ open class ResourcesDownloadService {
             val charactersResponse = ioAsync {
                 EternalReturnDakGGApi.Data.GetCharacters.execute()
             }.await()
-            val characters = profile.playerSeasonOverviews.firstOrNull()?.characterStats
-            characters?.forEach { character ->
-                ioLaunch {
-                    val characterById = charactersResponse.getCharacterById(character.key)
-                    val skin = character.skinStats?.firstOrNull()?.key ?: characterById.skins.first().id
-                    downloadCharacterImage(characterById, skin)
-                }
-            }
-            profile.playerSeasonOverviews.flatMap { it.duoStats }.flatMap { it.characterStats }
-                .distinctBy { it.key }
-                .forEach { character ->
-                    ioLaunch {
-                        val characterById = charactersResponse.getCharacterById(character.key)
-                        downloadCharacterImage(characterById, characterById.skins.first().id)
-                    }
-                }
+            downloadProfileCharacters(profile, charactersResponse)
+        }
+    }
+
+    private suspend fun downloadProfileCharacters(
+        profile: DakGGProfileResponse,
+        characters: DakGGCharactersResponse,
+    ) {
+        downloadAll(profileCharacterImageRequests(profile, characters)) { (character, skinCode) ->
+            downloadCharacterImage(character, skinCode)
         }
     }
 
@@ -273,9 +251,8 @@ open class ResourcesDownloadService {
      */
     private suspend fun downloadBanner(games: List<UserGame>) {
         val seasonId = games.maxOfOrNull { it.seasonId }?.toInt()?.takeIf { it > 0 } ?: 39
-        val bannerId = (seasonId - 1) / 2 * 2 - 27
-        val name = "bg-landing-search-v${bannerId}"
-        val path = ImageResourcesType.Banner.getGeneralPath(name).toPath()
+        val name = ImageResourcesType.bannerNameForSeason(seasonId)
+        val path = ImageResourcesType.bannerPathForSeason(seasonId).toPath()
         if (ResourceCheckUtil.checkResource(path)) return
         downloadIfAbsent(
             "https://cdn.dak.gg/er/images/bg/${name}.jpg",
@@ -301,4 +278,24 @@ open class ResourcesDownloadService {
     private companion object {
         const val MAX_CONCURRENT_DOWNLOADS = 8
     }
+}
+
+internal fun profileCharacterImageRequests(
+    profile: DakGGProfileResponse,
+    characters: DakGGCharactersResponse,
+): List<Pair<DakGGCharactersResponse.DakGGCharacterById, Long>> {
+    val overviewCharacters = profile.playerSeasonOverviews
+        .flatMap { it.characterStats }
+        .map { stat ->
+            val character = characters.getCharacterById(stat.key)
+            character to (stat.skinStats?.firstOrNull()?.key ?: character.skins.first().id)
+        }
+    val duoCharacters = profile.playerSeasonOverviews
+        .flatMap { it.duoStats }
+        .flatMap { it.characterStats }
+        .map { stat ->
+            val character = characters.getCharacterById(stat.key)
+            character to character.skins.first().id
+        }
+    return (overviewCharacters + duoCharacters).distinctBy { (character, skinCode) -> character.id to skinCode }
 }

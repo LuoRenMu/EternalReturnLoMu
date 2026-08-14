@@ -88,6 +88,14 @@ enum class ImageResourcesType(val path: String, val fileType: String) {
         // 小威下载地址
         const val TRAIT_SKILL_GROUP_PLACEHOLDER_WILSON_URL =
             "//cdn.dak.gg/er/images/common/img-placeholder-wilson-round.png"
+
+        fun bannerNameForSeason(seasonId: Int): String {
+            val bannerId = (seasonId - 1) / 2 * 2 - 27
+            return "bg-landing-search-v$bannerId"
+        }
+
+        fun bannerPathForSeason(seasonId: Int): String =
+            Banner.getGeneralPath(bannerNameForSeason(seasonId))
     }
 
     fun getGeneralPath(name: String): String {
