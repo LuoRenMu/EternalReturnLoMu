@@ -27,6 +27,20 @@ class ProfileCharacterImageRequestsTest {
         assertEquals(listOf(1L to 101L, 2L to 202L, 3L to 303L), requests.map { it.first.id to it.second })
     }
 
+    @Test
+    fun `collects default avatar skin when profile uses another skin`() {
+        val profile = DakGGProfileResponse(
+            meta = DakGGProfileResponse.ProfileMeta(),
+            player = DakGGProfileResponse.ProfilePlayer(),
+            playerSeasonOverviews = listOf(overview(characterId = 1, skinId = 199)),
+        )
+        val characters = DakGGCharactersResponse(arrayListOf(character(1, 101)))
+
+        val requests = profileCharacterImageRequests(profile, characters)
+
+        assertEquals(listOf(1L to 199L, 1L to 101L), requests.map { it.first.id to it.second })
+    }
+
     private fun overview(characterId: Long, skinId: Long, duoCharacterId: Long? = null) =
         DakGGProfileResponse.ProfilePlayerSeasonOverviews(
             characterStats = listOf(

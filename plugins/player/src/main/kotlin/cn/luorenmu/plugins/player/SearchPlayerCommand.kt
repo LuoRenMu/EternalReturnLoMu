@@ -145,7 +145,7 @@ class SearchPlayerCommand : CommandEvent {
                 log.debug { "gameDataDownload 预备请求数据已完成" }
             }
             ioLaunch {
-                resourcesDownloadService.downloadProfileData(profile)
+                resourcesDownloadService.downloadProfileData(profile, characters)
                 log.debug { "downloadProfileData 预备请求数据已完成" }
             }
 

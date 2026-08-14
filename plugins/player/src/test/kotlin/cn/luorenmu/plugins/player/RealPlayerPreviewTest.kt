@@ -19,7 +19,7 @@ class RealPlayerPreviewTest {
     @Test
     fun renderSacredJudgement() = runBlocking {
         if (System.getenv("REAL_PLAYER_PREVIEW") != "true") return@runBlocking
-        val nickname = "神圣审判"
+        val nickname = System.getenv("REAL_PLAYER_NICKNAME") ?: "神圣审判"
         val totalStarted = System.nanoTime()
         val queryStarted = System.nanoTime()
         val renderData = coroutineScope {
@@ -62,8 +62,9 @@ class RealPlayerPreviewTest {
         }
         assertTrue(renderData.profileImageUrl?.toPath()?.let(Files::isRegularFile) == true)
         assertTrue(Files.isRegularFile(renderData.bannerUrl.toPath()))
+        assertTrue(renderData.characterUseStats.all { Files.isRegularFile(it.imgUrl.toPath()) })
         val queryMs = (System.nanoTime() - queryStarted) / 1_000_000
-        val output = Path.of(System.getProperty("user.dir"), "build", "previews", "search-player-神圣审判.png")
+        val output = Path.of(System.getProperty("user.dir"), "build", "previews", "search-player-$nickname.png")
         Files.createDirectories(output.parent)
         val renderTimes = (1..5).map { iteration ->
             val started = System.nanoTime()

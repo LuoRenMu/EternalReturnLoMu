@@ -60,8 +60,15 @@ open class ResourcesDownloadService {
             val charactersResponse = ioAsync {
                 EternalReturnDakGGApi.Data.GetCharacters.execute()
             }.await()
-            downloadProfileCharacters(profile, charactersResponse)
+            downloadProfileData(profile, charactersResponse)
         }
+    }
+
+    open suspend fun downloadProfileData(
+        profile: DakGGProfileResponse,
+        characters: DakGGCharactersResponse,
+    ) {
+        downloadProfileCharacters(profile, characters)
     }
 
     private suspend fun downloadProfileCharacters(
@@ -287,9 +294,12 @@ internal fun profileCharacterImageRequests(
 ): List<Pair<DakGGCharactersResponse.DakGGCharacterById, Long>> {
     val overviewCharacters = profile.playerSeasonOverviews
         .flatMap { it.characterStats }
-        .map { stat ->
+        .flatMap { stat ->
             val character = characters.getCharacterById(stat.key)
-            character to (stat.skinStats?.firstOrNull()?.key ?: character.skins.first().id)
+            listOfNotNull(
+                stat.skinStats?.firstOrNull()?.key,
+                character.skins.firstOrNull()?.id,
+            ).map { skinCode -> character to skinCode }
         }
     val duoCharacters = profile.playerSeasonOverviews
         .flatMap { it.duoStats }
