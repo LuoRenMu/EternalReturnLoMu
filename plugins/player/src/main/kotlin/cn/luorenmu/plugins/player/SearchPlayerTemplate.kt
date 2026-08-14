@@ -87,7 +87,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                     Text(data.data.rpName, textStyle(12f, ink, 20f).copy(textAlign = TextAlign.CENTER))
                 }
             }
-            Row(CssStyle(wrap = FlexWrap.WRAP, width = percent(100), height = px(178), padding = Edges(10f), gap = 5f, justifyContent = JustifyContent.CENTER), id = "rank_overview") {
+            Row(CssStyle(wrap = FlexWrap.WRAP, width = percent(100), height = px(195), padding = Edges(10f), gap = 5f, justifyContent = JustifyContent.CENTER), id = "rank_overview") {
                 val records = listOf("平均TK" to data.data.avgTk, "TOP 1" to data.data.top1, "游戏场次" to data.data.play,
                     "平均击杀" to data.data.avgKill, "TOP 2" to data.data.top2, "平均伤害" to data.data.avgDmg,
                     "平均助攻" to data.data.avgAssists, "TOP 3" to data.data.top3, "平均排名" to data.data.avgRank,
@@ -271,7 +271,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     private fun textStyle(size: Float, color: Int, height: Float) = CssStyle(width = percent(100), height = px(height), fontSize = size, color = color)
     private fun recordTextStyle(size: Float, color: Int, height: Float) = textStyle(size, color, height).copy(verticalAlign = VerticalAlign.CENTER)
     private fun chipStyle() = textStyle(12f, white, 24f).copy(width = px(70), border = Border(2f, white), borderRadius = 15f, textAlign = TextAlign.CENTER,verticalAlign = VerticalAlign.CENTER)
-    private fun rankPanelHeight(data: EternalReturnPlayRender) = if (data.mmrStats == null) 330f else 570f
+    private fun rankPanelHeight(data: EternalReturnPlayRender) = if (data.mmrStats == null) 347f else 587f
     private fun rankChip(rank: Int) = textStyle(12f, if (rank > 3 && rank != 99) muted else white, 24f).copy(width = px(24), background = when (rank) { 1 -> Color.makeRGB(17,178,136); 2,3 -> Color.makeRGB(32,122,199); 99 -> Color.makeRGB(71,84,130); else -> Color.makeRGB(214,214,214) }, borderRadius = 3f, textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER)
     private fun String?.resolve(base: String): String? = this?.takeIf(String::isNotBlank)?.let { if (it.startsWith("http://") || it.startsWith("https://")) it else base.trimEnd('/') + "/" + it.trimStart('/') }
 }

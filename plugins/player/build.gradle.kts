@@ -2,7 +2,7 @@ plugins { kotlin("jvm") }
 dependencies {
     implementation(project(":core")); implementation(project(":nutdraw")); implementation(project(":common")); implementation(project(":http-client"))
     implementation(libs.simbot.core); compileOnly(libs.simbot.component.qq)
-    implementation(libs.kotlin.logging.jvm); implementation(libs.kotlinx.coroutines.core); implementation(libs.caffeine)
+    implementation(libs.kotlin.logging.jvm); implementation(libs.kotlinx.coroutines.core)
     testImplementation(kotlin("test"))
     testRuntimeOnly(libs.skiko.runtime.windows.x64)
 }

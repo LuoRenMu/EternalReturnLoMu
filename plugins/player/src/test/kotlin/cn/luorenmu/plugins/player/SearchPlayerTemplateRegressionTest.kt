@@ -53,6 +53,18 @@ class SearchPlayerTemplateRegressionTest {
     }
 
     @Test
+    fun `rank overview cells stay inside left summary`() {
+        val document = SearchPlayerTemplate().build(player(matchType = "排位"))
+        val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+        val rank = assertNotNull(layout.findById("rank"))
+        val overview = assertNotNull(layout.findById("rank_overview"))
+
+        assertTrue(overview.children.isNotEmpty())
+        assertTrue(overview.children.all { it.bounds.bottom <= overview.bounds.bottom })
+        assertTrue(rank.children.all { it.bounds.bottom <= rank.bounds.bottom })
+    }
+
+    @Test
     fun `cobalt match shows infusions instead of kda`() {
         val root = SearchPlayerTemplate().build(player(matchType = "钴协议")).root
         val texts = root.textValues()

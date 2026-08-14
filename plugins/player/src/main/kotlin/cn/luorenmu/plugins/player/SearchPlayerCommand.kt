@@ -22,7 +22,6 @@ import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.User
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.service.ResourcesDownloadService
-import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.CoroutineScope
@@ -37,8 +36,6 @@ import love.forte.simbot.message.OfflineImage
 import love.forte.simbot.message.toText
 import org.koin.java.KoinJavaComponent.inject
 import java.time.LocalDateTime
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 
 /**
  *
@@ -68,12 +65,7 @@ class SearchPlayerCommand : CommandEvent {
     private val statisticsService: StatisticsRepository by inject(StatisticsRepository::class.java)
     private val aliasRepository: PlayerAliasRepository by inject(PlayerAliasRepository::class.java)
 
-    private val cache = Caffeine.newBuilder()
-        .maximumSize(500)
-        .expireAfterWrite(5, TimeUnit.MINUTES)
-        .build<String, String>()
-
-    private val keyMutexes = ConcurrentHashMap<String, Mutex>()
+    private val renderMutexes = Array(64) { Mutex() }
     private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
@@ -90,19 +82,10 @@ class SearchPlayerCommand : CommandEvent {
             return "[${NickNameUtil.hideNickname(actualNickname)}]该名称不合法,EternalReturn不允许使用这样的名称".toText()
         }
         val mode = MatchingMode.convert(command["mode"])
-        val cacheKey = "$actualNickname:${mode.value}"
+        val renderKey = "$actualNickname:${mode.value}"
 
-        cache.getIfPresent(cacheKey)?.let {
-            statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
-            return OfflineImage.fileOfflineImage(it)
-        }
-
-        val mutex = keyMutexes.computeIfAbsent(cacheKey) { Mutex() }
+        val mutex = renderMutexes[Math.floorMod(renderKey.hashCode(), renderMutexes.size)]
         return mutex.withLock {
-            cache.getIfPresent(cacheKey)?.let {
-                statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
-                return@withLock OfflineImage.fileOfflineImage(it)
-            }
             val preheated = preheatRequest(actualNickname)
             val outputPath = PathUtils.resourcesPathResolve("render", "player", "$actualNickname-${mode.value}.png")
             NutDraw.render(
@@ -110,8 +93,6 @@ class SearchPlayerCommand : CommandEvent {
                 playerRenderAssembler.assemble(preheated.profile, preheated.games, preheated.characters, preheated.tiers, preheated.season, preheated.infusions, mode, actualNickname),
                 outputPath,
             )
-            cache.put(cacheKey, outputPath.toString())
-            keyMutexes.remove(cacheKey)
             statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
             OfflineImage.fileOfflineImage(outputPath.toString())
         }
