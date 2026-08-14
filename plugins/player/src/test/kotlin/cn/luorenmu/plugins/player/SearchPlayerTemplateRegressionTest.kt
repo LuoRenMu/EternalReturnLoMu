@@ -9,6 +9,7 @@ import cn.luorenmu.nutdraw.dom.NutText
 import cn.luorenmu.nutdraw.layout.FlexLayoutEngine
 import cn.luorenmu.nutdraw.layout.LayoutBox
 import cn.luorenmu.service.entity.EternalReturnPlayRender
+import org.jetbrains.skia.Color
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertEquals
@@ -59,6 +60,27 @@ class SearchPlayerTemplateRegressionTest {
         assertNotNull(root.findById("infusions-game-1"))
         assertTrue("灌注" in texts)
         assertTrue("KDA" !in texts)
+    }
+
+    @Test
+    fun `rank match gives rp enough width and semantic change colors`() {
+        val cases = listOf(
+            18 to Color.makeRGB(24, 161, 108),
+            -12 to Color.makeRGB(210, 65, 65),
+            0 to Color.makeRGB(128, 128, 128),
+        )
+
+        cases.forEach { (rpChange, expectedColor) ->
+            val source = player(matchType = "排位")
+            val data = source.copy(matches = source.matches.map { it.copy(rp = 6800, rpChange = rpChange) })
+            val root = SearchPlayerTemplate().build(data).root
+            val metric = assertNotNull(root.findById("match-rp-game-1"))
+            val value = assertNotNull(root.findById("match-rp-value-game-1"))
+
+            assertEquals(px(108f), metric.style.width)
+            assertEquals(expectedColor, value.style.color)
+            assertEquals(if (rpChange > 0) "6800 (+$rpChange)" else "6800 ($rpChange)", (value as NutText).value)
+        }
     }
 
     @Test

@@ -18,6 +18,8 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     private val line = Color.makeRGB(230, 230, 230)
     private val darkHeader = Color.makeRGB(54, 57, 68)
     private val orange = Color.makeRGB(255, 80, 11)
+    private val positive = Color.makeRGB(24, 161, 108)
+    private val negative = Color.makeRGB(210, 65, 65)
 
     override fun build(data: EternalReturnPlayRender): TemplateDocument {
         val summaryHeight = if (data.summary != null) 190f else 0f
@@ -141,7 +143,22 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                     metric("${match.tk} / ${match.kill} / ${match.assist}", "TK / K / A")
                     metric(match.dmg, "DMG")
                     when {
-                        isRank -> metric("${match.rp} (${if (match.rpChange >= 0) "+" else ""}${match.rpChange})", "RP")
+                        isRank -> {
+                            val change = if (match.rpChange > 0) "+${match.rpChange}" else match.rpChange.toString()
+                            val color = when {
+                                match.rpChange > 0 -> positive
+                                match.rpChange < 0 -> negative
+                                else -> muted
+                            }
+                            metric(
+                                value = "${match.rp} ($change)",
+                                label = "RP",
+                                width = 108f,
+                                valueColor = color,
+                                id = "match-rp-${match.gameId}",
+                                valueId = "match-rp-value-${match.gameId}",
+                            )
+                        }
                         !isCobalt -> metric(String.format("%.2f", match.kda), "KDA")
                     }
                     if (isCobalt) infusionMetric(match, base) else metric(match.routeId, "路径ID")
@@ -220,9 +237,16 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
         }
     }
 
-    private fun ElementBuilder.metric(value: Any?, label: String) {
-        Column(CssStyle(width = px(72), height = px(48), alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER)) {
-            Text(value, recordTextStyle(14f, ink, 22f).copy(textAlign = TextAlign.CENTER))
+    private fun ElementBuilder.metric(
+        value: Any?,
+        label: String,
+        width: Float = 72f,
+        valueColor: Int = ink,
+        id: String? = null,
+        valueId: String? = null,
+    ) {
+        Column(CssStyle(width = px(width), height = px(48), alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER), id = id) {
+            Text(value, recordTextStyle(14f, valueColor, 22f).copy(textAlign = TextAlign.CENTER), id = valueId)
             Text(label, recordTextStyle(12f, muted, 18f).copy(textAlign = TextAlign.CENTER))
         }
     }
