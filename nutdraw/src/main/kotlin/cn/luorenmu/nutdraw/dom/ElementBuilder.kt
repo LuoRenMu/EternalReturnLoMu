@@ -1,13 +1,32 @@
+@file:Suppress("FunctionName")
+
 package cn.luorenmu.nutdraw.dom
 
 import cn.luorenmu.nutdraw.css.CssStyle
+import cn.luorenmu.nutdraw.css.FlexDirection
 
+@NutDrawDsl
 class ElementBuilder(private val style: CssStyle, private val id: String? = null) {
     private val children = mutableListOf<NutNode>()
 
     fun element(style: CssStyle = CssStyle(), id: String? = null, content: ElementBuilder.() -> Unit = {}) {
         children += ElementBuilder(style, id).apply(content).build()
     }
+
+    fun Column(style: CssStyle = CssStyle(), id: String? = null, content: ElementBuilder.() -> Unit = {}) {
+        element(style.copy(direction = FlexDirection.COLUMN), id, content)
+    }
+
+    fun Row(style: CssStyle = CssStyle(), id: String? = null, content: ElementBuilder.() -> Unit = {}) {
+        element(style.copy(direction = FlexDirection.ROW), id, content)
+    }
+
+    fun Text(value: Any?, style: CssStyle = CssStyle(), id: String? = null) = text(value, style, id)
+
+    fun Image(source: String?, style: CssStyle = CssStyle(), id: String? = null) = image(source, style, id)
+
+    fun LineChart(labels: List<String>, values: List<Int>, lineColor: Int, style: CssStyle = CssStyle(), id: String? = null) =
+        lineChart(labels, values, lineColor, style, id)
 
     fun text(value: Any?, style: CssStyle = CssStyle(), id: String? = null) {
         children += NutText(value?.toString().orEmpty(), style, id)
