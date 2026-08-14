@@ -20,11 +20,17 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     private val orange = Color.makeRGB(255, 80, 11)
 
     override fun build(data: EternalReturnPlayRender): TemplateDocument {
-        val summaryHeight = if (data.summary != null) 190 else 0
-        val matchesHeight = data.matches.sumOf { 120 + (it.teamMates?.size ?: 0) * 50 }
-        val leftHeight = 470 + data.characterUseStats.size * 52 + data.recentPlayers.size * 52
+        val summaryHeight = if (data.summary != null) 190f else 0f
+        val matchesHeight = data.matches.sumOf { 120 + (it.teamMates?.size ?: 0) * 50 }.toFloat()
+        val rankHeight = rankPanelHeight(data)
+        val leftSections = buildList {
+            add(rankHeight)
+            if (data.characterUseStats.isNotEmpty()) add(40f + data.characterUseStats.size * 52f)
+            if (data.recentPlayers.isNotEmpty()) add(40f + data.recentPlayers.size * 52f)
+        }
+        val leftHeight = leftSections.sum() + (leftSections.size - 1).coerceAtLeast(0) * 30f
         val bodyHeight = max(leftHeight, summaryHeight + matchesHeight + 30)
-        val height = 20 + 211 + 20 + bodyHeight + 30
+        val height = (20 + 211 + 20 + bodyHeight + 30).toInt()
         val base = data.httpServer
 
         return TemplateDocument(1290, height, Document(CssStyle(width = px(1290), height = px(height), padding = Edges(20f), gap = 20f, background = pageBg, color = ink), id = "content-container") {
@@ -51,13 +57,15 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                 Column(CssStyle(width = px(860), height = px(bodyHeight), padding = Edges(20f), gap = 22f), id = "right") {
                     data.summary?.let { summary ->
                         Column(panel(170f, 820f).copy(justifyContent = JustifyContent.CENTER), id = "summary-panel") {
-                            Text("近期 ${summary.count} 场对局(排位)", textStyle(18f, ink, 50f).copy(padding = Edges(0f, 10f), border = Border(1f, line)), id = "summary-title")
+                            Text("近期 ${summary.count} 场对局(排位)", textStyle(18f, ink, 50f).copy(padding = Edges(0f, 10f), verticalAlign = VerticalAlign.CENTER), id = "summary-title")
                             Row(CssStyle(width = percent(100), height = px(75), justifyContent = JustifyContent.CENTER, gap = 30f, alignItems = AlignItems.CENTER), id = "summary-stats") {
                                 summaryStat("对局获胜数", summary.wins); summaryStat("平均排名", summary.avgRank)
                                 summaryStat("平均团队击杀", summary.avgTk); summaryStat("平均伤害", summary.avgDmg)
                             }
                             Row(CssStyle(width = percent(100), height = px(35), justifyContent = JustifyContent.CENTER, gap = 5f, alignItems = AlignItems.CENTER), id = "summary-ranks") {
-                                summary.ranks.forEach { rank -> Text(if (rank == 99) "逃" else rank, rankChip(rank)) }
+                                summary.ranks.forEachIndexed { index, rank ->
+                                    Text(if (rank == 99) "逃" else rank, rankChip(rank), id = "summary-rank-$index")
+                                }
                             }
                         }
                     }
@@ -68,7 +76,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     }
 
     private fun ElementBuilder.rankPanel(data: EternalReturnPlayRender, base: String) {
-        Column(panel(455f, 370f), id = "rank") {
+        Column(panel(rankPanelHeight(data), 370f), id = "rank") {
             Text("${data.mode}(${data.season})", textStyle(20f, ink, 45f).copy(textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER, border = Border(1f, line)))
             Row(CssStyle(width = percent(100), height = px(106), justifyContent = JustifyContent.CENTER, alignItems = AlignItems.CENTER, gap = 15f, border = Border(1f, line))) {
                 Image(data.data.tierImageUrl.resolve(base), CssStyle(width = px(64), height = px(64), objectFit = ObjectFit.CONTAIN))
@@ -85,7 +93,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                 records.forEach { (label, value) -> Column(CssStyle(width = px(105), height = px(40), padding = Edges(3f), background = Color.makeRGB(240,233,233), borderRadius = 5f, alignItems = AlignItems.CENTER)) { Text(label, textStyle(11f, ink, 16f).copy(textAlign = TextAlign.CENTER)); Text(value, textStyle(13f, orange, 18f).copy(textAlign = TextAlign.CENTER)) } }
             }
             data.mmrStats?.let { mmr ->
-                Column(CssStyle(width = percent(100), height = px(115), margin = Edges(top = 10f), padding = Edges(12f), border = Border(1f, line)), id = "rank_stats") {
+                Column(CssStyle(width = percent(100), height = px(230), margin = Edges(top = 10f), padding = Edges(12f), border = Border(1f, line)), id = "rank_stats") {
                     LineChart(mmr.mmrDate, mmr.mmr, Color.makeRGB(202,164,40), CssStyle(width = percent(100), height = percent(100)), id = "rank_canvas")
                 }
             }
@@ -161,7 +169,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
             }
             data.characterUseStats.forEachIndexed { index, c ->
                 Row(tableRowStyle(52f)) {
-                    Image(c.imgUrl.resolve(base), CssStyle(width = px(40), height = px(40), borderRadius = 20f))
+                    Image(c.imgUrl.resolve(base), CssStyle(width = px(40), height = px(40), borderRadius = 20f, objectFit = ObjectFit.COVER), id = "character-avatar-$index")
                     playerIdentityCell(c.characterName, "${c.characterPlay} 场游戏(${c.winRate})", 115f, "character-name-$index")
                     Text(c.getRP, tableCellStyle(42f, if (c.getRP >= 0) Color.RED else Color.makeRGB(83,147,202)))
                     Text(c.avgRank, tableCellStyle(62f, ink))
@@ -239,6 +247,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     private fun textStyle(size: Float, color: Int, height: Float) = CssStyle(width = percent(100), height = px(height), fontSize = size, color = color)
     private fun recordTextStyle(size: Float, color: Int, height: Float) = textStyle(size, color, height).copy(verticalAlign = VerticalAlign.CENTER)
     private fun chipStyle() = textStyle(12f, white, 24f).copy(width = px(70), border = Border(2f, white), borderRadius = 15f, textAlign = TextAlign.CENTER,verticalAlign = VerticalAlign.CENTER)
-    private fun rankChip(rank: Int) = textStyle(12f, if (rank > 3 && rank != 99) muted else white, 24f).copy(width = px(24), background = when (rank) { 1 -> Color.makeRGB(17,178,136); 2,3 -> Color.makeRGB(32,122,199); 99 -> Color.makeRGB(71,84,130); else -> Color.makeRGB(214,214,214) }, borderRadius = 3f, textAlign = TextAlign.CENTER)
+    private fun rankPanelHeight(data: EternalReturnPlayRender) = if (data.mmrStats == null) 330f else 570f
+    private fun rankChip(rank: Int) = textStyle(12f, if (rank > 3 && rank != 99) muted else white, 24f).copy(width = px(24), background = when (rank) { 1 -> Color.makeRGB(17,178,136); 2,3 -> Color.makeRGB(32,122,199); 99 -> Color.makeRGB(71,84,130); else -> Color.makeRGB(214,214,214) }, borderRadius = 3f, textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER)
     private fun String?.resolve(base: String): String? = this?.takeIf(String::isNotBlank)?.let { if (it.startsWith("http://") || it.startsWith("https://")) it else base.trimEnd('/') + "/" + it.trimStart('/') }
 }

@@ -1,6 +1,7 @@
 package cn.luorenmu.plugins.player
 
 import cn.luorenmu.nutdraw.css.VerticalAlign
+import cn.luorenmu.nutdraw.css.px
 import cn.luorenmu.nutdraw.dom.NutElement
 import cn.luorenmu.nutdraw.dom.NutImage
 import cn.luorenmu.nutdraw.dom.NutNode
@@ -31,8 +32,12 @@ class SearchPlayerTemplateRegressionTest {
         val panel = assertNotNull(layout.findById("summary-panel"))
         val title = assertNotNull(layout.findById("summary-title"))
         val ranks = assertNotNull(layout.findById("summary-ranks"))
+        val firstRank = assertNotNull(layout.findById("summary-rank-0"))
 
         assertEquals(title.bounds.top - panel.bounds.top, panel.bounds.bottom - ranks.bounds.bottom)
+        assertEquals(VerticalAlign.CENTER, title.node.style.verticalAlign)
+        assertEquals(0f, title.node.style.border.width)
+        assertEquals(VerticalAlign.CENTER, firstRank.node.style.verticalAlign)
     }
 
     @Test
@@ -43,6 +48,7 @@ class SearchPlayerTemplateRegressionTest {
         val chart = assertNotNull(layout.findById("rank_stats"))
 
         assertTrue(chart.bounds.top - overview.bounds.bottom >= 10f)
+        assertEquals(px(230f), chart.node.style.height)
     }
 
     @Test
@@ -62,9 +68,12 @@ class SearchPlayerTemplateRegressionTest {
 
         val banner = assertNotNull(layout.findById("header-banner"))
         val profile = assertNotNull(layout.findById("profile-image"))
+        val characterAvatar = assertNotNull(layout.findById("character-avatar-0"))
         assertEquals(10f, banner.node.style.cornerRadii?.topLeft)
         assertEquals(10f, banner.node.style.cornerRadii?.topRight)
         assertEquals(10f, profile.node.style.cornerRadii?.topLeft)
+        assertTrue(banner.node.style.backgroundImage?.endsWith("/resources/images/bg/bg-landing-search-v11.jpg") == true)
+        assertTrue((characterAvatar.node as NutImage).source?.endsWith("/resources/images/character/1/CharProfile/1001003.png") == true)
 
         val nameHeader = assertNotNull(layout.findById("recent-name-header"))
         val recentHeaderRow = assertNotNull(layout.findById("recent-header-row"))
