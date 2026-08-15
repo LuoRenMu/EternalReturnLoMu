@@ -18,8 +18,7 @@ open class ExceptionRepository(private val databaseManager: DatabaseManager) {
     private val logger = KotlinLogging.logger {}
 
     open fun record(error: Throwable, source: String, context: String = "") {
-        if (!databaseManager.isEnabled()) return
-        val database = databaseManager.database ?: return
+        val database = databaseManager.database
 
         runCatching {
             database.insert(ExceptionLogs) {
@@ -37,8 +36,7 @@ open class ExceptionRepository(private val databaseManager: DatabaseManager) {
 
     open fun list(limit: Int = 100): List<ExceptionLogRecord> {
         require(limit in 1..500) { "limit 必须在 1 到 500 之间" }
-        if (!databaseManager.isEnabled()) return emptyList()
-        val database = databaseManager.database ?: return emptyList()
+        val database = databaseManager.database
 
         return runCatching {
             database.from(ExceptionLogs)

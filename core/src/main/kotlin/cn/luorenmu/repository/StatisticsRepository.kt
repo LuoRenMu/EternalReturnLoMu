@@ -27,7 +27,7 @@ import java.time.LocalDateTime
  * 统计信息仓储层，负责命令使用记录和昵称查询记录的持久化操作。
  *
  * 使用 Ktorm 数据库实现。所有公开方法均通过
- * [withDatabase] 统一处理数据库启用状态检查和异常处理。
+ * [withDatabase] 统一处理数据库异常。
  *
  * @author LoMu
  * Date 2026/5/1 18:33
@@ -43,25 +43,14 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
     /**
      * 统一的数据操作模板方法。
      *
-     * 1. 检查数据库是否启用，未启用时返回 [defaultValue]
-     * 2. 获取 Database 实例，为 null 时返回 [defaultValue]
-     * 3. 执行 [block] 中的业务逻辑
-     * 4. 捕获所有异常并记录日志，返回 [defaultValue]
+     * 执行 [block] 中的业务逻辑；发生异常时记录日志并返回 [defaultValue]。
      */
     private fun <T> withDatabase(
         operationName: String,
         defaultValue: T,
         block: (Database) -> T,
     ): T {
-        if (!dbManager.isEnabled()) {
-            logger.debug { "${dbManager.displayName()} 未启用，跳过操作: $operationName" }
-            return defaultValue
-        }
         val database = dbManager.database
-        if (database == null) {
-            logger.warn { "${dbManager.displayName()} Database 实例为 null，跳过操作: $operationName" }
-            return defaultValue
-        }
         return try {
             block(database)
         } catch (e: Exception) {

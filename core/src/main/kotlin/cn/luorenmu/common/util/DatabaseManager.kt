@@ -33,21 +33,11 @@ open class DatabaseManager(
     var backend: DatabaseBackend = backend
         private set
 
-    private val dataSourceDelegate = lazy {
-        if (isEnabled()) {
-            createDataSourceWithFallback()
-        } else {
-            null
-        }
-    }
-    private val dataSource: HikariDataSource?
+    private val dataSourceDelegate = lazy(::createDataSourceWithFallback)
+    private val dataSource: HikariDataSource
         get() = dataSourceDelegate.value
 
-    open val database: Database? by lazy {
-        dataSource?.let { Database.connect(it) }
-    }
-
-    open fun isEnabled(): Boolean = backend == DatabaseBackend.SQLITE || ConfigFile.config.postgres.enabled
+    open val database: Database by lazy { Database.connect(dataSource) }
 
     fun schema(): String? = if (backend == DatabaseBackend.POSTGRESQL) ConfigFile.config.postgres.schema else null
 
@@ -57,14 +47,11 @@ open class DatabaseManager(
     }
 
     open fun initialize() {
-        if (isEnabled()) {
-            database
-        }
+        database
     }
 
     fun <T> useConnection(block: (Connection) -> T): T {
-        check(isEnabled()) { "${displayName()} 未启用" }
-        return checkNotNull(database) { "${displayName()} 未连接" }.useConnection(block)
+        return database.useConnection(block)
     }
 
     private fun createDataSourceWithFallback(): HikariDataSource {
@@ -169,7 +156,7 @@ open class DatabaseManager(
 
     fun close() {
         if (dataSourceDelegate.isInitialized()) {
-            dataSource?.close()
+            dataSource.close()
             logger.info { "${displayName()} 连接池已关闭" }
         }
     }

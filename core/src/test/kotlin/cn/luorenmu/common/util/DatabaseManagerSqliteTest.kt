@@ -85,8 +85,6 @@ class DatabaseManagerSqliteTest {
     @Test
     fun fallsBackToSqliteWhenPostgresCannotConnect() {
         val directory = Files.createTempDirectory("lomu-postgres-fallback-test")
-        val previousEnabled = cn.luorenmu.ConfigFile.config.postgres.enabled
-        cn.luorenmu.ConfigFile.config.postgres.enabled = true
         val manager = DatabaseManager(
             backend = DatabaseBackend.POSTGRESQL,
             sqlitePath = directory.resolve("fallback.db"),
@@ -106,7 +104,6 @@ class DatabaseManagerSqliteTest {
             assertContains(AdminDatabaseService(manager).tables().map { it.name }, "command_usage")
         } finally {
             manager.close()
-            cn.luorenmu.ConfigFile.config.postgres.enabled = previousEnabled
             directory.toFile().deleteRecursively()
         }
     }

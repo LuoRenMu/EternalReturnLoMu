@@ -155,7 +155,6 @@ object ConfigFile {
     ) {
         @Serializable
         data class PostgresConfig(
-            var enabled: Boolean = false,
             var host: String = "localhost",
             var port: Int = 5432,
             var database: String = "bot_db",

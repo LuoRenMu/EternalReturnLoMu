@@ -127,11 +127,10 @@ document.addEventListener("alpine:init", () => {
             try {
                 const config = await this.api("/api/admin/config");
                 const sqlite = config.databaseBackend === "SQLite";
-                const databaseEnabled = sqlite || config.postgres.enabled;
                 Object.assign(this.overview, {
                     configState: config.databaseBackend || "未加载",
                     serverPort: config.runtimePort,
-                    database: sqlite ? "SQLite" : databaseEnabled ? "PostgreSQL" : "未启用",
+                    database: sqlite ? "SQLite" : "PostgreSQL",
                     ai: config.ai.apiKey ? "已配置" : "未配置",
                     auth: config.adminTokenConfigured ? "已保护" : "本地开放",
                 });

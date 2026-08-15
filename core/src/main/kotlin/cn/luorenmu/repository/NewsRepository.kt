@@ -34,15 +34,7 @@ open class NewsRepository(private val dbManager: DatabaseManager) {
         defaultValue: T,
         block: (Database) -> T,
     ): T {
-        if (!dbManager.isEnabled()) {
-            logger.debug { "${dbManager.displayName()} 未启用，跳过操作: $operationName" }
-            return defaultValue
-        }
         val database = dbManager.database
-        if (database == null) {
-            logger.warn { "${dbManager.displayName()} Database 实例为 null，跳过操作: $operationName" }
-            return defaultValue
-        }
         return try {
             block(database)
         } catch (e: Exception) {

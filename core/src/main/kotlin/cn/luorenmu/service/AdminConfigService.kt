@@ -19,7 +19,6 @@ class AdminConfigService(private val databaseManager: DatabaseManager) {
             if (isSensitiveKey(key) && value.isNotBlank()) SECRET_MASK else value
         },
         postgres = PostgresConfigView(
-            postgres.enabled,
             postgres.host,
             postgres.port,
             postgres.database,
@@ -58,7 +57,6 @@ data class AdminConfigView(
 
 @Serializable
 data class PostgresConfigView(
-    val enabled: Boolean,
     val host: String,
     val port: Int,
     val database: String,
