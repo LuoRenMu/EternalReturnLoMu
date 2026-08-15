@@ -19,6 +19,9 @@ import java.nio.file.Path
 import kotlin.math.max
 import kotlin.math.min
 
+internal const val NUTDRAW_FOOTER_TEXT = "Power By EternalReturnLoMu & LuoRenMu"
+internal const val NUTDRAW_FOOTER_HEIGHT = 36
+
 class SkiaDocumentRenderer(
     private val layoutEngine: FlexLayoutEngine = FlexLayoutEngine(),
     resources: ResourceManager = ResourceManager(),
@@ -29,12 +32,44 @@ class SkiaDocumentRenderer(
     private val lineChartRenderer = LineChartRenderer(fontResolver)
     suspend fun render(root: NutNode, output: Path, width: Int, height: Int): Path = withContext(Dispatchers.IO) {
         output.parent?.let(Files::createDirectories)
-        Surface.makeRasterN32Premul(width, height).use { surface ->
+        Surface.makeRasterN32Premul(width, height + NUTDRAW_FOOTER_HEIGHT).use { surface ->
             surface.canvas.clear(root.style.background)
             draw(surface.canvas, layoutEngine.layout(root, width.toFloat(), height.toFloat()))
+            drawFooter(surface.canvas, width, height)
             Files.write(output, checkNotNull(surface.makeImageSnapshot().encodeToData(EncodedImageFormat.PNG)).bytes)
         }
         output
+    }
+
+    private fun drawFooter(canvas: Canvas, width: Int, contentHeight: Int) {
+        val bounds = Rect.makeXYWH(0f, contentHeight.toFloat(), width.toFloat(), NUTDRAW_FOOTER_HEIGHT.toFloat())
+        canvas.drawRect(bounds, Paint().apply { color = Color.makeRGB(21, 24, 32) })
+
+        val availableWidth = (width - FOOTER_HORIZONTAL_PADDING * 2).coerceAtLeast(1).toFloat()
+        val initialRuns = fontResolver.runs(NUTDRAW_FOOTER_TEXT, FOOTER_FONT_SIZE, 500)
+        val initialWidth = initialRuns.sumOf { it.width.toDouble() }.toFloat()
+        val fontSize = if (initialWidth > availableWidth) {
+            (FOOTER_FONT_SIZE * availableWidth / initialWidth).coerceAtLeast(MIN_FOOTER_FONT_SIZE)
+        } else {
+            FOOTER_FONT_SIZE
+        }
+        val runs = if (fontSize == FOOTER_FONT_SIZE) initialRuns else fontResolver.runs(NUTDRAW_FOOTER_TEXT, fontSize, 500)
+        val textWidth = runs.sumOf { it.width.toDouble() }.toFloat()
+        val metrics = runs.firstOrNull()?.font?.metrics
+        val baselineOffset = if (metrics == null) fontSize else -(metrics.ascent + metrics.descent) / 2f
+        var cursor = (width - textWidth) / 2f
+        val baseline = contentHeight + NUTDRAW_FOOTER_HEIGHT / 2f + baselineOffset
+        val paint = Paint().apply {
+            color = Color.makeRGB(215, 218, 227)
+            isAntiAlias = true
+        }
+        canvas.save()
+        canvas.clipRect(bounds)
+        runs.forEach { run ->
+            canvas.drawString(run.text, cursor, baseline, run.font, paint)
+            cursor += run.width
+        }
+        canvas.restore()
     }
 
     private fun draw(canvas: Canvas, box: LayoutBox) {
@@ -157,5 +192,11 @@ class SkiaDocumentRenderer(
             Rect.makeXYWH(0f, (image.height - sourceHeight) / 2f, image.width.toFloat(), sourceHeight)
         }
         canvas.drawImageRect(image, source, target, SamplingMode.LINEAR, Paint(), false)
+    }
+
+    private companion object {
+        const val FOOTER_FONT_SIZE = 13f
+        const val MIN_FOOTER_FONT_SIZE = 6f
+        const val FOOTER_HORIZONTAL_PADDING = 12
     }
 }
