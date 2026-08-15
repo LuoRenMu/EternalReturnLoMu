@@ -11,6 +11,9 @@ import cn.luorenmu.nutdraw.resource.ResourceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.*
+import org.jetbrains.skia.svg.SVGPreserveAspectRatio
+import org.jetbrains.skia.svg.SVGPreserveAspectRatioAlign
+import org.jetbrains.skia.svg.SVGPreserveAspectRatioScale
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.math.max
@@ -116,7 +119,22 @@ class SkiaDocumentRenderer(
         is LoadedImage.Vector -> {
             val width = target.width.toInt().coerceAtLeast(1)
             val height = target.height.toInt().coerceAtLeast(1)
-            val image = vectors.getOrRender(VectorImageKey(loaded.source, width, height)) {
+            val image = vectors.getOrRender(VectorImageKey(loaded.source, width, height, fit)) {
+                loaded.dom.root?.let { root ->
+                    root.width = root.width.withValue(width.toFloat())
+                    root.height = root.height.withValue(height.toFloat())
+                    root.preserveAspectRatio = when (fit) {
+                        ObjectFit.FILL -> SVGPreserveAspectRatio(SVGPreserveAspectRatioAlign.NONE)
+                        ObjectFit.CONTAIN -> SVGPreserveAspectRatio(
+                            SVGPreserveAspectRatioAlign.XMID_YMID,
+                            SVGPreserveAspectRatioScale.MEET,
+                        )
+                        ObjectFit.COVER -> SVGPreserveAspectRatio(
+                            SVGPreserveAspectRatioAlign.XMID_YMID,
+                            SVGPreserveAspectRatioScale.SLICE,
+                        )
+                    }
+                }
                 loaded.dom.setContainerSize(width.toFloat(), height.toFloat())
                 Surface.makeRasterN32Premul(width, height).use { surface ->
                     surface.canvas.clear(Color.TRANSPARENT)

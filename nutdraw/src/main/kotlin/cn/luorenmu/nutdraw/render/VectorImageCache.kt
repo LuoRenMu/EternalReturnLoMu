@@ -1,9 +1,10 @@
 package cn.luorenmu.nutdraw.render
 
+import cn.luorenmu.nutdraw.css.ObjectFit
 import org.jetbrains.skia.Image
 import java.util.LinkedHashMap
 
-data class VectorImageKey(val source: String, val width: Int, val height: Int)
+data class VectorImageKey(val source: String, val width: Int, val height: Int, val fit: ObjectFit)
 
 /** Caches rasterised SVG variants because templates repeatedly draw a few SVGs at fixed sizes. */
 class VectorImageCache(private val maxEntries: Int = 256) {
