@@ -5,7 +5,6 @@ import cn.luorenmu.nutdraw.dom.ElementBuilder
 import cn.luorenmu.nutdraw.dom.document
 import cn.luorenmu.nutdraw.template.ImageTemplate
 import cn.luorenmu.nutdraw.template.TemplateDocument
-import cn.luorenmu.service.entity.TierStatistics
 import org.jetbrains.skia.Color
 import kotlin.math.ceil
 

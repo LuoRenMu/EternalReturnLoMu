@@ -6,7 +6,6 @@ import cn.luorenmu.request.api.entity.response.dakgg.resolveCutoffs
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGServerName
 import cn.luorenmu.request.entity.module.DakGGTeamMode
-import cn.luorenmu.service.entity.TierStatistics
 import kotlinx.coroutines.coroutineScope
 import java.util.stream.Collectors
 

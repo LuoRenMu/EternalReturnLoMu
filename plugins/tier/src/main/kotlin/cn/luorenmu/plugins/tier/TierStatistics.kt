@@ -1,14 +1,10 @@
-package cn.luorenmu.service.entity
+package cn.luorenmu.plugins.tier
 
 import cn.luorenmu.HTTP_SERVER_URL
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
 import java.text.SimpleDateFormat
 
-/**
- *
- * @author LoMu
- * Date 2025/11/1 01:07
- */
+/** Data rendered by the tier statistics command and owned by the reloadable tier plugin. */
 data class TierStatistics(
     val season: String,
     val tierTypes: List<String>,
