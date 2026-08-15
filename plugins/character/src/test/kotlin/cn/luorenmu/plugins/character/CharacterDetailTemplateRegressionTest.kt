@@ -5,7 +5,9 @@ import cn.luorenmu.nutdraw.layout.LayoutBox
 import cn.luorenmu.nutdraw.dom.NutImage
 import cn.luorenmu.nutdraw.dom.NutText
 import cn.luorenmu.service.entity.CharacterDetail
+import org.jetbrains.skia.Color
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -37,6 +39,26 @@ class CharacterDetailTemplateRegressionTest {
                 assertTrue((assertNotNull(layout.findById("equipment-win-rate-$slotIndex-$itemIndex")).node as NutText).value.startsWith("胜"))
             }
         }
+    }
+
+    @Test
+    fun `tier images stay compact and other weapons do not render avatar placeholders`() {
+        val document = CharacterDetailTemplate().build(characterDetail())
+        val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+
+        val detailTier = assertNotNull(layout.findById("detail-tier-icon"))
+        val mainWeaponTier = assertNotNull(layout.findById("main-weapon-tier-icon"))
+        val otherWeapon = assertNotNull(layout.findById("other-weapon-0"))
+        val otherWeaponTier = assertNotNull(layout.findById("other-weapon-tier-icon-0"))
+        val ranking = assertNotNull(layout.findById("main-weapon-ranking"))
+
+        assertTrue(detailTier.bounds.right - detailTier.bounds.left <= 26f)
+        assertTrue(mainWeaponTier.bounds.right - mainWeaponTier.bounds.left <= 18f)
+        assertTrue(otherWeaponTier.bounds.right - otherWeaponTier.bounds.left <= 20f)
+        assertEquals(1, otherWeapon.descendants().count { it.node is NutImage })
+        assertEquals(Color.makeRGB(235, 237, 243), otherWeapon.node.style.background)
+        assertEquals("实验体排名 #1 / 10", (ranking.node as NutText).value)
+        assertTrue(ranking.node.style.fontSize >= 12f)
     }
 
     @Test

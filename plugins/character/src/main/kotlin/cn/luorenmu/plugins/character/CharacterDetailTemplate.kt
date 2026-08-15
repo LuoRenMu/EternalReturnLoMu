@@ -136,8 +136,8 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
             image(data.imageUrl.resolve(base), CssStyle(width = px(112), height = px(112), borderRadius = 14f, border = Border(2f, Color.makeRGB(77, 82, 108)), objectFit = ObjectFit.COVER))
             element(CssStyle(width = px(275), height = px(112), gap = 4f)) {
                 element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(34), gap = 10f, alignItems = AlignItems.CENTER)) {
-                    image(characterTierIconUrl(analysis.characterTier).resolve(base), CssStyle(width = px(34), height = px(34), objectFit = ObjectFit.CONTAIN), id = "detail-tier-icon")
-                    text(data.name, txt(27f, white, 34f, 700).copy(width = px(231)), id = "detail-character-name")
+                    image(characterTierIconUrl(analysis.characterTier).resolve(base), CssStyle(width = px(26), height = px(26), objectFit = ObjectFit.CONTAIN), id = "detail-tier-icon")
+                    text(data.name, txt(27f, white, 34f, 700).copy(width = px(239)), id = "detail-character-name")
                 }
                 text(data.title, txt(12f, Color.makeRGB(184, 189, 210), 19f))
                 element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(24), gap = 5f)) {
@@ -152,12 +152,16 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
                 image(weapon.iconUrl.resolve(base), CssStyle(width = px(58), height = px(58), padding = Edges(6f), background = Color.makeRGB(16, 18, 27), borderRadius = 12f, objectFit = ObjectFit.CONTAIN))
                 element(CssStyle(flexGrow = 1f, height = px(92), gap = 2f, justifyContent = JustifyContent.CENTER)) {
                     element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(24), gap = 5f, alignItems = AlignItems.CENTER)) {
-                        image(characterTierIconUrl(weapon.tier).resolve(base), CssStyle(width = px(23), height = px(23), objectFit = ObjectFit.CONTAIN), id = "main-weapon-tier-icon")
+                        image(characterTierIconUrl(weapon.tier).resolve(base), CssStyle(width = px(18), height = px(18), objectFit = ObjectFit.CONTAIN), id = "main-weapon-tier-icon")
                         text(weapon.weapon, txt(15f, white, 24f, 700).copy(flexGrow = 1f), id = "main-weapon-name")
                     }
                     text("${"%.1f".format(weapon.tierScore)} 分", txt(11f, Color.makeRGB(205, 199, 244), 18f, 600))
                     text("RP变动 ${signed(weapon.rpChange)}", txt(10f, rpColor(weapon.rpChange), 16f, 700), id = "main-weapon-rp")
-                    text("热门 #${weapon.rank}/${weapon.rankSize}", txt(10f, Color.makeRGB(151, 158, 185), 16f))
+                    text(
+                        "实验体排名 #${weapon.rank} / ${weapon.rankSize}",
+                        CssStyle(width = percent(100), height = px(20), padding = Edges(2f, 6f), fontSize = 12f, fontWeight = 700, color = Color.makeRGB(255, 222, 122), background = Color.makeRGB(63, 58, 91), borderRadius = 6f),
+                        id = "main-weapon-ranking",
+                    )
                 }
             }
             element(CssStyle(direction = FlexDirection.ROW, wrap = FlexWrap.WRAP, flexGrow = 1f, height = px(112), gap = 7f)) {
@@ -277,9 +281,8 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
         element(cardStyle(104f).copy(direction = FlexDirection.ROW, padding = Edges(12f, 14f), gap = 8f, alignItems = AlignItems.CENTER), id = "other-weapons-panel") {
             text("其他武器", txt(12f, ink, 24f, 700).copy(width = px(72), textAlign = TextAlign.CENTER))
             weapons.forEachIndexed { index, weapon ->
-                element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(78), padding = Edges(7f), gap = 7f, alignItems = AlignItems.CENTER, background = soft, borderRadius = 10f), id = "other-weapon-$index") {
-                    image(weapon.iconUrl.resolve(base), CssStyle(width = px(40), height = px(40), padding = Edges(4f), background = card, borderRadius = 9f, objectFit = ObjectFit.CONTAIN))
-                    image(characterTierIconUrl(weapon.tier).resolve(base), CssStyle(width = px(28), height = px(28), objectFit = ObjectFit.CONTAIN), id = "other-weapon-tier-icon-$index")
+                element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(78), padding = Edges(7f), gap = 7f, alignItems = AlignItems.CENTER, background = Color.makeRGB(235, 237, 243), borderRadius = 10f), id = "other-weapon-$index") {
+                    image(characterTierIconUrl(weapon.tier).resolve(base), CssStyle(width = px(20), height = px(20), objectFit = ObjectFit.CONTAIN), id = "other-weapon-tier-icon-$index")
                     element(CssStyle(flexGrow = 1f, height = px(62), justifyContent = JustifyContent.CENTER)) {
                         text(weapon.weapon, txt(11f, ink, 17f, 700), id = "other-weapon-name-$index")
                         text("${"%.1f".format(weapon.tierScore)} 分 · 登场 ${pct(weapon.pickRate)}", txt(8f, muted, 14f, 600))

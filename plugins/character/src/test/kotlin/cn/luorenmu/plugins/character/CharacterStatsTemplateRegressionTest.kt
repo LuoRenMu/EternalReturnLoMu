@@ -43,6 +43,7 @@ class CharacterStatsTemplateRegressionTest {
 
         assertTrue((tierIcon.node as NutImage).source?.endsWith("/character-tier-A.svg") == true)
         assertTrue(tierIcon.bounds.right <= characterName.bounds.left)
+        assertTrue(tierIcon.bounds.right - tierIcon.bounds.left <= 24f)
     }
 
     private fun LayoutBox.findById(id: String): LayoutBox? =

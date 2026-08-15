@@ -39,8 +39,8 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
                                     image(player.weaponImgUrl.resolve(base),CssStyle(width=percent(100),height=percent(100),objectFit=ObjectFit.CONTAIN))
                                 }
                             }
-                            image(characterTierIconUrl(player.tier).resolve(base), CssStyle(width = px(32), height = px(32), objectFit = ObjectFit.CONTAIN), id = "stats-tier-icon-${player.rank}")
-                            text(player.characterName, cell(14f, ink, 212f).copy(textAlign = TextAlign.START), id = "stats-character-name-${player.rank}")
+                            image(characterTierIconUrl(player.tier).resolve(base), CssStyle(width = px(24), height = px(24), objectFit = ObjectFit.CONTAIN), id = "stats-tier-icon-${player.rank}")
+                            text(player.characterName, cell(14f, ink, 220f).copy(textAlign = TextAlign.START), id = "stats-character-name-${player.rank}")
                         }
                         text(player.rp, cell(15f, Color.makeRGB(42,46,58),80f))
                         text(player.pick, barCell(135f, Color.makeARGB(80,100,140,240)))
