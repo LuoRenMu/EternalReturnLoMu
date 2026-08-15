@@ -19,11 +19,12 @@ class CharacterDetailTemplateRegressionTest {
         val tierIcon = assertNotNull(layout.findById("detail-tier-icon"))
         val characterName = assertNotNull(layout.findById("detail-character-name"))
 
-        assertTrue((tierIcon.node as NutImage).source?.endsWith("/character-tier-S.svg") == true)
+        assertTrue(tierIcon.node.style.backgroundImage?.endsWith("/character-tier-S.svg") == true)
+        assertTrue(tierIcon.node !is NutImage)
         assertTrue(tierIcon.bounds.right <= characterName.bounds.left)
-        assertTrue((assertNotNull(layout.findById("main-weapon-tier-icon")).node as NutImage).source?.endsWith("/character-tier-S.svg") == true)
+        assertTrue(assertNotNull(layout.findById("main-weapon-tier-icon")).node.style.backgroundImage?.endsWith("/character-tier-S.svg") == true)
         assertTrue((assertNotNull(layout.findById("main-weapon-rp")).node as NutText).value.contains("+4.5"))
-        assertTrue((assertNotNull(layout.findById("other-weapon-tier-icon-0")).node as NutImage).source?.endsWith("/character-tier-A.svg") == true)
+        assertTrue(assertNotNull(layout.findById("other-weapon-tier-icon-0")).node.style.backgroundImage?.endsWith("/character-tier-A.svg") == true)
         assertTrue((assertNotNull(layout.findById("other-weapon-rp-0")).node as NutText).value.contains("-2.5"))
         repeat(4) { augmentIndex ->
             repeat(6) { subIndex ->
@@ -55,7 +56,7 @@ class CharacterDetailTemplateRegressionTest {
         assertTrue(detailTier.bounds.right - detailTier.bounds.left <= 26f)
         assertTrue(mainWeaponTier.bounds.right - mainWeaponTier.bounds.left <= 18f)
         assertTrue(otherWeaponTier.bounds.right - otherWeaponTier.bounds.left <= 20f)
-        assertEquals(1, otherWeapon.descendants().count { it.node is NutImage })
+        assertEquals(0, otherWeapon.descendants().count { it.node is NutImage })
         assertEquals(Color.makeRGB(235, 237, 243), otherWeapon.node.style.background)
         assertEquals("实验体排名 #1 / 10", (ranking.node as NutText).value)
         assertTrue(ranking.node.style.fontSize >= 12f)

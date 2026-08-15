@@ -1,6 +1,5 @@
 package cn.luorenmu.plugins.character
 
-import cn.luorenmu.nutdraw.dom.NutImage
 import cn.luorenmu.nutdraw.layout.FlexLayoutEngine
 import cn.luorenmu.nutdraw.layout.LayoutBox
 import cn.luorenmu.service.entity.CharacterStats
@@ -41,7 +40,7 @@ class CharacterStatsTemplateRegressionTest {
         val tierIcon = assertNotNull(layout.findById("stats-tier-icon-1"))
         val characterName = assertNotNull(layout.findById("stats-character-name-1"))
 
-        assertTrue((tierIcon.node as NutImage).source?.endsWith("/character-tier-A.svg") == true)
+        assertTrue(tierIcon.node.style.backgroundImage?.endsWith("/character-tier-A.svg") == true)
         assertTrue(tierIcon.bounds.right <= characterName.bounds.left)
         assertTrue(tierIcon.bounds.right - tierIcon.bounds.left <= 24f)
     }
