@@ -1,6 +1,8 @@
 # EternalReturnLoMu
 
-![EternalReturnLoMu](docs/images/LoMu-logo.png)
+<div style="text-align: center">
+<img src="docs/images/LoMu-logo.png" style="width: 30%" alt="lomu">
+</div>
 
 永恒轮回战绩查询机器人，支持 QQ 官方机器人和 OneBot 11。项目提供玩家战绩、角色数据、段位统计、兑换码与查询统计等命令，并附带带令牌认证的 Web 管理后台。
 
