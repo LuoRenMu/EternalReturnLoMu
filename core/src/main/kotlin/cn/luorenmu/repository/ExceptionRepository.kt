@@ -13,7 +13,12 @@ import org.ktorm.dsl.orderBy
 import org.ktorm.dsl.select
 import java.time.LocalDateTime
 
-/** Persists unexpected runtime failures without ever masking the original exception. */
+/**
+ * Persists unexpected runtime failures without ever masking the original exception.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 open class ExceptionRepository(private val databaseManager: DatabaseManager) {
     private val logger = KotlinLogging.logger {}
 

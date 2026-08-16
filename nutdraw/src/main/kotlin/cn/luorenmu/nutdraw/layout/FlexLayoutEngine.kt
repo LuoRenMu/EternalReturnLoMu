@@ -1,13 +1,16 @@
 package cn.luorenmu.nutdraw.layout
 
 import cn.luorenmu.nutdraw.css.*
-import cn.luorenmu.nutdraw.dom.NutNode
 import cn.luorenmu.nutdraw.dom.*
 import org.jetbrains.skia.Rect
 import kotlin.math.max
-import kotlin.math.min
 
-/** Small deterministic CSS box/Flex layout engine for image documents. */
+/**
+ * Small deterministic CSS box/Flex layout engine for image documents.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class FlexLayoutEngine {
     fun layout(root: NutNode, width: Float, height: Float): LayoutBox = layoutNode(root, 0f, 0f, width, height)
 

@@ -4,6 +4,11 @@ import cn.luorenmu.nutdraw.css.ObjectFit
 import org.jetbrains.skia.Image
 import java.util.LinkedHashMap
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 data class VectorImageKey(val source: String, val width: Int, val height: Int, val fit: ObjectFit)
 
 /** Caches rasterised SVG variants because templates repeatedly draw a few SVGs at fixed sizes. */

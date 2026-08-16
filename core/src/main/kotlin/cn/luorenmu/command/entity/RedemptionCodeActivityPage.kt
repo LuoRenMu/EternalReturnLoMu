@@ -1,5 +1,10 @@
 package cn.luorenmu.command.entity
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 data class RedemptionCodeActivityPage(
     val generatedDate: String,
     val items: List<Item>,

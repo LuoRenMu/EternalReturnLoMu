@@ -8,7 +8,12 @@ import cn.luorenmu.nutdraw.template.ImageTemplate
 import cn.luorenmu.nutdraw.template.TemplateDocument
 import org.jetbrains.skia.Color
 
-/** Bright, cartoon-styled command guide with strictly bounded card layouts. */
+/**
+ * Bright, cartoon-styled command guide with strictly bounded card layouts.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class HelpTemplate : ImageTemplate<CommandHelp> {
     private val page = Color.makeRGB(255, 247, 251)
     private val ink = Color.makeRGB(82, 55, 73)

@@ -138,7 +138,6 @@ data class BattleUserGamesResponse(
         val escapeState: Int = 0,
         val totalExtraKill: Long = 0,
         val collectItemForLog: List<Long>,
-        // val equipFirstItemForLog: Map<String, List<Long>>,
         /**
          *   战术技能  闪灵、赤色风暴
          */

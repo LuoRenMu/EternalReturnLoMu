@@ -2,6 +2,11 @@ package cn.luorenmu.nutdraw.css
 
 import org.jetbrains.skia.Color
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 data class CssStyle(
     val display: Display = Display.FLEX,
     val direction: FlexDirection = FlexDirection.COLUMN,

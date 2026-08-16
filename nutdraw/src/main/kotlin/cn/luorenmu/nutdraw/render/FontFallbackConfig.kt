@@ -1,5 +1,10 @@
 package cn.luorenmu.nutdraw.render
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 data class FontFallbackConfig(
     val families: List<String?> = listOf(
         "Microsoft YaHei", "Microsoft JhengHei", "Yu Gothic UI", "Meiryo", "MS Gothic",

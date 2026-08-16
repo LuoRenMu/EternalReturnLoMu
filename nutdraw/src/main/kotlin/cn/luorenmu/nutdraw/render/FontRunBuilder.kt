@@ -4,6 +4,11 @@ import org.jetbrains.skia.Font
 import org.jetbrains.skia.FontStyle
 import org.jetbrains.skia.Typeface
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class FontRunBuilder(private val typefaces: TypefaceResolver = TypefaceResolver()) {
     fun build(text: String, size: Float, weight: Int): List<FontRun> {
         if (text.isEmpty()) return emptyList()

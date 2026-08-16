@@ -6,6 +6,11 @@ import cn.luorenmu.nutdraw.css.ObjectFit
 import cn.luorenmu.nutdraw.css.px
 import cn.luorenmu.nutdraw.dom.ElementBuilder
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 private val CHARACTER_TIER_GRADES = setOf("S", "A", "B", "C", "D")
 
 internal fun characterTierIconUrl(tier: String): String? {

@@ -3,6 +3,11 @@ package cn.luorenmu.nutdraw.template
 import cn.luorenmu.nutdraw.css.*
 import org.jetbrains.skia.Color
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 object TemplateStyles {
     val background = Color.makeRGB(15, 17, 23)
     val card = Color.makeRGB(26, 29, 39)

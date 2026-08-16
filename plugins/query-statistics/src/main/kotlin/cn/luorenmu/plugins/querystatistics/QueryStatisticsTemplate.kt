@@ -8,6 +8,11 @@ import cn.luorenmu.nutdraw.template.TemplateDocument
 import org.jetbrains.skia.Color
 import java.time.format.DateTimeFormatter
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class QueryStatisticsTemplate : ImageTemplate<QueryStatisticsData> {
     private val background = Color.makeRGB(246, 241, 245)
     private val card = Color.WHITE

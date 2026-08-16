@@ -4,7 +4,12 @@ import cn.luorenmu.HTTP_SERVER_URL
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
 import java.text.SimpleDateFormat
 
-/** Data rendered by the tier statistics command and owned by the reloadable tier plugin. */
+/**
+ * Data rendered by the tier statistics command and owned by the reloadable tier plugin.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 data class TierStatistics(
     val season: String,
     val tierTypes: List<String>,

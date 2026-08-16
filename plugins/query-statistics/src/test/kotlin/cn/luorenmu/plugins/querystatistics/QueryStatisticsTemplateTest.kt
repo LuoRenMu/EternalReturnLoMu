@@ -9,6 +9,11 @@ import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class QueryStatisticsTemplateTest {
     @Test
     fun rendersPlayerHistoryImage() = runBlocking {

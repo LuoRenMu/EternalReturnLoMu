@@ -6,7 +6,12 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.max
 
-/** Native Skia equivalent of the small Chart.js MMR history chart. */
+/**
+ * Native Skia equivalent of the small Chart.js MMR history chart.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class LineChartRenderer(private val fonts: CjkFontResolver) {
     fun draw(canvas: Canvas, chart: NutLineChart, bounds: Rect) {
         val count = minOf(chart.labels.size, chart.values.size)

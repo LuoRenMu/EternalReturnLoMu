@@ -5,6 +5,11 @@ import love.forte.simbot.message.OfflineImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class AdminMessagePreviewTest {
     @Test
     fun offlineResourceImageUsesPublicResourcesUrl() {

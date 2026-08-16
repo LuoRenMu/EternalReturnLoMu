@@ -11,6 +11,11 @@ import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class LineChartRenderingTest {
     @Test
     fun `renders chart js equivalent mmr line chart`() = runBlocking {

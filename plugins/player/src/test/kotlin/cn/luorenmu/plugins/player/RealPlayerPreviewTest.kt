@@ -14,7 +14,12 @@ import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/** Opt-in integration preview: REAL_PLAYER_PREVIEW=true (uses live DAK.GG data). */
+/**
+ * Opt-in integration preview: REAL_PLAYER_PREVIEW=true (uses live DAK.GG data).
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class RealPlayerPreviewTest {
     @Test
     fun renderSacredJudgement() = runBlocking {

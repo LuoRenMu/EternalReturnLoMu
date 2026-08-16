@@ -8,7 +8,12 @@ import cn.luorenmu.nutdraw.template.TemplateDocument
 import cn.luorenmu.service.entity.CharacterStats
 import org.jetbrains.skia.Color
 
-/** Faithful reconstruction of character_stats.ftl + character_stats.css. */
+/**
+ * Faithful reconstruction of character_stats.ftl + character_stats.css.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
     private val bg = Color.makeRGB(245,246,250); private val white = Color.WHITE; private val ink = Color.makeRGB(26,29,40)
     private val muted = Color.makeRGB(120,128,160); private val line = Color.makeRGB(226,229,238)

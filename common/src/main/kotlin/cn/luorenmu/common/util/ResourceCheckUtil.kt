@@ -3,7 +3,12 @@ package cn.luorenmu.common.util
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
-/** Thread-safe cache for validated local resources. */
+/**
+ * Thread-safe cache for validated local resources.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 object ResourceCheckUtil {
     private val fileMap = ConcurrentHashMap<Path, Byte>()
 

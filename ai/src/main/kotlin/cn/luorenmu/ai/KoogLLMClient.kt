@@ -18,6 +18,9 @@ import java.time.Duration
  *
  * The class name is kept for compatibility with existing wiring, but the
  * implementation avoids Koog so the bot runtime does not pull in Ktor 3.
+  *
+  * @author LoMu
+  * Date 2026/8/16 15:30
  */
 class KoogLLMClient(private val config: AIConfig) {
 

@@ -8,6 +8,11 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Types
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class AdminDatabaseService(private val databaseManager: DatabaseManager) {
     fun tables(): List<AdminTableSummary> = databaseManager.useConnection { connection ->
         val schema = databaseManager.schema()

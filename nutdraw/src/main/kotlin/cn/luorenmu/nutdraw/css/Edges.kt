@@ -1,5 +1,10 @@
 package cn.luorenmu.nutdraw.css
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 data class Edges(
     val top: Float = 0f,
     val right: Float = 0f,

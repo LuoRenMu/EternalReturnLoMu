@@ -5,6 +5,9 @@ import java.time.LocalDate
 
 /**
  * 活动展示规则。
+  *
+  * @author LoMu
+  * Date 2026/8/16 15:30
  */
 object GameActivityVisibility {
     fun EternalReturnNewsRecord.isVisibleOn(today: LocalDate): Boolean {

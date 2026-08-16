@@ -5,6 +5,11 @@ import cn.luorenmu.SERVER_PORT
 import cn.luorenmu.common.util.DatabaseManager
 import kotlinx.serialization.Serializable
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class AdminConfigService(private val databaseManager: DatabaseManager) {
     fun view(): AdminConfigView = ConfigFile.config.toView()
 

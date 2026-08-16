@@ -48,6 +48,11 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 private val adminJson = Json {
     ignoreUnknownKeys = true
     encodeDefaults = true

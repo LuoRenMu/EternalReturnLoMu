@@ -4,6 +4,11 @@ import cn.luorenmu.nutdraw.render.FontFallbackConfig
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class FontFallbackConfigTest {
     @Test
     fun `equivalent fallback lists have value equality`() {

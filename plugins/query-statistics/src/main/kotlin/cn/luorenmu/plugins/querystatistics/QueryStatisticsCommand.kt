@@ -22,6 +22,11 @@ import org.koin.java.KoinJavaComponent.inject
     aliases = ["查询记录", "玩家查询统计"],
     adapter = [Adapter.QG_BOT, Adapter.ONE_BOT],
 )
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class QueryStatisticsCommand : CommandEvent {
     override val example = "/查询统计 神圣审判"
     override val description = "查看玩家被查询次数，以及自己查询过的玩家"

@@ -16,6 +16,11 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class CommandPluginsTest {
     @Test
     fun `disable reply and state survive a loader restart`() {

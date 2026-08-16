@@ -10,6 +10,11 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class HelpTemplateRegressionTest {
     @Test
     fun `cartoon help layout stays centered and inside every parent`() {

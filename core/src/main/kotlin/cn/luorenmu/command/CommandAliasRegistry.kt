@@ -2,6 +2,11 @@ package cn.luorenmu.command
 
 import cn.luorenmu.common.annotation.BotCommand
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 internal object CommandAliasRegistry {
     fun <T> register(target: MutableMap<String, T>, command: BotCommand, value: T) {
         (listOf(command.alias) + command.aliases)

@@ -1,5 +1,10 @@
 package cn.luorenmu.command
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 internal data class CommandTextMatch<T>(
     val value: T,
     val arguments: String,

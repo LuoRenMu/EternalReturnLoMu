@@ -5,6 +5,11 @@ import kotlinx.serialization.SerialName
 
 // ============ 根对象 ============
 @Serializable
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 data class ArticleResponse(
     @SerialName("per_page")
     val perPage: Int,

@@ -7,6 +7,11 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class CharacterStatsTemplateRegressionTest {
     @Test
     fun `tier image appears before character name`() {

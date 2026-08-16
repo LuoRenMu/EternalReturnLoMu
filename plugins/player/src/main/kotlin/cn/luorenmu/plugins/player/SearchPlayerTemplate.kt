@@ -9,7 +9,12 @@ import cn.luorenmu.service.entity.EternalReturnPlayRender
 import org.jetbrains.skia.Color
 import kotlin.math.max
 
-/** Faithful Skia reconstruction of search_player.ftl + search_player.css. */
+/**
+ * Faithful Skia reconstruction of search_player.ftl + search_player.css.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     private val pageBg = Color.makeRGB(245, 245, 245)
     private val white = Color.WHITE

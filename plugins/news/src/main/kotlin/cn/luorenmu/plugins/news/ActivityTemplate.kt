@@ -7,7 +7,12 @@ import cn.luorenmu.nutdraw.template.ImageTemplate
 import cn.luorenmu.nutdraw.template.TemplateDocument
 import org.jetbrains.skia.Color
 
-/** Faithful reconstruction of redemption_code_activity.ftl. */
+/**
+ * Faithful reconstruction of redemption_code_activity.ftl.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class ActivityTemplate : ImageTemplate<RedemptionCodeActivityPage> {
     override fun build(data: RedemptionCodeActivityPage): TemplateDocument {
         val height = 108 + data.items.size * 184 + 28

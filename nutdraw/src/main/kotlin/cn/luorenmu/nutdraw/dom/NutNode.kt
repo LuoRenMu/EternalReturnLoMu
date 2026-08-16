@@ -2,6 +2,11 @@ package cn.luorenmu.nutdraw.dom
 
 import cn.luorenmu.nutdraw.css.CssStyle
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 sealed class NutNode(open val style: CssStyle, open val id: String? = null) {
     fun findById(target: String): NutNode? {
         if (id == target) return this

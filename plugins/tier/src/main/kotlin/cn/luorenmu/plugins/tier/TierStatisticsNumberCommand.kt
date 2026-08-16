@@ -15,7 +15,6 @@ import cn.luorenmu.service.ResourcesDownloadService
 import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
-import love.forte.simbot.message.OfflineURIImage
 import org.koin.java.KoinJavaComponent.inject
 
 /**

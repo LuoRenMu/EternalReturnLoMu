@@ -4,6 +4,11 @@ import cn.luorenmu.request.api.entity.response.dakgg.CharacterAnalysisResponse
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class CharacterDetailCollectorTest {
     @Test
     fun `collects five most selected items for every equipment slot`() {

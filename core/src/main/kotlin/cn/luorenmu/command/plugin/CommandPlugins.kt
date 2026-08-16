@@ -21,6 +21,9 @@ import kotlin.io.path.name
 /**
  * Core plugin loader. Registry publication is atomic: in-flight commands finish on the old
  * Implementation while new calls immediately see the enabled/reloaded Module snapshot.
+  *
+  * @author LoMu
+  * Date 2026/8/16 15:30
  */
 object CommandPlugins {
     private val log = KotlinLogging.logger {}

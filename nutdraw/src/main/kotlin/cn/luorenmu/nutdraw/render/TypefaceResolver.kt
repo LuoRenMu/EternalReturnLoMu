@@ -5,6 +5,11 @@ import org.jetbrains.skia.FontStyle
 import org.jetbrains.skia.Typeface
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class TypefaceResolver(
     private val fontManager: FontMgr = FontMgr.default,
     private val config: FontFallbackConfig = FontFallbackConfig(),

@@ -3,7 +3,6 @@ package cn.luorenmu.nutdraw.render
 import cn.luorenmu.nutdraw.css.ObjectFit
 import cn.luorenmu.nutdraw.css.TextAlign
 import cn.luorenmu.nutdraw.css.VerticalAlign
-import cn.luorenmu.nutdraw.dom.NutNode
 import cn.luorenmu.nutdraw.dom.*
 import cn.luorenmu.nutdraw.layout.FlexLayoutEngine
 import cn.luorenmu.nutdraw.layout.LayoutBox
@@ -19,6 +18,11 @@ import java.nio.file.Path
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 internal const val NUTDRAW_FOOTER_TEXT = "Power By EternalReturnLoMu • LuoRenMu"
 internal const val NUTDRAW_FOOTER_HEIGHT = 36
 

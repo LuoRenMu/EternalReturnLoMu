@@ -5,7 +5,6 @@ import cn.luorenmu.command.entity.CommandFindResult
 import cn.luorenmu.command.entity.CommandInfo
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.command.plugin.CommandPlugins
-import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.currentAdapter
 import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.repository.StatisticsRepository

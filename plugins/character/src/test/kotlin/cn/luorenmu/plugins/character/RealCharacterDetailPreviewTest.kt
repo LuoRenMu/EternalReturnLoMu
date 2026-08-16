@@ -6,7 +6,12 @@ import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/** Opt-in live visual test: REAL_CHARACTER_PREVIEW=true. */
+/**
+ * Opt-in live visual test: REAL_CHARACTER_PREVIEW=true.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class RealCharacterDetailPreviewTest {
     @Test
     fun renderAyaDetail() = runBlocking {

@@ -9,6 +9,11 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class AdminDashboardPageTest {
     @Test
     fun dashboardUsesFreemarkerHtmxAlpineAndStandaloneCss() {

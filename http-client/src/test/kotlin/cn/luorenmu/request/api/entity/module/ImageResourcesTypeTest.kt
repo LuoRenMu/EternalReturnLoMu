@@ -3,6 +3,11 @@ package cn.luorenmu.request.api.entity.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class ImageResourcesTypeTest {
     @Test
     fun `banner path uses queried game season`() {

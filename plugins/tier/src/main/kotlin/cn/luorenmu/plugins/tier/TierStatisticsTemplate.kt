@@ -8,7 +8,12 @@ import cn.luorenmu.nutdraw.template.TemplateDocument
 import org.jetbrains.skia.Color
 import kotlin.math.ceil
 
-/** Faithful reconstruction of tier_statistics_number.ftl. */
+/**
+ * Faithful reconstruction of tier_statistics_number.ftl.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class TierStatisticsTemplate : ImageTemplate<TierStatistics> {
     override fun build(data: TierStatistics): TemplateDocument {
         val rows = ceil(data.tierTypes.size / 5.0).toInt()

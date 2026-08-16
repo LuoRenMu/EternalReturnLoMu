@@ -4,6 +4,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class CommandTextParserTest {
     private val commands = linkedMapOf(
         "查询" to true,

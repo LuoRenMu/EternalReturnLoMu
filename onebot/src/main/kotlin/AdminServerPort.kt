@@ -3,6 +3,11 @@ package cn.luorenmu.onebot
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 object AdminServerPort {
     const val DEFAULT_PORT = 5752
 

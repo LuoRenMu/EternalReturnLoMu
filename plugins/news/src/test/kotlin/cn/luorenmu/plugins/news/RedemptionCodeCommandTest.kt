@@ -9,6 +9,9 @@ import kotlin.test.assertTrue
 
 /**
  * RedemptionCodeCommand 元数据测试（自包含，无需 Koin/网络/数据库）。
+  *
+  * @author LoMu
+  * Date 2026/8/16 15:30
  */
 class RedemptionCodeCommandTest {
 

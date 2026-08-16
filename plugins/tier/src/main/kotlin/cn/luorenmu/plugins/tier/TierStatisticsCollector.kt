@@ -1,7 +1,6 @@
 package cn.luorenmu.plugins.tier
 
 import cn.luorenmu.request.api.Api.Companion.ioAsync
-import cn.luorenmu.request.api.entity.response.dakgg.DakGGLeaderboardResponse
 import cn.luorenmu.request.api.entity.response.dakgg.resolveCutoffs
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.DakGGServerName

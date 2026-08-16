@@ -6,6 +6,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class DomIdLookupTest {
     @Test
     fun `finds elements by id and nested shinobu style path`() {

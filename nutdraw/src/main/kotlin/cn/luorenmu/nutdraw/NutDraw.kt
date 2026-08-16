@@ -4,7 +4,12 @@ import cn.luorenmu.nutdraw.template.ImageTemplate
 import cn.luorenmu.nutdraw.template.TemplateManager
 import java.nio.file.Path
 
-/** Host-owned generic rendering Implementation shared by independently reloadable command Modules. */
+/**
+ * Host-owned generic rendering Implementation shared by independently reloadable command Modules.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 object NutDraw {
     private val templates = TemplateManager()
 

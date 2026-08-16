@@ -2,7 +2,12 @@ package cn.luorenmu.command.plugin
 
 import cn.luorenmu.command.CommandEvent
 
-/** A replaceable command Module. Implementations should keep command-specific assets in the same jar. */
+/**
+ * A replaceable command Module. Implementations should keep command-specific assets in the same jar.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 interface CommandPlugin {
     val id: String
     val name: String

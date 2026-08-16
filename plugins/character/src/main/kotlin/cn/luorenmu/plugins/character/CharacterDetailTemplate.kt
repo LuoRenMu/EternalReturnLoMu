@@ -8,7 +8,12 @@ import cn.luorenmu.nutdraw.template.TemplateDocument
 import cn.luorenmu.service.entity.CharacterDetail
 import org.jetbrains.skia.Color
 
-/** Compact character guide with skill learning plans as the primary visual focus. */
+/**
+ * Compact character guide with skill learning plans as the primary visual focus.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
     private val pageBg = Color.makeRGB(239, 242, 248)
     private val card = Color.WHITE

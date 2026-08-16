@@ -4,6 +4,11 @@ import java.util.jar.JarFile
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 class TierPluginPackagingTest {
     @Test
     fun `standalone plugin jar contains its TierStatistics model`() {

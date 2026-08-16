@@ -3,7 +3,12 @@ package cn.luorenmu.command.plugin
 import java.net.URL
 import java.net.URLClassLoader
 
-/** Keeps shared interfaces parent-loaded while allowing a plugin Module to replace its own classes. */
+/**
+ * Keeps shared interfaces parent-loaded while allowing a plugin Module to replace its own classes.
+ *
+ * @author LoMu
+ * Date 2026/8/16 15:30
+ */
 internal class ChildFirstPluginClassLoader(
     urls: Array<URL>,
     parent: ClassLoader,
