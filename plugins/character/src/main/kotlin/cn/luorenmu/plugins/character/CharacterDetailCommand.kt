@@ -6,6 +6,7 @@ import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.PathUtils
+import cn.luorenmu.common.util.RenderedFileCache
 import cn.luorenmu.nutdraw.NutDraw
 import cn.luorenmu.request.entity.module.DakGGRank
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -48,15 +49,27 @@ class CharacterDetailCommand : CommandEvent {
             null
         }
 
-        val detail = characterDetailCollector.collect(
-            characterQuery = query,
-            teamMode = mode.first,
-            matchingMode = mode.second,
-            tier = tierKey,
+        val cacheKey = RenderedFileCache.cacheKey(
+            CACHE_VERSION,
+            query.lowercase(),
+            mode.first,
+            mode.second,
+            tierKey.orEmpty(),
         )
+        val outputPath = PathUtils.resourcesPathResolve("render", "character_detail_$cacheKey.png")
+        val cachedPath = RenderedFileCache.getOrCreate(outputPath) { path ->
+            val detail = characterDetailCollector.collect(
+                characterQuery = query,
+                teamMode = mode.first,
+                matchingMode = mode.second,
+                tier = tierKey,
+            )
+            NutDraw.render(CharacterDetailTemplate(), detail, path)
+        }
+        return OfflineImage.fileOfflineImage(cachedPath.toString())
+    }
 
-        val outputPath = PathUtils.resourcesPathResolve("render", "character_detail_${detail.id}.png")
-        NutDraw.render(CharacterDetailTemplate(), detail, outputPath)
-        return OfflineImage.fileOfflineImage(outputPath.toString())
+    private companion object {
+        const val CACHE_VERSION = "v1"
     }
 }

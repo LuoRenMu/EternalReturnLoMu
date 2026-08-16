@@ -6,6 +6,7 @@ import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.PathUtils
+import cn.luorenmu.common.util.RenderedFileCache
 import cn.luorenmu.nutdraw.NutDraw
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
@@ -42,12 +43,16 @@ class CharacterStatsCommand : CommandEvent {
             rankStr = "灭钻"
         }
         val rank = DakGGRank.convert(rankStr)
-        preheatRequest()
-        val stats = characterStatsCollector.collect(rank)
-
-        val outputPath = PathUtils.resourcesPathResolve("render", "character_stats_${rank.value}.png")
-        NutDraw.render(CharacterStatsTemplate(), stats, outputPath)
-        return OfflineImage.fileOfflineImage(outputPath.toString())
+        val outputPath = PathUtils.resourcesPathResolve(
+            "render",
+            "character_stats_${CACHE_VERSION}_${rank.value}.png",
+        )
+        val cachedPath = RenderedFileCache.getOrCreate(outputPath) { path ->
+            preheatRequest()
+            val stats = characterStatsCollector.collect(rank)
+            NutDraw.render(CharacterStatsTemplate(), stats, path)
+        }
+        return OfflineImage.fileOfflineImage(cachedPath.toString())
     }
 
     private suspend fun preheatRequest() {
@@ -69,5 +74,9 @@ class CharacterStatsCommand : CommandEvent {
                 resourcesDownloadService.downloadCharacterTierIcons(CHARACTER_TIER_GRADES)
             }
         }
+    }
+
+    private companion object {
+        const val CACHE_VERSION = "v1"
     }
 }

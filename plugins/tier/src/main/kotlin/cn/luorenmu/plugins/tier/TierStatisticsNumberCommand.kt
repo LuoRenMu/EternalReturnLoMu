@@ -6,6 +6,7 @@ import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.PathUtils
+import cn.luorenmu.common.util.RenderedFileCache
 import cn.luorenmu.nutdraw.NutDraw
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
@@ -36,12 +37,17 @@ class TierStatisticsNumberCommand : CommandEvent {
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         val serverName = command["server"]?.let { DakGGServerName.convert(it) } ?: DakGGServerName.Asia
-        preheatRequest(serverName)
-        val cutoffsAndTierNumber = tierStatisticsCollector.collect(serverName)
-        val outputPath = PathUtils.resourcesPathResolve("render", "tier", "tierStatisticsNumber.png")
-        NutDraw.render(TierStatisticsTemplate(), cutoffsAndTierNumber, outputPath)
-
-        return OfflineImage.fileOfflineImage(outputPath.toString())
+        val outputPath = PathUtils.resourcesPathResolve(
+            "render",
+            "tier",
+            "tierStatisticsNumber_${CACHE_VERSION}_${serverName.value}.png",
+        )
+        val cachedPath = RenderedFileCache.getOrCreate(outputPath) { path ->
+            preheatRequest(serverName)
+            val cutoffsAndTierNumber = tierStatisticsCollector.collect(serverName)
+            NutDraw.render(TierStatisticsTemplate(), cutoffsAndTierNumber, path)
+        }
+        return OfflineImage.fileOfflineImage(cachedPath.toString())
     }
 
     /**
@@ -66,5 +72,9 @@ class TierStatisticsNumberCommand : CommandEvent {
             val tiers = EternalReturnDakGGApi.Data.GetTiers.execute()
             resourcesDownloadService.downloadTiers(tiers)
         }
+    }
+
+    private companion object {
+        const val CACHE_VERSION = "v1"
     }
 }
