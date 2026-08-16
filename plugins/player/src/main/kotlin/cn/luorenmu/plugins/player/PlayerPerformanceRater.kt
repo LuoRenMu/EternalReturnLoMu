@@ -190,6 +190,7 @@ internal object PlayerPerformanceRater {
         ),
         Tier.MMR_DROP to listOf(
             "别担心，你只是回到了属于你自己的段位。",
+            "在这个段位是不是越来越轻松了呢?"
         ),
         Tier.EXCEPTIONAL to listOf(
             "嗯~~~非常厉害喵！",
@@ -202,22 +203,15 @@ internal object PlayerPerformanceRater {
         Tier.EXCELLENT to listOf(
             "打得很漂亮喵！",
             "这波状态火热喵！",
-            "发挥相当出色喵！",
             "战斗效率很高喵！",
-            "这份战绩很能打喵！",
             "近期手感正盛喵！",
         ),
         Tier.GOOD to listOf(
-            "整体发挥超过平均线喵！",
-            "关键数据很可靠喵！",
             "状态在线喵！",
-            "这份表现挺扎实喵！",
-            "输出节奏不错喵！",
-            "稳中带秀喵！",
+            "好！非常好喵！",
         ),
         Tier.AVERAGE to listOf(
             "一般般啦喵。",
-            "这几场比较平稳喵！",
             "表现合格喵。",
             "手感还可以再热一点喵。",
             "属于正常发挥喵！",

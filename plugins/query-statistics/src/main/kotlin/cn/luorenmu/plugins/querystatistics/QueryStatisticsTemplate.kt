@@ -22,8 +22,6 @@ class QueryStatisticsTemplate : ImageTemplate<QueryStatisticsData> {
         val height = 260 + rowCount * 72 + 70
         return TemplateDocument(900, height, document(rootStyle(height)) {
             text("玩家查询统计", textStyle(34f, ink, 52f).copy(textAlign = TextAlign.CENTER))
-            text("${data.senderName} 的查询足迹", textStyle(16f, muted, 30f).copy(textAlign = TextAlign.CENTER))
-
             text("我查询过的玩家", textStyle(20f, ink, 34f))
             if (data.history.isEmpty()) {
                 element(CssStyle(width = percent(100), height = px(72), background = card, borderRadius = 14f, alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER)) {
@@ -32,7 +30,6 @@ class QueryStatisticsTemplate : ImageTemplate<QueryStatisticsData> {
             } else {
                 data.history.forEachIndexed { index, item -> historyRow(index + 1, item.nickname, item.queryCount, item.lastQueryAt.format(timeFormat)) }
             }
-            text("仅统计成功返回的玩家查询", textStyle(12f, muted, 24f).copy(textAlign = TextAlign.CENTER))
         })
     }
 

@@ -25,7 +25,7 @@ import java.time.LocalDate
     adapter = [Adapter.QG_BOT, Adapter.ONE_BOT],
 )
 class RedemptionCodeCommand : CommandEvent {
-    override val description = "查询最近识别到的永恒轮回兑换码活动"
+    override val description = "查询最近识别到的永恒轮回兑换码活动，不包含掉包"
     override val example = "/兑换码"
     override val optionals = listOf(
         CommandOptional("limit", "返回数量，默认 5，最多 10", required = false)

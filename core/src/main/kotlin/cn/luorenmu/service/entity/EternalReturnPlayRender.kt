@@ -92,6 +92,7 @@ data class EternalReturnPlayRender(
         val weaponUrl: String = "",
         val traitSkillGroupUrl: String = "",
         val tacticalSkillUrl: String = "",
+        val tacticalSkillLevel: Int = 0,
         val traitSkillUrl: String = "",
         val kill: Int = 0,
         val assist: Int = 0,

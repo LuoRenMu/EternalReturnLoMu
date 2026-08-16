@@ -21,6 +21,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     private val positive = Color.makeRGB(24, 161, 108)
     private val negative = Color.makeRGB(210, 65, 65)
 
+
     override fun build(data: EternalReturnPlayRender): TemplateDocument {
         val summaryHeight = if (data.summary != null) 190f else 0f
         val matchesHeight = data.matches.sumOf { 120 + (it.teamMates?.size ?: 0) * 50 }.toFloat()
@@ -43,8 +44,8 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                     Image(data.profileImageUrl.resolve(base), CssStyle(width = px(222), height = px(177), cornerRadii = CornerRadii(10f, 0f, 0f, 0f), objectFit = ObjectFit.COVER), id = "profile-image")
                     Column(CssStyle(width = px(430), height = px(120), margin = Edges(30f, 0f, 0f, 20f), gap = 8f)) {
                         Text("Lv.${data.level}", chipStyle())
-                        Text(data.nickName, textStyle(28f, white, 38f))
-                        Text("如对该UI有任何建议或问题,欢迎加入654087758群聊反馈 ξ( ✿＞◡❛)", textStyle(11f, white, 18f))
+                        Text(data.nickName, textStyle(28f, white, 38f).copy(fontWeight = 800))
+                        Text("ξ( ✿＞◡❛)", textStyle(11f, white, 18f))
                     }
                 }
                 Text(data.rate, textStyle(12f, Color.makeRGB(209, 207, 207), 34f).copy(background = darkHeader, textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER, width = percent(100)), id = "describe")
@@ -79,7 +80,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
 
     private fun ElementBuilder.rankPanel(data: EternalReturnPlayRender, base: String) {
         Column(panel(rankPanelHeight(data), 370f), id = "rank") {
-            Text("${data.mode}(${data.season})", textStyle(20f, ink, 45f).copy(textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER, border = Border(1f, line)))
+            Text("${data.mode}(${data.season})", textStyle(20f, ink, 45f).copy(fontWeight = 800,textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER, border = Border(1f, line)))
             Row(CssStyle(width = percent(100), height = px(106), justifyContent = JustifyContent.CENTER, alignItems = AlignItems.CENTER, gap = 15f, border = Border(1f, line))) {
                 Image(data.data.tierImageUrl.resolve(base), CssStyle(width = px(64), height = px(64), objectFit = ObjectFit.CONTAIN))
                 Column(CssStyle(width = px(190), height = px(65), gap = 4f, alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER)) {
@@ -116,8 +117,8 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
             Column(CssStyle(position = Position.ABSOLUTE, left = 0f, top = 0f, width = px(15), height = percent(100), background = accent, cornerRadii = CornerRadii(20f, 0f, 0f, 20f)))
             Column(CssStyle(position = Position.ABSOLUTE, right = 0f, top = 0f, width = px(15), height = percent(100), background = accent, cornerRadii = CornerRadii(0f, 20f, 20f, 0f)))
             Row(CssStyle(width = percent(100), height = px(98), alignItems = AlignItems.CENTER, padding = Edges(0f, 20f), gap = 14f)) {
-                Column(CssStyle(width = px(70), height = px(75), gap = 3f, margin = Edges(left = 3f))) {
-                    Text(if (match.rank == 99) "逃离" else "#${match.rank}", recordTextStyle(14f, accent, 18f))
+                Column(CssStyle(width = px(50), height = px(75), gap = 3f, margin = Edges(left = 3f))) {
+                    Text(if (isCobalt) if (match.rank == 1) "胜利" else "失败" else if (match.rank == 99) "逃离" else "#${match.rank}" , recordTextStyle(14f, accent, 18f))
                     Text(match.type, recordTextStyle(12f, ink, 16f))
                     Text(match.dateHour, recordTextStyle(11f, muted, 15f))
                     Text(match.dateMonth, recordTextStyle(11f, muted, 15f))
@@ -133,9 +134,33 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                     Column(CssStyle(width = px(24), height = px(24), padding = Edges(2f), background = Color.makeRGB(50,50,50), borderRadius = 12f)) {
                         Image(match.weaponUrl.resolve(base), CssStyle(width = percent(100), height = percent(100), objectFit = ObjectFit.CONTAIN))
                     }
-                    listOf(match.traitSkillUrl, match.tacticalSkillUrl, match.traitSkillGroupUrl).forEach { source ->
+                    listOf(
+                        match.traitSkillUrl to null,
+                        match.tacticalSkillUrl to match.tacticalSkillLevel,
+                        match.traitSkillGroupUrl to null,
+                    ).forEach { (source, skillLevel) ->
                         Column(CssStyle(width = px(24), height = px(24), background = Color.makeRGB(240,241,246), borderRadius = 12f)) {
                             Image(source.resolve(base), CssStyle(width = percent(100), height = percent(100), borderRadius = 12f, objectFit = ObjectFit.CONTAIN))
+                            if (skillLevel != null) {
+                                Text(
+                                    skillLevel,
+                                    CssStyle(
+                                        width = px(11),
+                                        height = px(11),
+                                        position = Position.ABSOLUTE,
+                                        right = 0f,
+                                        bottom = 0f,
+                                        fontSize = 7f,
+                                        color = Color.WHITE,
+                                        background = Color.makeRGB(50, 50, 50),
+                                        border = Border(1f, Color.WHITE),
+                                        borderRadius = 6f,
+                                        textAlign = TextAlign.CENTER,
+                                        verticalAlign = VerticalAlign.CENTER,
+                                    ),
+                                    id = "tactical-skill-level-${match.gameId}",
+                                )
+                            }
                         }
                     }
                 }
@@ -270,7 +295,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     private fun panel(height: Float, width: Float) = CssStyle(width = px(width), height = px(height), background = white, border = Border(1f, line), borderRadius = 10f, gap = 0f)
     private fun textStyle(size: Float, color: Int, height: Float) = CssStyle(width = percent(100), height = px(height), fontSize = size, color = color)
     private fun recordTextStyle(size: Float, color: Int, height: Float) = textStyle(size, color, height).copy(verticalAlign = VerticalAlign.CENTER)
-    private fun chipStyle() = textStyle(12f, white, 24f).copy(width = px(70), border = Border(2f, white), borderRadius = 15f, textAlign = TextAlign.CENTER,verticalAlign = VerticalAlign.CENTER)
+    private fun chipStyle() = textStyle(12f, white, 24f).copy(width = px(70), border = Border(2f, white), borderRadius = 15f, textAlign = TextAlign.CENTER,verticalAlign = VerticalAlign.CENTER, fontWeight = 800)
     private fun rankPanelHeight(data: EternalReturnPlayRender) = if (data.mmrStats == null) 347f else 587f
     private fun rankChip(rank: Int) = textStyle(12f, if (rank > 3 && rank != 99) muted else white, 24f).copy(width = px(24), background = when (rank) { 1 -> Color.makeRGB(17,178,136); 2,3 -> Color.makeRGB(32,122,199); 99 -> Color.makeRGB(71,84,130); else -> Color.makeRGB(214,214,214) }, borderRadius = 3f, textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER)
     private fun String?.resolve(base: String): String? = this?.takeIf(String::isNotBlank)?.let { if (it.startsWith("http://") || it.startsWith("https://")) it else base.trimEnd('/') + "/" + it.trimStart('/') }

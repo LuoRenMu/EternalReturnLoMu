@@ -19,7 +19,7 @@ import java.nio.file.Path
 import kotlin.math.max
 import kotlin.math.min
 
-internal const val NUTDRAW_FOOTER_TEXT = "Power By EternalReturnLoMu & LuoRenMu"
+internal const val NUTDRAW_FOOTER_TEXT = "Power By EternalReturnLoMu • LuoRenMu"
 internal const val NUTDRAW_FOOTER_HEIGHT = 36
 
 class SkiaDocumentRenderer(

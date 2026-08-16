@@ -143,6 +143,20 @@ class SearchPlayerTemplateRegressionTest {
         assertEquals(rate, (assertNotNull(root.findById("describe")) as NutText).value)
     }
 
+    @Test
+    fun `tactical skill icon displays its level`() {
+        val source = player(matchType = "排位")
+        val data = source.copy(
+            matches = source.matches.map { it.copy(tacticalSkillLevel = 3) },
+        )
+
+        val level = assertNotNull(
+            SearchPlayerTemplate().build(data).root.findById("tactical-skill-level-game-1"),
+        )
+
+        assertEquals("3", (level as NutText).value)
+    }
+
     private fun player(matchType: String) = EternalReturnPlayRender(
         nickName = "神圣审判",
         level = 206,

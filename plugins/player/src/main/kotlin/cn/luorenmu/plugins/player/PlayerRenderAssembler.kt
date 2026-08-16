@@ -50,9 +50,7 @@ open class PlayerRenderAssembler {
 
         val playerSeasonOverviews = profile.playerSeasonOverviews
         val playerSeasonOverview =
-            playerSeasonOverviews.firstOrNull { it.matchingModeId == matchingMode.value } ?: run {
-                playerSeasonOverviews.firstOrNull()
-            }
+            playerSeasonOverviews.firstOrNull { it.matchingModeId == matchingMode.value }
 
         val accountLevel = profile.player.accountLevel
         val profileImageUrl = run {
@@ -117,7 +115,11 @@ open class PlayerRenderAssembler {
                 }
 
                 else -> {
-                    eternalReturnPlayerData.rpName = "${tier.name} $tierGradeId - $tierMmr"
+                    if (latestPlaySeason.mmr == 0) {
+                        eternalReturnPlayerData.rpName = "段位未鉴定"
+                    }else {
+                        eternalReturnPlayerData.rpName = "${tier.name} $tierGradeId - $tierMmr"
+                    }
                 }
             }
 
@@ -255,6 +257,7 @@ open class PlayerRenderAssembler {
             equips = gameEquip(game),
             weaponUrl = ImageResourcesType.Weapon.getGeneralPath(game.bestWeapon.toString()),
             tacticalSkillUrl = ImageResourcesType.TacticalSkill.getGeneralPath(game.tacticalSkillGroup.toString()),
+            tacticalSkillLevel = game.tacticalSkillLevel.toInt(),
             traitSkillUrl = ImageResourcesType.TraitSkill.getGeneralPath(game.traitFirstCore.toString()),
             traitSkillGroupUrl = if (isCobalt)
                 ImageResourcesType.TraitSkillGroupPlaceholder.getGeneralPath("")
