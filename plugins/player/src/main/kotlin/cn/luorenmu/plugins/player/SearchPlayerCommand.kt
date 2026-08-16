@@ -93,6 +93,7 @@ class SearchPlayerCommand : CommandEvent {
         val mutex = renderMutexes[Math.floorMod(renderKey.hashCode(), renderMutexes.size)]
         return mutex.withLock {
             val preheated = preheatRequest(actualNickname, mode)
+            // 固定使用“真实昵称 + 模式”路径，每次成功渲染直接覆盖该玩家的旧图片。
             val outputPath = PathUtils.resourcesPathResolve("render", "player", "$actualNickname-${mode.value}.png")
             val renderData = playerRenderAssembler.assemble(
                 preheated.profile,

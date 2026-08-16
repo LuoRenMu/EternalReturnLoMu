@@ -57,10 +57,7 @@ class CharacterDetailCommand : CommandEvent {
             tierKey.orEmpty(),
         )
         val outputPath = PathUtils.resourcesPathResolve("render", "character_detail_$cacheKey.png")
-        val cachedPath = RenderedFileCache.getOrCreate(
-            path = outputPath,
-            cleanupPrefix = "character_detail_",
-        ) { path ->
+        val cachedPath = RenderedFileCache.getOrCreate(outputPath) { path ->
             val detail = characterDetailCollector.collect(
                 characterQuery = query,
                 teamMode = mode.first,
