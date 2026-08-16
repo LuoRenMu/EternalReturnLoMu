@@ -1,8 +1,6 @@
 package cn.luorenmu.service.entity
 
 import cn.luorenmu.HTTP_SERVER_URL
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 /**
  * @author LoMu
@@ -37,10 +35,7 @@ data class EternalReturnPlayRender(
     data class EternalReturnPlayerMMRStats(
         val mmrDate: List<String>,
         val mmr: List<Int>,
-    ) {
-        val mmrDateJson = Json.encodeToString(mmrDate)
-        val mmrJson: String = Json.encodeToString(mmr)
-    }
+    )
 
     data class EternalReturnCharacterUseStats(
         val imgUrl: String,
