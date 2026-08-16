@@ -40,6 +40,6 @@ class FooterRenderingTest {
                 assertNotEquals(Color.WHITE, bitmap.getColor(0, contentHeight + 1))
             }
         }
-        assertEquals("Power By EternalReturnLoMu & LuoRenMu", NUTDRAW_FOOTER_TEXT)
+        assertEquals("Power By EternalReturnLoMu • LuoRenMu", NUTDRAW_FOOTER_TEXT)
     }
 }
