@@ -11,7 +11,7 @@ import cn.luorenmu.nutdraw.dom.ElementBuilder
  * @author LoMu
  * Date 2026/8/16 15:30
  */
-private val CHARACTER_TIER_GRADES = setOf("S", "A", "B", "C", "D")
+internal val CHARACTER_TIER_GRADES = setOf("S", "A", "B", "C", "D")
 
 internal fun characterTierIconUrl(tier: String): String? {
     val grade = tier.trim().uppercase()

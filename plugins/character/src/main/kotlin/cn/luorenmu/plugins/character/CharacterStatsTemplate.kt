@@ -136,25 +136,21 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
                     ),
                     id = "stats-character-$index",
                 )
-                text(
-                    player.tier.uppercase(),
+                element(
                     CssStyle(
-                        width = px(23),
-                        height = px(23),
+                        width = px(TIER_ICON_SIZE),
+                        height = px(TIER_ICON_SIZE),
                         position = Position.ABSOLUTE,
                         left = 0f,
                         top = 0f,
-                        fontSize = 12f,
-                        fontWeight = 900,
-                        color = Color.WHITE,
-                        background = tierColor(player.tier),
-                        border = Border(2f, Color.WHITE),
-                        borderRadius = 12f,
-                        textAlign = TextAlign.CENTER,
-                        verticalAlign = VerticalAlign.CENTER,
                     ),
-                    id = "stats-tier-$index",
-                )
+                ) {
+                    characterTierIcon(
+                        characterTierIconUrl(player.tier).resolve(base),
+                        TIER_ICON_SIZE,
+                        "stats-tier-$index",
+                    )
+                }
                 element(
                     CssStyle(
                         width = px(27),
@@ -198,14 +194,6 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
         verticalAlign = VerticalAlign.CENTER,
     )
 
-    private fun tierColor(tier: String): Int = when (tier.uppercase()) {
-        "S" -> Color.makeRGB(225, 83, 110)
-        "A" -> Color.makeRGB(235, 145, 55)
-        "B" -> Color.makeRGB(91, 148, 221)
-        "C" -> Color.makeRGB(75, 174, 132)
-        else -> Color.makeRGB(126, 134, 154)
-    }
-
     private fun String?.resolve(base: String): String? = this
         ?.takeIf(String::isNotBlank)
         ?.let { if (it.startsWith("http")) it else base.trimEnd('/') + "/" + it.trimStart('/') }
@@ -219,5 +207,6 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
         private const val CARD_WIDTH = 114f
         private const val CARD_HEIGHT = 126f
         private const val GRID_GAP = 8f
+        private const val TIER_ICON_SIZE = 28f
     }
 }

@@ -42,7 +42,8 @@ class CharacterStatsTemplateRegressionTest {
 
         assertTrue((character.node as NutImage).source?.endsWith("/character.png") == true)
         assertTrue((weapon.node as NutImage).source?.endsWith("/weapon.png") == true)
-        assertEquals("A", (tier.node as NutText).value)
+        assertTrue(tier.node.style.backgroundImage?.endsWith("/character-tier-A.svg") == true)
+        assertTrue(tier.node !is NutImage)
         assertEquals("选择率 12.50%", (pickRate.node as NutText).value)
         assertEquals("125 场", (playCount.node as NutText).value)
         assertTrue(playCount.bounds.top >= pickRate.bounds.bottom)

@@ -65,6 +65,9 @@ class CharacterStatsCommand : CommandEvent {
                     resourcesDownloadService.downloadWeaponImage(weapon)
                 }
             }
+            ioLaunch {
+                resourcesDownloadService.downloadCharacterTierIcons(CHARACTER_TIER_GRADES)
+            }
         }
     }
 }
