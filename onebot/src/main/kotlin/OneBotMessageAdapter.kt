@@ -29,14 +29,12 @@ private fun String.markdownToPlainText(): String =
         .replace(ITALIC_UNDERSCORE_PATTERN, "$1")
         .replace(STRIKETHROUGH_PATTERN, "$1")
         .replace(INLINE_CODE_PATTERN, "$1")
-        .lineSequence()
-        .map { line ->
+        .lineSequence().joinToString("\n") { line ->
             line.replace(HEADER_PATTERN, "")
                 .replace(QUOTE_PATTERN, "")
                 .replace(BULLET_PATTERN, "• ")
                 .trimEnd()
         }
-        .joinToString("\n")
         .trim('\n')
 
 private val IMAGE_PATTERN = Regex("!\\[([^]]*)]\\([^)]*\\)")
