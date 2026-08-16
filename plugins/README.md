@@ -1,5 +1,17 @@
 # Command plugins
 
+Core applications and shared modules use version `3.0.0`; standalone command plugins use version `1.0.0`.
+Both values are maintained centrally in `gradle.properties`.
+
+Build qgbot, onebot, and three upload-ready distribution directories:
+
+```powershell
+.\gradlew.bat test stageDistributions
+```
+
+Artifacts are written to `build/distributions/qgbot`, `build/distributions/onebot`, and
+`build/distributions/plugins`. GitHub Actions runs the same build automatically and uploads each directory separately.
+
 Build hot-reloadable jars:
 
 ```powershell

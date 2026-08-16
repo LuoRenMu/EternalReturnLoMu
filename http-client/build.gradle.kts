@@ -3,10 +3,6 @@ plugins {
     kotlin("plugin.serialization")
 }
 
-group = "cn.luorenmu"
-version = "1.0-SNAPSHOT"
-
-
 dependencies {
     implementation(project(":common"))
     implementation(libs.kotlin.reflect)

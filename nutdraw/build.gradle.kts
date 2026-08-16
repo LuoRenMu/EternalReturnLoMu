@@ -3,9 +3,6 @@ plugins {
     `java-library`
 }
 
-group = "cn.luorenmu"
-version = "1.0-SNAPSHOT"
-
 dependencies {
     implementation(project(":common"))
     api(libs.skiko.awt)

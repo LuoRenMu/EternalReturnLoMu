@@ -3,9 +3,6 @@ plugins {
     application
 }
 
-group = "cn.luorenmu"
-version = "1.0-SNAPSHOT"
-
 dependencies {
     implementation(project(":core"))
     rootProject.subprojects

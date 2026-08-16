@@ -3,10 +3,6 @@ plugins {
     kotlin("plugin.serialization")
 }
 
-group = "cn.luorenmu"
-version = "1.0-SNAPSHOT"
-
-
 dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)

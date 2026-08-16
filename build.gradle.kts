@@ -18,7 +18,9 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 group = "cn.luorenmu"
-version = "1.0-SNAPSHOT"
+val lomuCoreVersion = providers.gradleProperty("lomuCoreVersion").get()
+val lomuPluginVersion = providers.gradleProperty("lomuPluginVersion").get()
+version = lomuCoreVersion
 
 allprojects {
     repositories {
@@ -26,6 +28,11 @@ allprojects {
         maven(url = "https://jitpack.io")
         mavenCentral()
     }
+}
+
+subprojects {
+    group = rootProject.group
+    version = if (path.startsWith(":plugins:")) lomuPluginVersion else lomuCoreVersion
 }
 
 dependencies {
@@ -50,4 +57,38 @@ tasks.register<Sync>("stageCommandPlugins") {
         from(pluginJar)
     }
     into(layout.buildDirectory.dir("command-plugins"))
+}
+
+tasks.register<Sync>("stageDistributions") {
+    group = "distribution"
+    description = "Builds qgbot, onebot, and standalone command plugin distributions."
+    dependsOn(":qgbot:jar", ":onebot:jar", "stageCommandPlugins", "verifyVersions")
+
+    into(layout.buildDirectory.dir("distributions"))
+    into("qgbot") {
+        from(project(":qgbot").layout.buildDirectory.file("libs/qgbot-$lomuCoreVersion.jar"))
+        into("plugins") { from(layout.buildDirectory.dir("command-plugins")) }
+    }
+    into("onebot") {
+        from(project(":onebot").layout.buildDirectory.file("libs/onebot-$lomuCoreVersion.jar"))
+        into("plugins") { from(layout.buildDirectory.dir("command-plugins")) }
+    }
+    into("plugins") {
+        from(layout.buildDirectory.dir("command-plugins"))
+    }
+}
+
+tasks.register("verifyVersions") {
+    group = "verification"
+    description = "Verifies core and command plugin project versions."
+    doLast {
+        check(rootProject.version.toString() == lomuCoreVersion)
+        val invalidProjects = subprojects.filter { project ->
+            val expected = if (project.path.startsWith(":plugins:")) lomuPluginVersion else lomuCoreVersion
+            project.version.toString() != expected
+        }
+        check(invalidProjects.isEmpty()) {
+            "版本配置不一致: ${invalidProjects.joinToString { "${it.path}=${it.version}" }}"
+        }
+    }
 }
