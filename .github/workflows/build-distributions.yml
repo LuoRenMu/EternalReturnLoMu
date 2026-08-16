@@ -1,0 +1,70 @@
+name: Build distributions
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-distributions-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Read versions
+        id: versions
+        shell: bash
+        run: |
+          echo "core=$(grep '^lomuCoreVersion=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+          echo "plugin=$(grep '^lomuPluginVersion=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+
+      - name: Test and stage distributions
+        run: ./gradlew clean test stageDistributions --stacktrace
+
+      - name: Upload qgbot
+        uses: actions/upload-artifact@v4
+        with:
+          name: qgbot-${{ steps.versions.outputs.core }}
+          path: build/distributions/qgbot
+          if-no-files-found: error
+
+      - name: Upload onebot
+        uses: actions/upload-artifact@v4
+        with:
+          name: onebot-${{ steps.versions.outputs.core }}
+          path: build/distributions/onebot
+          if-no-files-found: error
+
+      - name: Upload command plugins
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugins-${{ steps.versions.outputs.plugin }}
+          path: build/distributions/plugins
+          if-no-files-found: error
