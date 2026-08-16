@@ -1,4 +1,4 @@
-name: Build distributions
+name: Build OneBot distribution
 
 on:
   workflow_dispatch:
@@ -45,28 +45,39 @@ jobs:
         shell: bash
         run: |
           echo "core=$(grep '^lomuCoreVersion=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
-          echo "plugin=$(grep '^lomuPluginVersion=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
 
-      - name: Test and stage distributions
-        run: ./gradlew clean test stageDistributions --stacktrace
+      - name: Test and build OneBot with plugins
+        run: ./gradlew clean test :onebot:jar stageCommandPlugins verifyVersions --stacktrace
 
-      - name: Upload qgbot
-        uses: actions/upload-artifact@v4
-        with:
-          name: qgbot-${{ steps.versions.outputs.core }}
-          path: build/distributions/qgbot
-          if-no-files-found: error
+      - name: Package OneBot distribution
+        shell: bash
+        run: |
+          package_dir="build/release/onebot-${{ steps.versions.outputs.core }}"
+          mkdir -p "$package_dir/plugins"
+          cp "onebot/build/libs/onebot-${{ steps.versions.outputs.core }}.jar" "$package_dir/"
+          cp build/command-plugins/*.jar "$package_dir/plugins/"
+          test -f "$package_dir/onebot-${{ steps.versions.outputs.core }}.jar"
+          test "$(find "$package_dir/plugins" -maxdepth 1 -type f -name '*.jar' | wc -l)" -gt 0
+          cd build/release
+          zip -r "onebot-${{ steps.versions.outputs.core }}.zip" "onebot-${{ steps.versions.outputs.core }}"
 
-      - name: Upload onebot
+      - name: Upload OneBot archive
         uses: actions/upload-artifact@v4
         with:
           name: onebot-${{ steps.versions.outputs.core }}
-          path: build/distributions/onebot
+          path: build/release/onebot-${{ steps.versions.outputs.core }}.zip
           if-no-files-found: error
+          compression-level: 0
 
-      - name: Upload command plugins
-        uses: actions/upload-artifact@v4
-        with:
-          name: plugins-${{ steps.versions.outputs.plugin }}
-          path: build/distributions/plugins
-          if-no-files-found: error
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.LOMU }}
+        run: |
+          archive="build/release/onebot-${{ steps.versions.outputs.core }}.zip"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$archive" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$archive" --generate-notes --title "$GITHUB_REF_NAME"
+          fi
