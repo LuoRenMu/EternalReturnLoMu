@@ -29,7 +29,7 @@ import java.util.*
 
 private val commandRouter = CommandRouter()
 suspend fun main(args: Array<String>) {
-    val adminPort = AdminServerPort.resolve(args)
+    val adminPort = AdminServerPort.resolve(args, config.port)
     val app = launchSimpleApplication {
         useOneBot11()
     }

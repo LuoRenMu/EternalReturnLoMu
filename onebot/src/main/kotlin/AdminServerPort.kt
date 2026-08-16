@@ -9,13 +9,12 @@ import java.net.ServerSocket
  * Date 2026/8/16 15:30
  */
 object AdminServerPort {
-    const val DEFAULT_PORT = 5752
-
     fun resolve(
         args: Array<String>,
+        configuredPort: Int,
         isAvailable: (Int) -> Boolean = ::isAvailable,
     ): Int {
-        val startPort = parse(args)
+        val startPort = parse(args, configuredPort)
         for (candidate in startPort..65535) {
             if (isAvailable(candidate)) return candidate
             if (candidate < 65535) println("端口 $candidate 已被占用，尝试 ${candidate + 1}")
@@ -23,7 +22,7 @@ object AdminServerPort {
         error("从端口 $startPort 开始没有可用端口")
     }
 
-    fun parse(args: Array<String>): Int {
+    fun parse(args: Array<String>, configuredPort: Int): Int {
         val raw = when {
             args.isEmpty() -> null
             args.first().startsWith("--port=") -> args.first().substringAfter('=')
@@ -31,7 +30,7 @@ object AdminServerPort {
                 ?: error("--port 后需要提供端口号")
             else -> args.first()
         }
-        val port = raw?.toIntOrNull() ?: if (raw == null) DEFAULT_PORT else error("无效端口: $raw")
+        val port = raw?.toIntOrNull() ?: if (raw == null) configuredPort else error("无效端口: $raw")
         require(port in 1..65535) { "端口必须在 1 到 65535 之间" }
         return port
     }

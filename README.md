@@ -77,7 +77,7 @@ java -jar onebot-3.0.0.jar
 
 首次启动会在 JAR 同级创建默认 `config.json`。此时 OneBot 地址尚未配置，机器人会跳过 QQ 连接，但管理后台仍会启动。编辑配置后重启程序即可。
 
-OneBot 管理后台默认使用 `5752` 端口，也可以手动指定：
+OneBot 管理后台使用 `config.json` 的 `port` 字段，默认是 `8080`。也可以仅为本次启动临时覆盖：
 
 ```bash
 java -jar onebot-3.0.0.jar --port=5752
@@ -135,7 +135,7 @@ java -jar onebot-3.0.0.jar --port=5752
 | `other.one_bot_ws` | OneBot 11 正向 WebSocket 地址，必须包含 `ws://` 或 `wss://`。 |
 | `postgres` | QQ 官方机器人使用的 PostgreSQL 配置；OneBot 模式默认使用本地 SQLite，因此无需额外部署 PostgreSQL。 |
 | `ai` | 可选 AI 服务配置；不使用 AI 功能时将 `apiKey` 留空。 |
-| `port` | QQ 官方机器人默认服务端口；OneBot 管理端口使用启动参数控制，默认是 `5752`。 |
+| `port` | 服务端口；QQ 官方机器人和 OneBot 管理后台统一读取此字段，默认是 `8080`。 |
 
 `other` 是一个键值对象。部署 OneBot 时请保留 `one_bot_http` 和 `one_bot_ws`；QQ 官方机器人使用的 `app_id`、`secret`、`token` 不需要填写。
 
@@ -144,13 +144,13 @@ java -jar onebot-3.0.0.jar --port=5752
 重启 OneBot 实现，再启动机器人：
 
 ```bash
-java -jar onebot-3.0.0.jar --port=5752
+java -jar onebot-3.0.0.jar
 ```
 
 控制台出现 OneBot 连接成功、插件加载完成和管理后台地址后，访问：
 
 ```text
-http://127.0.0.1:5752/
+http://127.0.0.1:8080/
 ```
 
 输入 `config.json` 中的 `adminToken` 登录。在管理后台可以查看运行状态、管理插件，并在 Debug 页面选择当前可用命令进行测试。
