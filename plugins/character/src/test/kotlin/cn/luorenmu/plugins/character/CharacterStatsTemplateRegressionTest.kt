@@ -31,29 +31,31 @@ class CharacterStatsTemplateRegressionTest {
     }
 
     @Test
-    fun `card shows requested fields with play count below pick rate`() {
+    fun `card shows win rate with average damage below it`() {
         val document = CharacterStatsTemplate().build(characterStats(1))
         val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
         val character = assertNotNull(layout.findById("stats-character-0"))
         val weapon = assertNotNull(layout.findById("stats-weapon-0"))
         val tier = assertNotNull(layout.findById("stats-tier-0"))
-        val pickRate = assertNotNull(layout.findById("stats-pick-rate-0"))
-        val playCount = assertNotNull(layout.findById("stats-play-count-0"))
+        val winRate = assertNotNull(layout.findById("stats-win-rate-0"))
+        val damage = assertNotNull(layout.findById("stats-damage-0"))
 
         assertTrue((character.node as NutImage).source?.endsWith("/character.png") == true)
         assertTrue((weapon.node as NutImage).source?.endsWith("/weapon.png") == true)
         assertTrue(tier.node.style.backgroundImage?.endsWith("/character-tier-A.svg") == true)
         assertTrue(tier.node !is NutImage)
-        assertEquals("选择率 12.50%", (pickRate.node as NutText).value)
-        assertEquals("125 场", (playCount.node as NutText).value)
-        assertTrue(playCount.bounds.top >= pickRate.bounds.bottom)
+        assertEquals("胜率 20.00%", (winRate.node as NutText).value)
+        assertEquals("伤害 12,345", (damage.node as NutText).value)
+        assertTrue(damage.bounds.top >= winRate.bounds.bottom)
     }
 
     @Test
-    fun `selection rate uses weapon games divided by total games`() {
-        assertEquals("12.50%", selectionRate(playCount = 125, totalGames = 1_000))
-        assertEquals("0.0%", selectionRate(playCount = 0, totalGames = 1_000))
-        assertEquals("0.0%", selectionRate(playCount = 10, totalGames = 0))
+    fun `win rate and damage use weapon game count`() {
+        assertEquals("20.00%", winRate(wins = 25, games = 125))
+        assertEquals("0.0%", winRate(wins = 0, games = 125))
+        assertEquals("0.0%", winRate(wins = 10, games = 0))
+        assertEquals(12_345, averageDamage(totalDamage = 1_543_125, games = 125))
+        assertEquals(0, averageDamage(totalDamage = 10_000, games = 0))
     }
 
     @Test
@@ -73,8 +75,8 @@ class CharacterStatsTemplateRegressionTest {
                 characterImgUrl = "/character.png",
                 weaponImgUrl = "/weapon.png",
                 tier = "A",
-                pickRate = "12.50%",
-                playCount = 125,
+                winRate = "20.00%",
+                averageDamage = 12_345,
             )
         },
         httpServer = "",

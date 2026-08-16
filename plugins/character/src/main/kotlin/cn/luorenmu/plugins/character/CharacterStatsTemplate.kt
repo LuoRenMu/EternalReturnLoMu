@@ -19,6 +19,7 @@ import cn.luorenmu.nutdraw.template.ImageTemplate
 import cn.luorenmu.nutdraw.template.TemplateDocument
 import cn.luorenmu.service.entity.CharacterStats
 import org.jetbrains.skia.Color
+import java.util.Locale
 
 /**
  * 紧凑展示全部英雄武器组合的角色数据模板。
@@ -173,14 +174,14 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
                 }
             }
             text(
-                "选择率 ${player.pickRate}",
+                "胜率 ${player.winRate}",
                 metricTextStyle(Color.makeRGB(70, 77, 94)),
-                id = "stats-pick-rate-$index",
+                id = "stats-win-rate-$index",
             )
             text(
-                "${player.playCount} 场",
+                "伤害 ${String.format(Locale.ROOT, "%,d", player.averageDamage)}",
                 metricTextStyle(Color.makeRGB(132, 139, 158)),
-                id = "stats-play-count-$index",
+                id = "stats-damage-$index",
             )
         }
     }

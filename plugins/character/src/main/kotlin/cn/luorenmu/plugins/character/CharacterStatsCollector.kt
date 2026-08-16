@@ -13,6 +13,7 @@ import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.service.entity.CharacterStats
 import kotlinx.coroutines.coroutineScope
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * @author LoMu
@@ -60,8 +61,8 @@ open class CharacterStatsCollector {
                 ),
                 weaponImgUrl = ImageResourcesType.Weapon.getGeneralPath(weapon.key.toString()),
                 tier = weapon.tier,
-                pickRate = selectionRate(weapon.count, snapshot.tierGameCount),
-                playCount = weapon.count,
+                winRate = winRate(weapon.win, weapon.count),
+                averageDamage = averageDamage(weapon.damageToPlayer, weapon.count),
             )
         }
 
@@ -72,10 +73,13 @@ open class CharacterStatsCollector {
     }
 }
 
-internal fun selectionRate(playCount: Int, totalGames: Int): String {
-    if (playCount <= 0 || totalGames <= 0) return "0.0%"
-    return "${String.format(Locale.ROOT, "%.2f", playCount.toDouble() / totalGames * 100)}%"
+internal fun winRate(wins: Int, games: Int): String {
+    if (wins <= 0 || games <= 0) return "0.0%"
+    return "${String.format(Locale.ROOT, "%.2f", wins.toDouble() / games * 100)}%"
 }
+
+internal fun averageDamage(totalDamage: Int, games: Int): Int =
+    if (totalDamage > 0 && games > 0) (totalDamage.toDouble() / games).roundToInt() else 0
 
 internal fun DakGGCharacterStatsResponse.requireSnapshot(): DakGGCharacterStatsResponse.CharacterStatSnapshot =
     characterStatSnapshot ?: throw MessageReplyException("数据统计中..")
