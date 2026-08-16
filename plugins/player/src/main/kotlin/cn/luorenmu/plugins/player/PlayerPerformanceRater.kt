@@ -6,6 +6,9 @@ import cn.luorenmu.request.entity.module.MatchingMode
 
 /**
  * Compares recent matches with DAK.GG's public baseline for the same character.
+ *
+ * @author LoMu
+ * Date 2026/8/16 14:11
  */
 internal object PlayerPerformanceRater {
     private const val DAMAGE_WEIGHT = 0.55

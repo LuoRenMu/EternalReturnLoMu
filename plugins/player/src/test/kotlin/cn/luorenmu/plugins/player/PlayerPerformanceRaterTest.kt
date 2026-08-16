@@ -7,6 +7,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 14:11
+ */
 class PlayerPerformanceRaterTest {
     @Test
     fun `builds every-character baselines from public statistics`() {

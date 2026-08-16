@@ -4,6 +4,11 @@ import freemarker.template.Configuration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 14:11
+ */
 class FreeMarkerEncodingTest {
     @Test
     fun `admin templates always use utf8 instead of the operating system encoding`() {

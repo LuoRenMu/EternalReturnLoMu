@@ -3,6 +3,11 @@ package cn.luorenmu.api
 import java.security.MessageDigest
 import java.security.SecureRandom
 
+/**
+ *
+ * @author LoMu
+ * Date 2026/8/16 14:11
+ */
 internal object AdminAccessToken {
     const val COOKIE_NAME = "lomu-admin-access"
     const val HEADER_NAME = "X-Admin-Token"
