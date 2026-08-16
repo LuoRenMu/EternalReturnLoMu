@@ -66,7 +66,7 @@ suspend fun Application.configure() {
                     plainText = event.messageContent.plainText?.trim() ?: "",
                 )
             )
-            reply?.let { event.reply(it) }
+            reply?.let { event.reply(it.toOneBotCompatibleMessage()) }
         }
     }
 

@@ -11,6 +11,7 @@ dependencies {
     implementation(libs.ktor.netty)
     implementation(libs.simbot.core)
     implementation(libs.simbot.component.onebot)
+    implementation(libs.simbot.component.qq)
     implementation(libs.logback.classic)
     testImplementation(kotlin("test"))
 }
