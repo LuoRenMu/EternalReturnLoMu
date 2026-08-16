@@ -193,7 +193,8 @@ internal object PlayerPerformanceRater {
         ),
         Tier.MMR_DROP to listOf(
             "别担心，你只是回到了属于你自己的段位。",
-            "在这个段位是不是越来越轻松了呢?"
+            "在这个段位是不是越来越轻松了呢?",
+            "终于要回到炸鱼局了喵？"
         ),
         Tier.EXCEPTIONAL to listOf(
             "嗯~~~非常厉害喵！",
@@ -216,23 +217,23 @@ internal object PlayerPerformanceRater {
         Tier.AVERAGE to listOf(
             "一般般啦喵。",
             "表现合格喵。",
-            "手感还可以再热一点喵。",
+            "平均玩家水平喵。",
             "属于正常发挥喵！",
         ),
         Tier.BELOW_AVERAGE to listOf(
             "这几场有点可惜喵。",
             "状态稍冷喵。",
             "较为差劲喵。",
-            "输出有些吃力喵。",
-            "这轮手感不太顺喵！",
-            "发挥低于平时水准喵。",
+            "有点蛆喵。",
+            "在所有玩家的统计中你的战绩远低于喵！",
+            "发挥低于平均水准喵。",
         ),
         Tier.POOR to listOf(
-            "切，这可不太行喵！",
+            "切，臭蛆喵！",
             "警报喵！正在呼叫群友支援。",
-            "今天可能不宜排位喵",
-            "伤害和名次都在迷路喵",
-            "这状态有点危险喵",
+            "今天可能适宜排位坑人喵",
+            "这....这还是人类吗?",
+            "错的不是你，是其他玩家太强了喵",
             "惨兮兮喵……！",
         ),
         Tier.INSUFFICIENT to listOf(
