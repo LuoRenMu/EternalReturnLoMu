@@ -100,6 +100,11 @@ fun Route.adminRouting() {
         call.respondJson(AdminResponse(data = statisticsRepository.listCommandUsages(limit)))
     }
 
+    get("/api/admin/commands") {
+        if (!call.requireAdmin()) return@get
+        call.respondJson(AdminResponse(data = CommandPlugins.commandCatalog()))
+    }
+
     put("/api/admin/command-usages/{id}") {
         if (!call.requireAdmin()) return@put
         val id = call.parameters["id"]?.toLongOrNull()

@@ -145,12 +145,15 @@
             </section>
 
             <section x-show="view === 'command'" x-cloak>
-                <div class="mb-5"><h2 class="text-2xl font-black text-lomu-900">Debug</h2><p class="mt-1 text-sm text-[#9b7187]">Dev Test</p></div>
-                <article class="panel"><form class="grid items-end gap-3 p-5 xl:grid-cols-[minmax(260px,1fr)_160px_160px_150px_auto]" @submit.prevent="runCommand($event.currentTarget)">
-                    <label class="field"><span class="field-label">命令</span><input class="control" name="plainText" value="/查询玩家 神圣审判"></label><label class="field"><span class="field-label">群 ID</span><input class="control" name="groupId" value="web-admin-group"></label><label class="field"><span class="field-label">用户 ID</span><input class="control" name="senderId" value="web-admin-user"></label><label class="field"><span class="field-label">用户名</span><input class="control" name="senderName" value="WebAdmin"></label><button class="button button-primary">运行</button>
+                <div class="mb-5"><h2 class="text-2xl font-black text-lomu-900">Debug</h2><p class="mt-1 text-sm text-[#9b7187]">自动识别当前已启用的命令，只需选择命令并填写参数。</p></div>
+                <article class="panel"><form class="grid items-end gap-3 p-5 md:grid-cols-2" @submit.prevent="runCommand($event.currentTarget)">
+                    <label class="field"><span class="field-label">可用命令</span><select class="control" name="command" x-model="selectedCommand" required><option value="" disabled>请选择命令</option><template x-for="command in commands" :key="command.alias"><option :value="command.alias" x-text="'/' + command.alias + (command.parameters ? ' ' + command.parameters : '')"></option></template></select></label>
+                    <label class="field"><span class="field-label">参数</span><input class="control" name="arguments" :disabled="!selectedCommandInfo()?.parameters" :placeholder="selectedCommandInfo()?.parameters || '该命令无需参数'"></label>
+                    <div class="text-sm text-[#9b7187]"><strong class="block text-lomu-900" x-text="selectedCommandInfo()?.description || '暂无可用命令'"></strong><span x-text="selectedCommandInfo()?.example ? '示例：' + selectedCommandInfo().example : ''"></span></div>
+                    <button class="button button-primary" :disabled="!selectedCommand">运行命令</button>
                 </form></article>
                 <div class="mt-4 min-h-40 rounded-3xl border border-dashed border-lomu-200 bg-white/80 p-5 backdrop-blur" x-show="!commandResult">等待运行命令。</div>
-                <div class="mt-4 rounded-3xl border border-dashed border-lomu-200 bg-white/80 p-5 backdrop-blur" x-show="commandResult"><template x-for="(element,index) in commandResult?.elements || []" :key="index"><div><img class="mt-3 max-h-190 max-w-full rounded-3xl border-4 border-white shadow-xl" x-show="element.type === 'image' && element.imageUrl" :src="element.imageUrl" alt="预览"><pre class="whitespace-pre-wrap break-words" x-show="element.type !== 'image' || !element.imageUrl" x-text="element.text || element.raw || ''"></pre></div></template></div>
+                <div class="mt-4 rounded-3xl border border-dashed border-lomu-200 bg-white/80 p-5 backdrop-blur" x-show="commandResult"><template x-for="(element,index) in commandResult?.elements || []" :key="index"><div><img class="mt-3 max-h-190 max-w-full rounded-3xl border-4 border-white shadow-xl" style="cursor:zoom-in" x-show="element.type === 'image' && element.imageUrl" :src="element.imageUrl" alt="命令结果预览，点击放大" @click="openImagePreview(element.imageUrl)"><pre class="whitespace-pre-wrap break-words" x-show="element.type !== 'image' || !element.imageUrl" x-text="element.text || element.raw || ''"></pre></div></template></div>
             </section>
 
             <section x-show="view === 'about'" x-cloak>
@@ -173,6 +176,10 @@
 
 <div class="fixed inset-0 z-40 grid place-items-center bg-[#5b3046]/35 p-4 backdrop-blur-md" x-show="editOpen" x-cloak @click.self="editOpen = false">
     <form class="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-3xl border border-lomu-200 bg-lomu-50 shadow-2xl" @submit.prevent="saveRow()"><div class="panel-head"><h3 class="font-black">编辑记录</h3><button type="button" class="button" @click="editOpen = false">关闭</button></div><div class="grid gap-3 p-5"><template x-for="column in table?.columns || []" :key="column.name"><label class="field"><span class="field-label" x-text="column.name + ' · ' + column.type + (column.primaryKey ? ' · 主键' : '')"></span><input class="control" :readonly="column.primaryKey || column.autoIncrement" :value="displayValue(editValues[column.name], '')" @input="editValues[column.name] = $event.target.value"></label></template><div class="flex justify-end gap-2"><button type="button" class="button" @click="editOpen = false">取消</button><button class="button button-primary">保存记录</button></div></div></form>
+</div>
+<div class="fixed inset-0 z-50 grid place-items-center bg-[#5b3046]/35 p-4 backdrop-blur-md" x-show="previewImageUrl" x-cloak @click.self="previewImageUrl = null" @keydown.escape.window="previewImageUrl = null">
+    <button type="button" class="button absolute right-5" style="top:1.25rem" @click="previewImageUrl = null">关闭</button>
+    <img class="max-h-[90vh] max-w-full rounded-3xl border-4 border-white shadow-xl" :src="previewImageUrl" alt="放大的命令结果">
 </div>
 <div class="fixed bottom-5 right-5 z-50 max-w-sm rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-xl" x-show="toast.visible" x-transition x-cloak :class="toast.error ? 'bg-[#b83f68]' : 'bg-gradient-to-br from-lomu-500 to-[#9d72d4]'" x-text="toast.message"></div>
 </body>

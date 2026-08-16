@@ -94,6 +94,19 @@ object CommandPlugins {
 
     fun commands(): Map<String, CommandInfo> = registry.get()
 
+    fun commandCatalog(): List<CommandCatalogView> = registry.get().values
+        .distinctBy { it.command.alias }
+        .map { info ->
+            CommandCatalogView(
+                name = info.command.name,
+                alias = info.command.alias,
+                parameters = info.command.value,
+                description = info.commandEvent.description,
+                example = info.commandEvent.example,
+            )
+        }
+        .sortedBy(CommandCatalogView::alias)
+
     fun disabledCommand(plainText: String): DisabledCommandMatch? {
         val found = CommandTextParser.find(plainText, disabledRegistry.get()) { it.command.value.isNotBlank() }
             ?: return null

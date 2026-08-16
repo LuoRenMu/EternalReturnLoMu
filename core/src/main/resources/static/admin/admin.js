@@ -62,6 +62,8 @@ document.addEventListener("alpine:init", () => {
         tables: [],
         exceptions: [],
         plugins: [],
+        commands: [],
+        selectedCommand: "",
         table: null,
         offset: 0,
         limit: 50,
@@ -69,6 +71,7 @@ document.addEventListener("alpine:init", () => {
         editRow: null,
         editValues: {},
         commandResult: null,
+        previewImageUrl: null,
         toast: { visible: false, message: "", error: false, timer: null },
 
         async init() {
@@ -103,6 +106,28 @@ document.addEventListener("alpine:init", () => {
             if (view === "database") this.loadTables();
             if (view === "exceptions") this.loadExceptions();
             if (view === "plugins") this.loadPlugins();
+            if (view === "command") this.loadCommands();
+        },
+
+        async loadCommands() {
+            try {
+                this.commands = await this.api("/api/admin/commands");
+                if (!this.commands.some((command) => command.alias === this.selectedCommand)) {
+                    this.selectedCommand = this.commands[0]?.alias || "";
+                }
+            } catch (error) {
+                this.commands = [];
+                this.selectedCommand = "";
+                this.notify(error.message, true);
+            }
+        },
+
+        selectedCommandInfo() {
+            return this.commands.find((command) => command.alias === this.selectedCommand) || null;
+        },
+
+        openImagePreview(url) {
+            if (url) this.previewImageUrl = url;
         },
 
         async refreshOverview() {
@@ -278,10 +303,14 @@ document.addEventListener("alpine:init", () => {
         async runCommand(form) {
             this.commandResult = { matched: true, elements: [{ type: "text", text: "运行中…" }] };
             try {
+                const fields = Object.fromEntries(new FormData(form));
+                const command = String(fields.command || "").trim();
+                const argumentsText = String(fields.arguments || "").trim();
+                const plainText = `/${command}${argumentsText ? ` ${argumentsText}` : ""}`;
                 const result = await this.api("/api/admin/test-command", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(Object.fromEntries(new FormData(form))),
+                    body: JSON.stringify({ plainText }),
                 });
                 this.commandResult = result.matched
                     ? result

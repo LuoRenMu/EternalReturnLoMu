@@ -29,6 +29,16 @@ class CommandPluginsTest {
         CommandPlugins.initialize(Adapter.ONE_BOT, directory)
 
         assertNotNull(CommandPlugins.commands()["plugin-test"])
+        assertEquals(
+            CommandCatalogView(
+                name = "test",
+                alias = "plugin-test",
+                parameters = "",
+                description = "test",
+                example = "/plugin-test",
+            ),
+            CommandPlugins.commandCatalog().first { it.alias == "plugin-test" },
+        )
         CommandPlugins.setDisabledReply("test", "maintenance")
         CommandPlugins.disable("test")
         assertNull(CommandPlugins.commands()["plugin-test"])
