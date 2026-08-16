@@ -47,7 +47,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                         Text("如对该UI有任何建议或问题,欢迎加入654087758群聊反馈 ξ( ✿＞◡❛)", textStyle(11f, white, 18f))
                     }
                 }
-                Text("Design inspired by DakGG • Powered by LuoRenMu", textStyle(10f, Color.makeRGB(209, 207, 207), 34f).copy(background = darkHeader, textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER, width = percent(100)), id = "describe")
+                Text(data.rate, textStyle(12f, Color.makeRGB(209, 207, 207), 34f).copy(background = darkHeader, textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER, width = percent(100)), id = "describe")
             }
 
             Row(CssStyle(width = px(1250), height = px(bodyHeight), gap = 20f, alignItems = AlignItems.START), id = "body") {

@@ -10,4 +10,5 @@ enum class DakGGTeamMode (val value: String) {
     Solo("SOLO"),
     Duo("DUO"),
     Squad("SQUAD"),
+    Cobalt("COBALT"),
 }

@@ -28,7 +28,10 @@ open class PlayerRenderAssembler {
         infusions: DakGGInfusionsResponse,
         matchingMode: MatchingMode,
         nickname: String,
-    ): EternalReturnPlayRender = buildRender(profile, games, characters, tiers, season, infusions, matchingMode, nickname)
+        characterStats: DakGGCharacterStatsResponse? = null,
+    ): EternalReturnPlayRender = buildRender(
+        profile, games, characters, tiers, season, infusions, matchingMode, nickname, characterStats,
+    )
 
     private fun buildRender(
         profile: DakGGProfileResponse,
@@ -39,6 +42,7 @@ open class PlayerRenderAssembler {
         infusions: DakGGInfusionsResponse,
         matchingMode: MatchingMode,
         nickname: String,
+        characterStats: DakGGCharacterStatsResponse?,
     ): EternalReturnPlayRender {
         if (games.isEmpty()) {
             throw MessageReplyException("该玩家无任何游玩数据")
@@ -215,6 +219,13 @@ open class PlayerRenderAssembler {
             characterUseStats = characterUseStats,
             season = season.name,
             mode = matchingMode.modeName,
+            rate = PlayerPerformanceRater.rate(
+                games = games,
+                characterStats = characterStats,
+                matchingMode = matchingMode,
+                playerLevel = accountLevel,
+                recentMmr = playerMMRStats?.mmr.orEmpty(),
+            ),
             summary = summary,
             bannerUrl = bannerUrl,
         )

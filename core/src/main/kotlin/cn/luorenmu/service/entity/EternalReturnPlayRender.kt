@@ -21,6 +21,7 @@ data class EternalReturnPlayRender(
     val season: String,
     val httpServer: String = HTTP_SERVER_URL,
     val mode :String = "排位",
+    val rate: String = "想你了喵~",
     val bannerUrl: String = "/resources/images/bg/bg-landing-search-v11.jpg",
 ) {
 

@@ -135,6 +135,14 @@ class SearchPlayerTemplateRegressionTest {
         assertTrue(match.bounds.right <= document.width)
     }
 
+    @Test
+    fun `header displays the assembled performance rating`() {
+        val rate = "嗯~~~厉害喵，非常厉害喵！"
+        val root = SearchPlayerTemplate().build(player(matchType = "排位").copy(rate = rate)).root
+
+        assertEquals(rate, (assertNotNull(root.findById("describe")) as NutText).value)
+    }
+
     private fun player(matchType: String) = EternalReturnPlayRender(
         nickName = "神圣审判",
         level = 206,

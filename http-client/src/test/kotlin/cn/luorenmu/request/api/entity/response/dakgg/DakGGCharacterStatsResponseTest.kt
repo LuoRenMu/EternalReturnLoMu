@@ -1,6 +1,7 @@
 package cn.luorenmu.request.api.entity.response.dakgg
 
 import cn.luorenmu.request.entity.module.MatchingMode
+import cn.luorenmu.request.entity.module.DakGGTeamMode
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,7 +20,8 @@ class DakGGCharacterStatsResponseTest {
     }
 
     @Test
-    fun `cobalt uses API enum casing`() {
+    fun `cobalt matching and team modes use API enum casing`() {
         assertEquals("COBALT", MatchingMode.Cobalt.dakGGMode)
+        assertEquals("COBALT", DakGGTeamMode.Cobalt.value)
     }
 }

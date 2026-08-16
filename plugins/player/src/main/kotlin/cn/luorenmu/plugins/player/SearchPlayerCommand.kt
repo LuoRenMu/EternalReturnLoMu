@@ -14,6 +14,7 @@ import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharactersResponse
+import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharacterStatsResponse
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCurrentSeasonResponse
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGProfileResponse
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGTiersResponse
@@ -21,6 +22,8 @@ import cn.luorenmu.request.api.entity.response.dakgg.DakGGInfusionsResponse
 import cn.luorenmu.request.api.entity.response.game.BattleUserGamesResponse.UserGame
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.MatchingMode
+import cn.luorenmu.request.entity.module.DakGGRank
+import cn.luorenmu.request.entity.module.DakGGTeamMode
 import cn.luorenmu.service.ResourcesDownloadService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
@@ -86,11 +89,21 @@ class SearchPlayerCommand : CommandEvent {
 
         val mutex = renderMutexes[Math.floorMod(renderKey.hashCode(), renderMutexes.size)]
         return mutex.withLock {
-            val preheated = preheatRequest(actualNickname)
+            val preheated = preheatRequest(actualNickname, mode)
             val outputPath = PathUtils.resourcesPathResolve("render", "player", "$actualNickname-${mode.value}.png")
             NutDraw.render(
                 SearchPlayerTemplate(),
-                playerRenderAssembler.assemble(preheated.profile, preheated.games, preheated.characters, preheated.tiers, preheated.season, preheated.infusions, mode, actualNickname),
+                playerRenderAssembler.assemble(
+                    preheated.profile,
+                    preheated.games,
+                    preheated.characters,
+                    preheated.tiers,
+                    preheated.season,
+                    preheated.infusions,
+                    mode,
+                    actualNickname,
+                    preheated.characterStats,
+                ),
                 outputPath,
             )
             statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
@@ -105,12 +118,14 @@ class SearchPlayerCommand : CommandEvent {
         val tiers: DakGGTiersResponse,
         val season: DakGGCurrentSeasonResponse,
         val infusions: DakGGInfusionsResponse,
+        val characterStats: DakGGCharacterStatsResponse?,
     )
 
-    private suspend fun preheatRequest(nickname: String): PreheatedData {
+    private suspend fun preheatRequest(nickname: String, matchingMode: MatchingMode): PreheatedData {
         val profile = EternalReturnDakGGApi.User.GetProfile(nickname).execute()
         val latestSeasonId = profile.playerSeasons?.firstOrNull()?.seasonId
             ?: throw MessageReplyException("该玩家无任何赛季有游玩数据")
+        val playerTierId = profile.playerSeasons?.firstOrNull()?.tierId ?: 0
 
         return coroutineScope {
             // DAK.GG sync is advisory: the previous implementation launched it as a child
@@ -127,12 +142,26 @@ class SearchPlayerCommand : CommandEvent {
             val tiersDF = ioAsync { EternalReturnDakGGApi.Data.GetTiers.execute() }
             val seasonDF = ioAsync { EternalReturnDakGGApi.Data.GetCurrentSeason.execute() }
             val infusionsDF = ioAsync { EternalReturnDakGGApi.Data.GetInfusions.execute() }
+            val characterStatsDF = ioAsync {
+                val teamMode = when (matchingMode) {
+                    MatchingMode.Cobalt -> DakGGTeamMode.Cobalt
+                    MatchingMode.All -> DakGGTeamMode.All
+                    else -> DakGGTeamMode.Squad
+                }
+                val tier = characterStatsTier(playerTierId)
+                runCatching {
+                    EternalReturnDakGGApi.Statistics.GetCharacterStats(teamMode, matchingMode, tier).execute()
+                }.onFailure { error ->
+                    log.warn(error) { "角色公共统计请求失败，将使用闲话评价" }
+                }.getOrNull()
+            }
 
             val games = gamesDF.await()
             val characters = charactersDF.await()
             val tiers = tiersDF.await()
             val season = seasonDF.await()
             val infusions = infusionsDF.await()
+            val characterStats = characterStatsDF.await()
 
             ioLaunch {
                 resourcesDownloadService.gameDataDownload(
@@ -149,7 +178,19 @@ class SearchPlayerCommand : CommandEvent {
                 log.debug { "downloadProfileData 预备请求数据已完成" }
             }
 
-            PreheatedData(profile, games.matches, characters, tiers, season, infusions)
+            PreheatedData(profile, games.matches, characters, tiers, season, infusions, characterStats)
         }
+    }
+
+    private fun characterStatsTier(tierId: Int): DakGGRank = when (tierId) {
+        1 -> DakGGRank.IRON
+        2 -> DakGGRank.BRONZE
+        3 -> DakGGRank.SILVER
+        4 -> DakGGRank.GOLD
+        5 -> DakGGRank.PLATINUM_PLUS
+        63 -> DakGGRank.METEORITE_PLUS
+        66 -> DakGGRank.MITHRIL_PLUS
+        7, 8 -> DakGGRank.IN_1000
+        else -> DakGGRank.DIAMOND_PLUS
     }
 }
