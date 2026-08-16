@@ -22,10 +22,6 @@ object GameActivityVisibility {
         return if (end == today.minusDays(1)) "已过期 1 天" else "有效中"
     }
 
-    fun EternalReturnNewsRecord.isRedemptionCodeExpiringTomorrow(today: LocalDate): Boolean {
-        return isRedemptionCode && endDate.toLocalDateOrNull() == today.plusDays(1)
-    }
-
     fun String?.toLocalDateOrNull(): LocalDate? {
         val value = this?.trim()?.takeIf { it.isNotBlank() } ?: return null
         return runCatching { LocalDate.parse(value.take(10)) }.getOrNull()

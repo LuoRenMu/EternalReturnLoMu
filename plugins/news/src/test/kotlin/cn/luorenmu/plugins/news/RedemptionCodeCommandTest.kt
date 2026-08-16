@@ -1,8 +1,6 @@
 package cn.luorenmu.plugins.news
 
 import cn.luorenmu.common.annotation.BotCommand
-import cn.luorenmu.repository.entity.EternalReturnNewsRecord
-import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -40,35 +38,4 @@ class RedemptionCodeCommandTest {
     fun descriptionIsComplete() {
         assertTrue(cmd.description.contains("兑换码"))
     }
-
-    @Test
-    fun expiringTomorrowAddsWarningAfterCode() {
-        val today = LocalDate.of(2026, 8, 16)
-        val record = redemptionCode(endDate = "2026-08-17")
-
-        assertEquals("兑换码: `ER-WEEKEND`（兑换码即将过期）", record.displayCodeLine(today))
-    }
-
-    @Test
-    fun otherExpirationDatesDoNotAddWarning() {
-        val today = LocalDate.of(2026, 8, 16)
-
-        assertEquals("兑换码: `ER-WEEKEND`", redemptionCode(endDate = "2026-08-16").displayCodeLine(today))
-        assertEquals("兑换码: `ER-WEEKEND`", redemptionCode(endDate = "2026-08-18").displayCodeLine(today))
-        assertEquals(
-            "兑换码: `ER-WEEKEND`",
-            redemptionCode(endDate = "2026-08-17", isRedemptionCode = false).displayCodeLine(today),
-        )
-    }
-
-    private fun redemptionCode(
-        endDate: String,
-        isRedemptionCode: Boolean = true,
-    ) = EternalReturnNewsRecord(
-        articleId = 1,
-        title = "周末兑换码",
-        isRedemptionCode = isRedemptionCode,
-        code = "ER-WEEKEND",
-        endDate = endDate,
-    )
 }

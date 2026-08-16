@@ -8,7 +8,6 @@ import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.repository.NewsRepository
 import cn.luorenmu.repository.entity.EternalReturnNewsRecord
 import cn.luorenmu.service.GameActivityVisibility.displayStatus
-import cn.luorenmu.service.GameActivityVisibility.isRedemptionCodeExpiringTomorrow
 import cn.luorenmu.service.GameActivityVisibility.isVisibleOn
 import love.forte.simbot.component.qguild.message.QGMarkdown
 import love.forte.simbot.message.Message
@@ -50,7 +49,7 @@ class RedemptionCodeCommand : CommandEvent {
             records.forEachIndexed { index, record ->
                 appendLine()
                 appendLine("${index + 1}. **${record.title}**")
-                appendLine(record.displayCodeLine(today))
+                appendLine("兑换码: ${record.code.displayCode()}")
                 appendLine("状态: ${record.displayStatus(today)}")
                 record.reward?.takeIf { it.isNotBlank() }?.let {
                     appendLine("奖励: ${it.compact()}")
@@ -61,6 +60,11 @@ class RedemptionCodeCommand : CommandEvent {
                 appendLine("有效期: ${record.displayPeriod()}")
             }
         })
+    }
+
+    private fun String?.displayCode(): String {
+        val code = this?.trim()
+        return if (code.isNullOrBlank()) "详见活动页面" else "`$code`"
     }
 
     private fun EternalReturnNewsRecord.displayPeriod(): String {
@@ -83,14 +87,4 @@ class RedemptionCodeCommand : CommandEvent {
         private const val MAX_LIMIT = 10
         private const val LOOKUP_LIMIT = 50
     }
-}
-
-internal fun EternalReturnNewsRecord.displayCodeLine(today: LocalDate): String {
-    val expirationWarning = if (isRedemptionCodeExpiringTomorrow(today)) "（兑换码即将过期）" else ""
-    return "兑换码: ${code.displayCode()}$expirationWarning"
-}
-
-private fun String?.displayCode(): String {
-    val code = this?.trim()
-    return if (code.isNullOrBlank()) "详见活动页面" else "`$code`"
 }
