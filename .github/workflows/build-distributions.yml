@@ -15,7 +15,7 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: build-distributions-${{ github.ref }}
@@ -78,7 +78,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != ''
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.LOMU }}
+          GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           archive="build/release/onebot-${{ steps.versions.outputs.core }}.zip"
