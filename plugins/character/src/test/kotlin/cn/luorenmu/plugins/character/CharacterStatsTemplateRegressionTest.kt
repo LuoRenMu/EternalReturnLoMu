@@ -1,9 +1,16 @@
 package cn.luorenmu.plugins.character
 
+import cn.luorenmu.nutdraw.dom.NutImage
+import cn.luorenmu.nutdraw.dom.NutText
 import cn.luorenmu.nutdraw.layout.FlexLayoutEngine
 import cn.luorenmu.nutdraw.layout.LayoutBox
+import cn.luorenmu.nutdraw.NutDraw
 import cn.luorenmu.service.entity.CharacterStats
+import kotlinx.coroutines.runBlocking
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -14,41 +21,63 @@ import kotlin.test.assertTrue
  */
 class CharacterStatsTemplateRegressionTest {
     @Test
-    fun `tier image appears before character name`() {
-        val data = CharacterStats(
-            totalGames = 100,
-            totalPlayers = 10,
-            tierName = "diamond_plus",
-            tier = "钻石+",
-            players = listOf(
-                CharacterStats.CharacterStatsPlayer(
-                    rank = 1,
-                    characterImgUrl = "",
-                    weaponImgUrl = "",
-                    characterName = "测试角色",
-                    tier = "A",
-                    rp = "1",
-                    playCount = 10,
-                    winRate = "50.0%",
-                    avgKill = "1.0",
-                    top3Rate = "60.0%",
-                    pick = "10.0%",
-                    avgRank = "3.0",
-                    avgDmg = "1000",
-                    relativeWinRate = "100.0",
-                )
-            ),
-            httpServer = "",
-        )
+    fun `compact grid renders every hero weapon combination`() {
+        val data = characterStats(23)
         val document = CharacterStatsTemplate().build(data)
         val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
-        val tierIcon = assertNotNull(layout.findById("stats-tier-icon-1"))
-        val characterName = assertNotNull(layout.findById("stats-character-name-1"))
 
-        assertTrue(tierIcon.node.style.backgroundImage?.endsWith("/character-tier-A.svg") == true)
-        assertTrue(tierIcon.bounds.right <= characterName.bounds.left)
-        assertTrue(tierIcon.bounds.right - tierIcon.bounds.left <= 24f)
+        repeat(23) { index -> assertNotNull(layout.findById("stats-card-$index")) }
+        assertTrue(document.height < 600)
     }
+
+    @Test
+    fun `card shows requested fields with play count below pick rate`() {
+        val document = CharacterStatsTemplate().build(characterStats(1))
+        val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+        val character = assertNotNull(layout.findById("stats-character-0"))
+        val weapon = assertNotNull(layout.findById("stats-weapon-0"))
+        val tier = assertNotNull(layout.findById("stats-tier-0"))
+        val pickRate = assertNotNull(layout.findById("stats-pick-rate-0"))
+        val playCount = assertNotNull(layout.findById("stats-play-count-0"))
+
+        assertTrue((character.node as NutImage).source?.endsWith("/character.png") == true)
+        assertTrue((weapon.node as NutImage).source?.endsWith("/weapon.png") == true)
+        assertEquals("A", (tier.node as NutText).value)
+        assertEquals("选择率 12.50%", (pickRate.node as NutText).value)
+        assertEquals("125 场", (playCount.node as NutText).value)
+        assertTrue(playCount.bounds.top >= pickRate.bounds.bottom)
+    }
+
+    @Test
+    fun `selection rate uses weapon games divided by total games`() {
+        assertEquals("12.50%", selectionRate(playCount = 125, totalGames = 1_000))
+        assertEquals("0.0%", selectionRate(playCount = 0, totalGames = 1_000))
+        assertEquals("0.0%", selectionRate(playCount = 10, totalGames = 0))
+    }
+
+    @Test
+    fun `compact grid renders to png`() = runBlocking {
+        val output = Path.of(System.getProperty("user.dir"), "build", "previews", "character-stats-compact.png")
+        Files.createDirectories(output.parent)
+
+        NutDraw.render(CharacterStatsTemplate(), characterStats(43), output)
+
+        assertTrue(Files.size(output) > 100)
+    }
+
+    private fun characterStats(size: Int) = CharacterStats(
+        tier = "灭钻",
+        players = List(size) {
+            CharacterStats.CharacterStatsPlayer(
+                characterImgUrl = "/character.png",
+                weaponImgUrl = "/weapon.png",
+                tier = "A",
+                pickRate = "12.50%",
+                playCount = 125,
+            )
+        },
+        httpServer = "",
+    )
 
     private fun LayoutBox.findById(id: String): LayoutBox? =
         takeIf { node.id == id } ?: children.firstNotNullOfOrNull { it.findById(id) }

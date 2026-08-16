@@ -1,6 +1,18 @@
 package cn.luorenmu.plugins.character
 
-import cn.luorenmu.nutdraw.css.*
+import cn.luorenmu.nutdraw.css.AlignItems
+import cn.luorenmu.nutdraw.css.Border
+import cn.luorenmu.nutdraw.css.CssStyle
+import cn.luorenmu.nutdraw.css.Edges
+import cn.luorenmu.nutdraw.css.FlexDirection
+import cn.luorenmu.nutdraw.css.FlexWrap
+import cn.luorenmu.nutdraw.css.JustifyContent
+import cn.luorenmu.nutdraw.css.ObjectFit
+import cn.luorenmu.nutdraw.css.Position
+import cn.luorenmu.nutdraw.css.TextAlign
+import cn.luorenmu.nutdraw.css.VerticalAlign
+import cn.luorenmu.nutdraw.css.percent
+import cn.luorenmu.nutdraw.css.px
 import cn.luorenmu.nutdraw.dom.ElementBuilder
 import cn.luorenmu.nutdraw.dom.document
 import cn.luorenmu.nutdraw.template.ImageTemplate
@@ -9,60 +21,203 @@ import cn.luorenmu.service.entity.CharacterStats
 import org.jetbrains.skia.Color
 
 /**
- * Faithful reconstruction of character_stats.ftl + character_stats.css.
+ * 紧凑展示全部英雄武器组合的角色数据模板。
  *
  * @author LoMu
  * Date 2026/8/16 15:30
  */
 class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
-    private val bg = Color.makeRGB(245,246,250); private val white = Color.WHITE; private val ink = Color.makeRGB(26,29,40)
-    private val muted = Color.makeRGB(120,128,160); private val line = Color.makeRGB(226,229,238)
     override fun build(data: CharacterStats): TemplateDocument {
-        val height = 150 + 52 + data.players.size * 81 + 28
+        val rowCount = (data.players.size + COLUMN_COUNT - 1) / COLUMN_COUNT
+        val gridHeight = if (rowCount == 0) 0f else rowCount * CARD_HEIGHT + (rowCount - 1) * GRID_GAP
+        val height = (PAGE_PADDING * 2 + HEADER_HEIGHT + HEADER_GAP + gridHeight).toInt()
         val base = data.httpServer
-        return TemplateDocument(1250, height, document(CssStyle(width = px(1250), height = px(height), padding = Edges(22f), gap = 28f, background = bg, color = ink)) {
-            element(CssStyle(width = percent(100), height = px(100), gap = 18f, alignItems = AlignItems.CENTER)) {
-                element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(45), justifyContent = JustifyContent.CENTER, alignItems = AlignItems.CENTER, gap = 12f)) {
-                    element(CssStyle(width = px(32), height = px(32), background = Color.makeRGB(108,92,231), borderRadius = 8f))
-                    text("Character Stats", CssStyle(width = px(260), height = px(44), fontSize = 32f, color = ink))
+
+        return TemplateDocument(
+            PAGE_WIDTH,
+            height,
+            document(
+                CssStyle(
+                    width = px(PAGE_WIDTH),
+                    height = px(height),
+                    padding = Edges(PAGE_PADDING),
+                    gap = HEADER_GAP,
+                    background = Color.makeRGB(242, 244, 249),
+                ),
+                id = "character-stats",
+            ) {
+                element(
+                    CssStyle(
+                        direction = FlexDirection.ROW,
+                        width = percent(100),
+                        height = px(HEADER_HEIGHT),
+                        padding = Edges(10f, 16f),
+                        alignItems = AlignItems.CENTER,
+                        justifyContent = JustifyContent.SPACE_BETWEEN,
+                        background = Color.WHITE,
+                        border = Border(1f, Color.makeRGB(224, 228, 238)),
+                        borderRadius = 12f,
+                    ),
+                    id = "stats-header",
+                ) {
+                    text(
+                        "角色数据 · ${data.tier}",
+                        CssStyle(
+                            width = px(360),
+                            height = px(30),
+                            fontSize = 22f,
+                            fontWeight = 800,
+                            color = Color.makeRGB(32, 36, 48),
+                            verticalAlign = VerticalAlign.CENTER,
+                        ),
+                    )
+                    text(
+                        "${data.players.size} 个英雄武器组合",
+                        CssStyle(
+                            width = px(220),
+                            height = px(24),
+                            fontSize = 12f,
+                            color = Color.makeRGB(112, 120, 144),
+                            textAlign = TextAlign.END,
+                            verticalAlign = VerticalAlign.CENTER,
+                        ),
+                    )
                 }
-                element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(58), justifyContent = JustifyContent.CENTER, gap = 16f)) {
-                    statBadge("统计对局", data.totalGames); statBadge("统计玩家", data.totalPlayers); statBadge("统计段位", data.tier)
-                }
-            }
-            element(CssStyle(width = percent(100), flexGrow = 1f, background = white, border = Border(1f,line), borderRadius = 16f, gap = 0f)) {
-                element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(52), padding = Edges(0f,14f), alignItems = AlignItems.CENTER, background = Color.makeRGB(248,249,252), border = Border(1f,Color.makeRGB(232,235,242)))) {
-                    listOf("#" to 64f, "CHARACTER" to 322f, "RP" to 80f, "PICK RATE" to 135f, "WIN RATE" to 135f, "TOP3 RATE" to 130f, "AVG.RANK" to 105f, "AVG.DMG" to 105f, "PLAY COUNT" to 120f).forEach { (label,w) -> text(label, headerCell(w)) }
-                }
-                data.players.forEach { player ->
-                    element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(81), padding = Edges(14f), alignItems = AlignItems.CENTER, border = Border(1f,Color.makeRGB(240,241,246)))) {
-                        text(player.rank, CssStyle(width = px(64), height = px(38), padding = Edges(9f), fontSize = 14f, color = white, textAlign = TextAlign.CENTER, background = rankColor(player.rank), borderRadius = 19f))
-                        element(CssStyle(direction = FlexDirection.ROW, width = px(322), height = px(53), alignItems = AlignItems.CENTER, gap = 10f)) {
-                            element(CssStyle(width=px(58),height=px(58))) {
-                                image(player.characterImgUrl.resolve(base), CssStyle(width = px(52), height = px(52), borderRadius = 26f, border = Border(2f,line), objectFit = ObjectFit.COVER))
-                                element(CssStyle(width=px(22),height=px(22),padding=Edges(3f),position=Position.ABSOLUTE,right=0f,bottom=0f,background=Color.BLACK,border=Border(2f,line),borderRadius=11f)) {
-                                    image(player.weaponImgUrl.resolve(base),CssStyle(width=percent(100),height=percent(100),objectFit=ObjectFit.CONTAIN))
-                                }
-                            }
-                            characterTierIcon(characterTierIconUrl(player.tier).resolve(base), 24f, "stats-tier-icon-${player.rank}")
-                            text(player.characterName, cell(14f, ink, 220f).copy(textAlign = TextAlign.START), id = "stats-character-name-${player.rank}")
-                        }
-                        text(player.rp, cell(15f, Color.makeRGB(42,46,58),80f))
-                        text(player.pick, barCell(135f, Color.makeARGB(80,100,140,240)))
-                        text(player.winRate, barCell(135f, Color.makeARGB(95,80,200,120)))
-                        text(player.top3Rate, cell(13f,Color.makeRGB(58,62,74),130f))
-                        text(player.avgRank, cell(13f,Color.makeRGB(58,62,74),105f))
-                        text(player.avgDmg, cell(15f,Color.makeRGB(224,112,48),105f))
-                        text(player.playCount, cell(13f,Color.makeRGB(58,62,74),120f))
+
+                element(
+                    CssStyle(
+                        direction = FlexDirection.ROW,
+                        wrap = FlexWrap.WRAP,
+                        width = percent(100),
+                        height = px(gridHeight),
+                        gap = GRID_GAP,
+                        alignItems = AlignItems.START,
+                    ),
+                    id = "stats-grid",
+                ) {
+                    data.players.forEachIndexed { index, player ->
+                        characterWeaponCard(index, player, base)
                     }
                 }
-            }
-        })
+            },
+        )
     }
-    private fun ElementBuilder.statBadge(label: String, value: Any?) { element(CssStyle(width = px(170), height = px(58), padding = Edges(8f,24f), background = white, border = Border(1f,line), borderRadius = 12f, alignItems = AlignItems.CENTER)) { text(label, CssStyle(width = percent(100), height = px(17), fontSize = 11f, color = Color.makeRGB(136,144,168), textAlign = TextAlign.CENTER)); text(value, CssStyle(width = percent(100), height = px(28), fontSize = 22f, color = ink, textAlign = TextAlign.CENTER)) } }
-    private fun headerCell(width: Float) = CssStyle(width = px(width), height = px(20), fontSize = 11f, color = muted, textAlign = TextAlign.CENTER)
-    private fun cell(size: Float, color: Int, width: Float) = CssStyle(width = px(width), height = px(28), fontSize = size, color = color, textAlign = TextAlign.CENTER)
-    private fun barCell(width: Float, color: Int) = cell(12f,Color.makeRGB(58,62,74),width).copy(height = px(26), padding = Edges(5f), background = color, borderRadius = 13f)
-    private fun rankColor(rank: Int) = when(rank) { 1 -> Color.makeRGB(246,168,0); 2 -> Color.makeRGB(160,168,184); 3 -> Color.makeRGB(205,127,50); else -> Color.makeRGB(240,241,246) }
-    private fun String?.resolve(base: String) = this?.takeIf(String::isNotBlank)?.let { if (it.startsWith("http")) it else base.trimEnd('/') + "/" + it.trimStart('/') }
+
+    private fun ElementBuilder.characterWeaponCard(
+        index: Int,
+        player: CharacterStats.CharacterStatsPlayer,
+        base: String,
+    ) {
+        element(
+            CssStyle(
+                width = px(CARD_WIDTH),
+                height = px(CARD_HEIGHT),
+                padding = Edges(7f),
+                gap = 3f,
+                alignItems = AlignItems.CENTER,
+                background = Color.WHITE,
+                border = Border(1f, Color.makeRGB(224, 228, 238)),
+                borderRadius = 12f,
+            ),
+            id = "stats-card-$index",
+        ) {
+            element(
+                CssStyle(width = px(66), height = px(66), position = Position.STATIC),
+                id = "stats-portrait-$index",
+            ) {
+                image(
+                    player.characterImgUrl.resolve(base),
+                    CssStyle(
+                        width = px(66),
+                        height = px(66),
+                        border = Border(1f, Color.makeRGB(209, 214, 226)),
+                        borderRadius = 33f,
+                        objectFit = ObjectFit.COVER,
+                    ),
+                    id = "stats-character-$index",
+                )
+                text(
+                    player.tier.uppercase(),
+                    CssStyle(
+                        width = px(23),
+                        height = px(23),
+                        position = Position.ABSOLUTE,
+                        left = 0f,
+                        top = 0f,
+                        fontSize = 12f,
+                        fontWeight = 900,
+                        color = Color.WHITE,
+                        background = tierColor(player.tier),
+                        border = Border(2f, Color.WHITE),
+                        borderRadius = 12f,
+                        textAlign = TextAlign.CENTER,
+                        verticalAlign = VerticalAlign.CENTER,
+                    ),
+                    id = "stats-tier-$index",
+                )
+                element(
+                    CssStyle(
+                        width = px(27),
+                        height = px(27),
+                        padding = Edges(3f),
+                        position = Position.ABSOLUTE,
+                        right = 0f,
+                        bottom = 0f,
+                        background = Color.makeRGB(38, 42, 52),
+                        border = Border(2f, Color.WHITE),
+                        borderRadius = 14f,
+                    ),
+                    id = "stats-weapon-shell-$index",
+                ) {
+                    image(
+                        player.weaponImgUrl.resolve(base),
+                        CssStyle(width = percent(100), height = percent(100), objectFit = ObjectFit.CONTAIN),
+                        id = "stats-weapon-$index",
+                    )
+                }
+            }
+            text(
+                "选择率 ${player.pickRate}",
+                metricTextStyle(Color.makeRGB(70, 77, 94)),
+                id = "stats-pick-rate-$index",
+            )
+            text(
+                "${player.playCount} 场",
+                metricTextStyle(Color.makeRGB(132, 139, 158)),
+                id = "stats-play-count-$index",
+            )
+        }
+    }
+
+    private fun metricTextStyle(color: Int) = CssStyle(
+        width = percent(100),
+        height = px(18),
+        fontSize = 11f,
+        color = color,
+        textAlign = TextAlign.CENTER,
+        verticalAlign = VerticalAlign.CENTER,
+    )
+
+    private fun tierColor(tier: String): Int = when (tier.uppercase()) {
+        "S" -> Color.makeRGB(225, 83, 110)
+        "A" -> Color.makeRGB(235, 145, 55)
+        "B" -> Color.makeRGB(91, 148, 221)
+        "C" -> Color.makeRGB(75, 174, 132)
+        else -> Color.makeRGB(126, 134, 154)
+    }
+
+    private fun String?.resolve(base: String): String? = this
+        ?.takeIf(String::isNotBlank)
+        ?.let { if (it.startsWith("http")) it else base.trimEnd('/') + "/" + it.trimStart('/') }
+
+    companion object {
+        private const val PAGE_WIDTH = 1250
+        private const val PAGE_PADDING = 16f
+        private const val HEADER_HEIGHT = 58f
+        private const val HEADER_GAP = 12f
+        private const val COLUMN_COUNT = 10
+        private const val CARD_WIDTH = 114f
+        private const val CARD_HEIGHT = 126f
+        private const val GRID_GAP = 8f
+    }
 }
