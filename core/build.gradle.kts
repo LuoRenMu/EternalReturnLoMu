@@ -33,6 +33,7 @@ dependencies {
     implementation(libs.sqlite.jdbc)
     implementation(libs.hikari.cp)
     testImplementation(kotlin("test"))
+    testImplementation(libs.ktor.server.test.host)
     // QGMarkdown 等 QQ 组件类型在核心模块为 compileOnly，测试运行期需要显式加入
     testImplementation(libs.simbot.component.qq)
 }

@@ -2,6 +2,7 @@ package cn.luorenmu
 import cn.luorenmu.ai.AIConfig
 import cn.luorenmu.ai.KoogLLMClient
 import cn.luorenmu.ai.news.NewsClassifier
+import cn.luorenmu.api.AdminAccessToken
 import cn.luorenmu.api.resourcesRouting
 import cn.luorenmu.common.util.DatabaseManager
 import cn.luorenmu.common.util.DatabaseBackend
@@ -52,6 +53,10 @@ private val logger = KotlinLogging.logger {}
 fun Application.moduleCore(adapter: Adapter, serverPort: Int = ConfigFile.config.port) {
     currentAdapter = adapter
     SERVER_PORT = serverPort
+    HTTP_SERVER_URL = "http://127.0.0.1:$serverPort"
+    val adminAccessToken = AdminAccessToken.regenerate()
+    println("管理后台访问令牌: $adminAccessToken")
+    println("管理后台地址: $HTTP_SERVER_URL/")
     CommandPlugins.initialize(adapter, PathUtils.pathResolve(paths = arrayOf("plugins")))
     ApiKeyConfig.apiKeyMap = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
     configureRouting()
@@ -148,7 +153,6 @@ object ConfigFile {
     data class BotConfig(
         var port: Int = 8080,
         var apiKey: String = "非必要",
-        var adminToken: String = "",
         var other: Map<String, String> = mapOf(),
         var postgres: PostgresConfig = PostgresConfig(),
         var ai: AIConfig = AIConfig(),

@@ -13,6 +13,7 @@ class AdminDashboardPageTest {
     @Test
     fun dashboardUsesFreemarkerHtmxAlpineAndStandaloneCss() {
         val template = checkNotNull(javaClass.getResource("/templates/admin/dashboard.ftl")).readText()
+        val loginTemplate = checkNotNull(javaClass.getResource("/templates/admin/login.ftl")).readText()
         val fragment = checkNotNull(javaClass.getResource("/templates/admin/fragments/system.ftl")).readText()
         val script = checkNotNull(javaClass.getResource("/static/admin/admin.js")).readText()
         val stylesheet = checkNotNull(javaClass.getResource("/static/admin/admin.css")).readText()
@@ -59,7 +60,13 @@ class AdminDashboardPageTest {
         assertContains(template, "view === 'exceptions'")
         assertContains(template, "查看详细追溯")
         assertContains(template, "item.stackTrace")
-        assertContains(script, "X-Admin-Token")
+        assertFalse(script.contains("X-Admin-Token"))
+        assertFalse(script.contains("sessionStorage"))
+        assertContains(template, "令牌已验证")
+        assertContains(loginTemplate, "action=\"/admin/login\"")
+        assertContains(loginTemplate, "name=\"token\"")
+        assertContains(loginTemplate, "button-primary")
+        assertContains(loginTemplate, "${'$'}{backgroundImageUrl?html}")
         assertContains(script, "setInterval(render, 1000)")
         assertContains(script, "htmx:afterSwap")
         checkNotNull(javaClass.getResource("/static/images/admin-background.png"))
@@ -83,6 +90,19 @@ class AdminDashboardPageTest {
         }.toString()
         assertContains(dashboard, "LoMu Control Center")
         assertContains(dashboard, "https://example.com/background.jpg")
+
+        val login = StringWriter().also { output ->
+            configuration.getTemplate("admin/login.ftl").process(
+                mapOf(
+                    "pageTitle" to "LoMu Control Center",
+                    "backgroundImageUrl" to "https://example.com/background.jpg",
+                    "error" to "令牌无效",
+                ),
+                output,
+            )
+        }.toString()
+        assertContains(login, "欢迎回来喵！")
+        assertContains(login, "令牌无效")
 
         val fragment = StringWriter().also { output ->
             configuration.getTemplate("admin/fragments/system.ftl").process(

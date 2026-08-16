@@ -2,7 +2,6 @@ package cn.luorenmu.api
 
 import cn.luorenmu.command.CommandRouter
 import cn.luorenmu.command.plugin.CommandPlugins
-import cn.luorenmu.ConfigFile
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.repository.StatisticsRepository
@@ -13,6 +12,7 @@ import cn.luorenmu.service.AdminSystemService
 import cn.luorenmu.service.AdminSystemView
 import cn.luorenmu.service.AdminRowUpdate
 import io.ktor.http.ContentType
+import io.ktor.http.Cookie
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -21,7 +21,10 @@ import io.ktor.server.request.receiveText
 import io.ktor.server.request.receiveMultipart
 import io.ktor.http.content.*
 import io.ktor.server.request.header
+import io.ktor.server.request.path
+import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -41,7 +44,6 @@ import love.forte.simbot.message.OfflineURIImage
 import love.forte.simbot.message.PlainText
 import org.koin.java.KoinJavaComponent.inject
 import java.nio.file.Path
-import java.security.MessageDigest
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -61,6 +63,15 @@ fun Route.adminRouting() {
 
     get("/") { call.respondAdminDashboard() }
     get("/admin") { call.respondAdminDashboard() }
+    post("/admin/login") {
+        val supplied = call.receiveParameters()[AdminAccessToken.QUERY_NAME].orEmpty()
+        if (!AdminAccessToken.matches(supplied)) {
+            call.respondAdminLogin("访问令牌无效，请检查后重试。", HttpStatusCode.Unauthorized)
+            return@post
+        }
+        call.startAdminSession(supplied.trim())
+        call.respondRedirect("/admin")
+    }
 
     get("/admin/fragments/system") {
         if (!call.hasValidAdminToken()) {
@@ -253,6 +264,19 @@ fun Route.adminRouting() {
 private const val ADMIN_BACKGROUND_IMAGE = "/static/images/admin-background.png"
 
 private suspend fun ApplicationCall.respondAdminDashboard() {
+    request.queryParameters[AdminAccessToken.QUERY_NAME]?.let { supplied ->
+        if (!AdminAccessToken.matches(supplied)) {
+            respondAdminLogin("访问令牌无效，请检查后重试。", HttpStatusCode.Unauthorized)
+            return
+        }
+        startAdminSession(supplied.trim())
+        respondRedirect(request.path())
+        return
+    }
+    if (!hasValidAdminToken()) {
+        respondAdminLogin()
+        return
+    }
     respond(
         FreeMarkerContent(
             "admin/dashboard.ftl",
@@ -261,6 +285,35 @@ private suspend fun ApplicationCall.respondAdminDashboard() {
                 "backgroundImageUrl" to ADMIN_BACKGROUND_IMAGE,
             ),
         )
+    )
+}
+
+private fun ApplicationCall.startAdminSession(token: String) {
+    response.cookies.append(
+        Cookie(
+            name = AdminAccessToken.COOKIE_NAME,
+            value = token,
+            path = "/",
+            httpOnly = true,
+            extensions = mapOf("SameSite" to "Strict"),
+        )
+    )
+}
+
+private suspend fun ApplicationCall.respondAdminLogin(
+    error: String? = null,
+    status: HttpStatusCode = HttpStatusCode.OK,
+) {
+    respond(
+        status,
+        FreeMarkerContent(
+            "admin/login.ftl",
+            mapOf(
+                "pageTitle" to "LoMu Control Center",
+                "backgroundImageUrl" to ADMIN_BACKGROUND_IMAGE,
+                "error" to error,
+            ),
+        ),
     )
 }
 
@@ -338,10 +391,8 @@ private suspend fun ApplicationCall.requireAdmin(): Boolean {
 }
 
 private fun ApplicationCall.hasValidAdminToken(): Boolean {
-    val expected = ConfigFile.config.adminToken
-    if (expected.isBlank()) return true
-    val supplied = request.header("X-Admin-Token").orEmpty()
-    return MessageDigest.isEqual(expected.toByteArray(), supplied.toByteArray())
+    return AdminAccessToken.matches(request.header(AdminAccessToken.HEADER_NAME)) ||
+        AdminAccessToken.matches(request.cookies[AdminAccessToken.COOKIE_NAME])
 }
 
 private fun idOf(value: String): ID {

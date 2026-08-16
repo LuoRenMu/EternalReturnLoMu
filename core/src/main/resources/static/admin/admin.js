@@ -1,7 +1,3 @@
-document.addEventListener("htmx:configRequest", (event) => {
-    event.detail.headers["X-Admin-Token"] = sessionStorage.getItem("lomu-admin-token") || "";
-});
-
 let runtimeClockTimer = null;
 
 function formatRuntimeDuration(milliseconds) {
@@ -54,7 +50,6 @@ document.addEventListener("alpine:init", () => {
     Alpine.data("adminDashboard", () => ({
         view: "overview",
         pageTitle: "系统概览",
-        token: sessionStorage.getItem("lomu-admin-token") || "",
         overview: {
             configState: "—",
             tableCount: "—",
@@ -62,7 +57,7 @@ document.addEventListener("alpine:init", () => {
             serverPort: "—",
             database: "未连接",
             ai: "未配置",
-            auth: "本地开放",
+            auth: "已保护",
         },
         tables: [],
         exceptions: [],
@@ -81,13 +76,7 @@ document.addEventListener("alpine:init", () => {
         },
 
         async api(url, options = {}) {
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    ...(options.headers || {}),
-                    "X-Admin-Token": this.token,
-                },
-            });
+            const response = await fetch(url, options);
             let payload;
             try {
                 payload = await response.json();
@@ -108,13 +97,6 @@ document.addEventListener("alpine:init", () => {
             }, 3200);
         },
 
-        saveToken() {
-            sessionStorage.setItem("lomu-admin-token", this.token);
-            this.notify("管理令牌已保存");
-            this.refreshOverview();
-            if (window.htmx) htmx.trigger(document.body, "refresh-system");
-        },
-
         showView(view, title) {
             this.view = view;
             this.pageTitle = title;
@@ -132,7 +114,7 @@ document.addEventListener("alpine:init", () => {
                     serverPort: config.runtimePort,
                     database: sqlite ? "SQLite" : "PostgreSQL",
                     ai: config.ai.apiKey ? "已配置" : "未配置",
-                    auth: config.adminTokenConfigured ? "已保护" : "本地开放",
+                    auth: "已保护",
                 });
                 try {
                     const tables = await this.api("/api/admin/database/tables");

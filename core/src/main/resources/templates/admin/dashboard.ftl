@@ -54,10 +54,7 @@
     <div class="min-w-0">
         <header class="flex flex-col gap-3 border-b border-lomu-200/70 bg-white/80 px-4 py-4 shadow-sm backdrop-blur-xl md:flex-row md:items-center md:justify-between md:px-7">
             <h1 class="text-xl font-black tracking-tight text-lomu-900" x-text="pageTitle"></h1>
-            <div class="flex w-full gap-2 md:w-auto">
-                <input class="control md:w-60" type="password" placeholder="管理令牌（可选）" x-model="token" @keydown.enter="saveToken()">
-                <button class="button shrink-0" @click="saveToken()">保存令牌</button>
-            </div>
+            <span class="pill">令牌已验证</span>
         </header>
 
         <main class="p-4 pb-14 md:p-7">

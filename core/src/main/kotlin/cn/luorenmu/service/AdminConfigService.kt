@@ -12,8 +12,6 @@ class AdminConfigService(private val databaseManager: DatabaseManager) {
         port = port,
         runtimePort = SERVER_PORT,
         apiKey = apiKey.masked(),
-        adminToken = adminToken.masked(),
-        adminTokenConfigured = adminToken.isNotBlank(),
         databaseBackend = databaseManager.displayName(),
         other = other.mapValues { (key, value) ->
             if (isSensitiveKey(key) && value.isNotBlank()) SECRET_MASK else value
@@ -47,8 +45,6 @@ data class AdminConfigView(
     val port: Int,
     val runtimePort: Int,
     val apiKey: String,
-    val adminToken: String,
-    val adminTokenConfigured: Boolean,
     val databaseBackend: String,
     val other: Map<String, String>,
     val postgres: PostgresConfigView,

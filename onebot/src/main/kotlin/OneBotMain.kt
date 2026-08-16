@@ -34,7 +34,6 @@ suspend fun main(args: Array<String>) {
         useOneBot11()
     }
     app.configure()
-    println("管理后台地址: http://127.0.0.1:$adminPort/")
     embeddedServer(Netty, port = adminPort, host = "0.0.0.0") {
         moduleCore(Adapter.ONE_BOT, adminPort)
     }.start(wait = true)
