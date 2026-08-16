@@ -75,7 +75,7 @@ class AdminDashboardPageTest {
         assertContains(loginTemplate, "${'$'}{backgroundImageUrl?html}")
         assertContains(script, "setInterval(render, 1000)")
         assertContains(script, "htmx:afterSwap")
-        checkNotNull(javaClass.getResource("/static/images/admin-background.png"))
+        checkNotNull(javaClass.getResource("https://img.cdn1.vip/i/6a8171cba817b_1786868171.webp"))
     }
 
     @Test
