@@ -266,7 +266,7 @@ fun Route.adminRouting() {
     }
 }
 
-private const val ADMIN_BACKGROUND_IMAGE = "https://img.cdn1.vip/i/6a8171cba817b_1786868171.webp"
+internal const val ADMIN_BACKGROUND_IMAGE = "https://img.cdn1.vip/i/6a8171cba817b_1786868171.webp"
 
 private suspend fun ApplicationCall.respondAdminDashboard() {
     request.queryParameters[AdminAccessToken.QUERY_NAME]?.let { supplied ->
