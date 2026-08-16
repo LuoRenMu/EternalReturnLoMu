@@ -24,6 +24,8 @@ class AdminDashboardPageTest {
         val stylesheet = checkNotNull(javaClass.getResource("/static/admin/admin.css")).readText()
 
         assertContains(template, "href=\"/static/admin/admin.css\"")
+        assertContains(template, "rel=\"icon\" href=\"/static/images/favicon.ico\"")
+        assertContains(loginTemplate, "rel=\"icon\" href=\"/static/images/favicon.ico\"")
         assertFalse(template.contains("@tailwindcss/browser"))
         assertContains(template, "<body class=\"relative isolate min-h-screen bg-transparent")
         assertContains(template, "<aside class=\"overflow-x-hidden")
