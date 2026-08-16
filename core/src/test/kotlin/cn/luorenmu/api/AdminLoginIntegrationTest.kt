@@ -4,8 +4,11 @@ import cn.luorenmu.CoreApplication
 import freemarker.cache.ClassTemplateLoader
 import io.ktor.client.request.get
 import io.ktor.client.request.forms.submitForm
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.charset
+import io.ktor.http.contentType
 import io.ktor.http.parameters
 import io.ktor.server.freemarker.FreeMarker
 import io.ktor.server.application.install
@@ -27,7 +30,10 @@ class AdminLoginIntegrationTest {
         }
         val clientWithoutRedirects = createClient { followRedirects = false }
 
-        assertEquals(HttpStatusCode.OK, clientWithoutRedirects.get("/").status)
+        val loginResponse = clientWithoutRedirects.get("/")
+        assertEquals(HttpStatusCode.OK, loginResponse.status)
+        assertEquals(Charsets.UTF_8, loginResponse.contentType()?.charset())
+        assertContains(loginResponse.bodyAsText(), "欢迎回来喵！")
         val response = clientWithoutRedirects.submitForm(
             url = "/admin/login",
             formParameters = parameters { append(AdminAccessToken.QUERY_NAME, "  $token  ") },

@@ -23,12 +23,14 @@ import io.ktor.server.application.*
 import io.ktor.server.freemarker.FreeMarker
 import io.ktor.server.routing.*
 import freemarker.cache.ClassTemplateLoader
+import freemarker.template.Configuration
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import org.koin.ktor.ext.getKoin
 import org.koin.ktor.plugin.Koin
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
@@ -98,9 +100,15 @@ fun Application.configureInstall() {
         modules(appModule)
     }
     install(FreeMarker) {
-        templateLoader = ClassTemplateLoader(CoreApplication::class.java.classLoader, "templates")
+        configureAdminTemplates()
     }
 
+}
+
+internal fun Configuration.configureAdminTemplates() {
+    defaultEncoding = StandardCharsets.UTF_8.name()
+    outputEncoding = StandardCharsets.UTF_8.name()
+    templateLoader = ClassTemplateLoader(CoreApplication::class.java.classLoader, "templates")
 }
 
 fun Application.configureRouting() {
