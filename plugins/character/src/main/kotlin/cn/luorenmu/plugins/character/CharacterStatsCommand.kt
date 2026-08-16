@@ -47,7 +47,10 @@ class CharacterStatsCommand : CommandEvent {
             "render",
             "character_stats_${CACHE_VERSION}_${rank.value}.png",
         )
-        val cachedPath = RenderedFileCache.getOrCreate(outputPath) { path ->
+        val cachedPath = RenderedFileCache.getOrCreate(
+            path = outputPath,
+            cleanupPrefix = "character_stats_",
+        ) { path ->
             preheatRequest()
             val stats = characterStatsCollector.collect(rank)
             NutDraw.render(CharacterStatsTemplate(), stats, path)

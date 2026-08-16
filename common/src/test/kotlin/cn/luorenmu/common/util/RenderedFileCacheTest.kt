@@ -8,7 +8,9 @@ import java.time.temporal.ChronoUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 /**
  *
@@ -50,5 +52,30 @@ class RenderedFileCacheTest {
             RenderedFileCache.cacheKey("莉央", "SQUAD", "RANK", "diamond_plus"),
             RenderedFileCache.cacheKey("莉央", "SQUAD", "COBALT", "diamond_plus"),
         )
+    }
+
+    @Test
+    fun deletesOnlyExpiredPngFilesWithTheRequestedPrefix() = runBlocking {
+        val directory = Files.createTempDirectory("rendered-file-cleanup-test")
+        val expiredImage = Files.writeString(directory.resolve("character_detail_old.png"), "old")
+        val freshImage = Files.writeString(directory.resolve("character_detail_fresh.png"), "fresh")
+        val unrelatedImage = Files.writeString(directory.resolve("character_stats_old.png"), "unrelated")
+        val nonPngFile = Files.writeString(directory.resolve("character_detail_old.txt"), "text")
+        val oldTime = FileTime.from(Instant.now().minus(13, ChronoUnit.HOURS))
+        try {
+            listOf(expiredImage, unrelatedImage, nonPngFile).forEach { Files.setLastModifiedTime(it, oldTime) }
+
+            RenderedFileCache.getOrCreate(
+                path = directory.resolve("character_detail_current.png"),
+                cleanupPrefix = "character_detail_",
+            ) { path -> Files.writeString(path, "current") }
+
+            assertFalse(Files.exists(expiredImage))
+            assertTrue(Files.exists(freshImage))
+            assertTrue(Files.exists(unrelatedImage))
+            assertTrue(Files.exists(nonPngFile))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
     }
 }

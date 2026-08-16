@@ -42,7 +42,10 @@ class TierStatisticsNumberCommand : CommandEvent {
             "tier",
             "tierStatisticsNumber_${CACHE_VERSION}_${serverName.value}.png",
         )
-        val cachedPath = RenderedFileCache.getOrCreate(outputPath) { path ->
+        val cachedPath = RenderedFileCache.getOrCreate(
+            path = outputPath,
+            cleanupPrefix = "tierStatisticsNumber_",
+        ) { path ->
             preheatRequest(serverName)
             val cutoffsAndTierNumber = tierStatisticsCollector.collect(serverName)
             NutDraw.render(TierStatisticsTemplate(), cutoffsAndTierNumber, path)

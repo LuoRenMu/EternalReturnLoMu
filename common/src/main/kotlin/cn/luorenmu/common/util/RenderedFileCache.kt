@@ -20,13 +20,19 @@ object RenderedFileCache {
     suspend fun getOrCreate(
         path: Path,
         maxAge: Duration = DEFAULT_MAX_AGE,
+        cleanupPrefix: String? = null,
         producer: suspend (Path) -> Unit,
     ): Path {
         require(!maxAge.isZero && !maxAge.isNegative) { "maxAge 必须大于 0" }
+        require(cleanupPrefix == null || cleanupPrefix.isNotBlank()) { "cleanupPrefix 不能为空" }
         val normalizedPath = path.toAbsolutePath().normalize()
         return StringLockUtil.withKeyLock("rendered-file:$normalizedPath") {
-            if (!isFresh(normalizedPath, maxAge)) {
-                normalizedPath.parent?.let(Files::createDirectories)
+            val now = Instant.now()
+            normalizedPath.parent?.let { directory ->
+                Files.createDirectories(directory)
+                cleanupPrefix?.let { cleanupExpiredImages(directory, it, maxAge, now) }
+            }
+            if (!isFresh(normalizedPath, maxAge, now)) {
                 producer(normalizedPath)
                 check(Files.isRegularFile(normalizedPath)) { "渲染文件未生成: $normalizedPath" }
             }
@@ -41,7 +47,25 @@ object RenderedFileCache {
         return HexFormat.of().formatHex(digest).take(CACHE_KEY_LENGTH)
     }
 
-    private fun isFresh(path: Path, maxAge: Duration, now: Instant = Instant.now()): Boolean {
+    private fun cleanupExpiredImages(
+        directory: Path,
+        prefix: String,
+        maxAge: Duration,
+        now: Instant,
+    ) {
+        Files.list(directory).use { files ->
+            files.filter { path ->
+                val fileName = path.fileName.toString()
+                Files.isRegularFile(path) && fileName.startsWith(prefix) && fileName.endsWith(".png")
+            }.forEach { path ->
+                if (!isFresh(path, maxAge, now)) {
+                    runCatching { Files.deleteIfExists(path) }
+                }
+            }
+        }
+    }
+
+    private fun isFresh(path: Path, maxAge: Duration, now: Instant): Boolean {
         if (!Files.isRegularFile(path)) return false
         return Files.getLastModifiedTime(path).toInstant().plus(maxAge).isAfter(now)
     }
