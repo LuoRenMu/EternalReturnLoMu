@@ -70,6 +70,7 @@ class AdminDashboardPageTest {
         assertContains(template, "令牌已验证")
         assertContains(loginTemplate, "action=\"/admin/login\"")
         assertContains(loginTemplate, "name=\"token\"")
+        assertContains(loginTemplate, "config.json 中配置的访问令牌")
         assertContains(loginTemplate, "button-primary")
         assertContains(loginTemplate, "${'$'}{backgroundImageUrl?html}")
         assertContains(script, "setInterval(render, 1000)")

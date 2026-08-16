@@ -16,6 +16,7 @@ class AdminConfigService(private val databaseManager: DatabaseManager) {
     private fun ConfigFile.BotConfig.toView() = AdminConfigView(
         port = port,
         runtimePort = SERVER_PORT,
+        adminToken = adminToken.masked(),
         apiKey = apiKey.masked(),
         databaseBackend = databaseManager.displayName(),
         other = other.mapValues { (key, value) ->
@@ -49,6 +50,7 @@ class AdminConfigService(private val databaseManager: DatabaseManager) {
 data class AdminConfigView(
     val port: Int,
     val runtimePort: Int,
+    val adminToken: String,
     val apiKey: String,
     val databaseBackend: String,
     val other: Map<String, String>,

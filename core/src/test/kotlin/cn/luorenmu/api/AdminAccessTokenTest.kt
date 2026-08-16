@@ -1,6 +1,7 @@
 package cn.luorenmu.api
 
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -11,13 +12,18 @@ import kotlin.test.assertTrue
  */
 class AdminAccessTokenTest {
     @Test
-    fun `regenerate creates url safe token and invalidates previous token`() {
-        val previous = AdminAccessToken.regenerate()
-        val current = AdminAccessToken.regenerate()
+    fun `configure uses fixed token and replaces previous token`() {
+        AdminAccessToken.configure("previous")
+        AdminAccessToken.configure("  fixed-token  ")
 
-        assertTrue(current.matches(Regex("[A-Za-z0-9]{10}")))
-        assertTrue(AdminAccessToken.matches(current))
-        assertFalse(AdminAccessToken.matches(previous))
+        assertTrue(AdminAccessToken.matches("fixed-token"))
+        assertTrue(AdminAccessToken.matches("  fixed-token  "))
+        assertFalse(AdminAccessToken.matches("previous"))
         assertFalse(AdminAccessToken.matches(null))
+    }
+
+    @Test
+    fun `configure rejects blank token`() {
+        assertFailsWith<IllegalArgumentException> { AdminAccessToken.configure("   ") }
     }
 }

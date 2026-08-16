@@ -30,11 +30,11 @@
             <span class="pill">安全访问</span>
         </div>
         <h1 class="login-title">欢迎回来喵！</h1>
-        <p class="login-description">请输入服务启动时打印的访问令牌，验证后即可进入 LoMu Control Center。</p>
+        <p class="login-description">请输入 config.json 中配置的访问令牌，验证后即可进入 LoMu Control Center。</p>
         <form class="login-form" method="post" action="/admin/login">
             <label class="field">
                 <span class="field-label">访问令牌</span>
-                <input class="control" type="password" name="token" placeholder="粘贴启动日志中的令牌" autocomplete="one-time-code" autofocus required>
+                <input class="control" type="password" name="token" placeholder="输入配置文件中的令牌" autocomplete="current-password" autofocus required>
             </label>
             <button class="button button-primary login-button" type="submit">验证并进入</button>
         </form>

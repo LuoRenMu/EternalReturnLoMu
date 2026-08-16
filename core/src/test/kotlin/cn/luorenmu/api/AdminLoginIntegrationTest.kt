@@ -25,8 +25,9 @@ import kotlin.test.assertEquals
  */
 class AdminLoginIntegrationTest {
     @Test
-    fun `generated console token starts an admin session`() = testApplication {
-        val token = AdminAccessToken.regenerate()
+    fun `configured token starts an admin session`() = testApplication {
+        val token = "fixed-token"
+        AdminAccessToken.configure(token)
         application {
             install(FreeMarker) {
                 templateLoader = ClassTemplateLoader(CoreApplication::class.java.classLoader, "templates")

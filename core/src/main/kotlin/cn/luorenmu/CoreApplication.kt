@@ -56,8 +56,8 @@ fun Application.moduleCore(adapter: Adapter, serverPort: Int = ConfigFile.config
     currentAdapter = adapter
     SERVER_PORT = serverPort
     HTTP_SERVER_URL = "http://127.0.0.1:$serverPort"
-    val adminAccessToken = AdminAccessToken.regenerate()
-    println("管理后台访问令牌: $adminAccessToken")
+    AdminAccessToken.configure(ConfigFile.config.adminToken)
+    println("管理后台访问令牌已从 config.json 加载")
     println("管理后台地址: $HTTP_SERVER_URL/")
     CommandPlugins.initialize(adapter, PathUtils.pathResolve(paths = arrayOf("plugins")))
     ApiKeyConfig.apiKeyMap = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
@@ -144,6 +144,7 @@ object ConfigFile {
 
     @Synchronized
     fun save(next: BotConfig) {
+        require(next.adminToken.isNotBlank()) { "config.json 中的 adminToken 不能为空" }
         val file = PathUtils.pathResolve(paths = arrayOf("config.json"))
         val temporary = file.resolveSibling("${file.fileName}.tmp")
         Files.writeString(temporary, json.encodeToString(next))
@@ -153,6 +154,7 @@ object ConfigFile {
             Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING)
         }
         config = next
+        AdminAccessToken.configure(next.adminToken)
         ApiKeyConfig.apiKeyMap = mutableMapOf("x-api-key" to next.apiKey)
     }
 
@@ -160,6 +162,7 @@ object ConfigFile {
     @Serializable
     data class BotConfig(
         var port: Int = 8080,
+        var adminToken: String = "lomu-admin",
         var apiKey: String = "非必要",
         var other: Map<String, String> = mapOf(),
         var postgres: PostgresConfig = PostgresConfig(),
