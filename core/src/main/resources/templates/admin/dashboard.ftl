@@ -47,6 +47,7 @@
             <button class="nav-button" :class="view === 'exceptions' && 'nav-button-active'" @click="showView('exceptions', '异常日志')"><span class="rounded-lg bg-white/15 px-2 py-1 text-xs">03</span>异常日志</button>
             <button class="nav-button" :class="view === 'plugins' && 'nav-button-active'" @click="showView('plugins', '命令插件')"><span class="rounded-lg bg-white/15 px-2 py-1 text-xs">04</span>命令插件</button>
             <button class="nav-button" :class="view === 'command' && 'nav-button-active'" @click="showView('command', 'Debug')"><span class="rounded-lg bg-white/15 px-2 py-1 text-xs">05</span>Debug</button>
+            <button class="nav-button" :class="view === 'about' && 'nav-button-active'" @click="showView('about', '关于')"><span class="rounded-lg bg-white/15 px-2 py-1 text-xs">06</span>关于</button>
         </nav>
         <div class="absolute bottom-5 hidden text-xs text-white/65 lg:block">Power by LuoRenMu</div>
     </aside>
@@ -150,6 +151,21 @@
                 </form></article>
                 <div class="mt-4 min-h-40 rounded-3xl border border-dashed border-lomu-200 bg-white/80 p-5 backdrop-blur" x-show="!commandResult">等待运行命令。</div>
                 <div class="mt-4 rounded-3xl border border-dashed border-lomu-200 bg-white/80 p-5 backdrop-blur" x-show="commandResult"><template x-for="(element,index) in commandResult?.elements || []" :key="index"><div><img class="mt-3 max-h-190 max-w-full rounded-3xl border-4 border-white shadow-xl" x-show="element.type === 'image' && element.imageUrl" :src="element.imageUrl" alt="预览"><pre class="whitespace-pre-wrap break-words" x-show="element.type !== 'image' || !element.imageUrl" x-text="element.text || element.raw || ''"></pre></div></template></div>
+            </section>
+
+            <section x-show="view === 'about'" x-cloak>
+                <div class="mb-5"><h2 class="text-2xl font-black text-lomu-900">关于 EternalReturnLoMu</h2><p class="mt-1 text-sm text-[#9b7187]">永恒轮回战绩查询与机器人管理项目。</p></div>
+                <div class="grid max-w-2xl gap-4">
+                    <article class="panel p-5">
+                        <div class="flex items-center gap-3"><div class="grid size-11 place-items-center rounded-2xl bg-white/80 text-lg font-black text-lomu-600">L♡</div><div><h3 class="font-black text-lomu-900">项目仓库</h3><p class="text-sm text-[#9b7187]">查看源码、提交反馈或参与开发。</p></div></div>
+                        <a class="button button-primary mt-4" href="https://github.com/LuoRenMu/EternalReturnLoMu" target="_blank" rel="noopener noreferrer">GitHub · LuoRenMu/EternalReturnLoMu</a>
+                    </article>
+                    <article class="panel p-5">
+                        <h3 class="font-black text-lomu-900">交流与反馈</h3>
+                        <p class="mt-2 text-sm text-[#9b7187]">加入 QQ 群交流使用方法、问题反馈与项目动态。</p>
+                        <div class="mt-4 rounded-2xl border border-lomu-200 bg-white/80 p-4"><span class="text-xs font-extrabold text-[#9b7187]">QQ 群</span><strong class="mt-1 block text-2xl font-black text-lomu-600">654087758</strong></div>
+                    </article>
+                </div>
             </section>
         </main>
     </div>
