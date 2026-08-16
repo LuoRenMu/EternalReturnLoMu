@@ -9,8 +9,10 @@ import cn.luorenmu.common.util.NickNameUtil
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.exception.MessageReplyException
 import cn.luorenmu.nutdraw.NutDraw
+import cn.luorenmu.repository.NewsRepository
 import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.StatisticsRepository
+import cn.luorenmu.repository.entity.EternalReturnNewsRecord
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharactersResponse
@@ -25,6 +27,7 @@ import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.request.entity.module.DakGGRank
 import cn.luorenmu.request.entity.module.DakGGTeamMode
 import cn.luorenmu.service.ResourcesDownloadService
+import cn.luorenmu.service.GameActivityVisibility.isRedemptionCodeExpiringTomorrow
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.CoroutineScope
@@ -37,6 +40,7 @@ import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import love.forte.simbot.message.toText
 import org.koin.java.KoinJavaComponent.inject
+import java.time.LocalDate
 
 /**
  *
@@ -65,6 +69,7 @@ class SearchPlayerCommand : CommandEvent {
     private val playerRenderAssembler = PlayerRenderAssembler()
     private val statisticsService: StatisticsRepository by inject(StatisticsRepository::class.java)
     private val aliasRepository: PlayerAliasRepository by inject(PlayerAliasRepository::class.java)
+    private val newsRepository: NewsRepository by inject(NewsRepository::class.java)
 
     private val renderMutexes = Array(64) { Mutex() }
     private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -89,19 +94,25 @@ class SearchPlayerCommand : CommandEvent {
         return mutex.withLock {
             val preheated = preheatRequest(actualNickname, mode)
             val outputPath = PathUtils.resourcesPathResolve("render", "player", "$actualNickname-${mode.value}.png")
+            val renderData = playerRenderAssembler.assemble(
+                preheated.profile,
+                preheated.games,
+                preheated.characters,
+                preheated.tiers,
+                preheated.season,
+                preheated.infusions,
+                mode,
+                actualNickname,
+                preheated.characterStats,
+            )
+            val rate = appendRedemptionCodeExpiryNotice(
+                rate = renderData.rate,
+                records = newsRepository.findLatestRedemptionCodes(REDEMPTION_CODE_LOOKUP_LIMIT),
+                today = LocalDate.now(),
+            )
             NutDraw.render(
                 SearchPlayerTemplate(),
-                playerRenderAssembler.assemble(
-                    preheated.profile,
-                    preheated.games,
-                    preheated.characters,
-                    preheated.tiers,
-                    preheated.season,
-                    preheated.infusions,
-                    mode,
-                    actualNickname,
-                    preheated.characterStats,
-                ),
+                renderData.copy(rate = rate),
                 outputPath,
             )
             statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
@@ -191,4 +202,22 @@ class SearchPlayerCommand : CommandEvent {
         7, 8 -> DakGGRank.IN_1000
         else -> DakGGRank.DIAMOND_PLUS
     }
+
+    companion object {
+        private const val REDEMPTION_CODE_LOOKUP_LIMIT = 50
+    }
+}
+
+internal fun appendRedemptionCodeExpiryNotice(
+    rate: String,
+    records: List<EternalReturnNewsRecord>,
+    today: LocalDate,
+): String {
+    val expiringCodes = records.asSequence()
+        .filter { it.isRedemptionCodeExpiringTomorrow(today) }
+        .mapNotNull { it.code?.trim()?.takeIf(String::isNotEmpty) }
+        .distinct()
+        .toList()
+    if (expiringCodes.isEmpty()) return rate
+    return "$rate（兑换码即将过期：${expiringCodes.joinToString("、")}）"
 }
