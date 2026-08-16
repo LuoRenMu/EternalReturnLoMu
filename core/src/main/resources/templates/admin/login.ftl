@@ -41,7 +41,7 @@
         <#if error??>
             <p class="login-error" role="alert">${error?html}</p>
         </#if>
-        <p class="login-hint">令牌会在每次服务重启时更新</p>
+        <p class="login-hint">Biu Biu~</p>
     </section>
 </main>
 </body>

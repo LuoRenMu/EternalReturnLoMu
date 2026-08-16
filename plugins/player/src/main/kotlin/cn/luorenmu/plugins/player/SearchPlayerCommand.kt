@@ -85,7 +85,7 @@ class SearchPlayerCommand : CommandEvent {
         actualNickname ?: return "未设置别名或未输入昵称".toText()
 
         if (!NickNameUtil.isValidNickname(actualNickname)) {
-            return "[${NickNameUtil.hideNickname(actualNickname)}]该名称不合法,EternalReturn不允许使用这样的名称".toText()
+            throw MessageReplyException("[${NickNameUtil.hideNickname(actualNickname)}]该名称不合法,EternalReturn不允许使用这样的名称")
         }
         val mode = MatchingMode.convert(command["mode"])
         val renderKey = "$actualNickname:${mode.value}"

@@ -16,7 +16,6 @@ import org.jetbrains.skia.svg.SVGPreserveAspectRatioScale
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.math.max
-import kotlin.math.min
 
 /**
  *
