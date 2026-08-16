@@ -8,12 +8,26 @@ import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.common.util.NickNameUtil
 import cn.luorenmu.common.util.PathUtils
 import cn.luorenmu.nutdraw.NutDraw
+import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.StatisticsRepository
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import love.forte.simbot.message.toText
 import love.forte.simbot.component.qguild.message.QGMarkdown
 import org.koin.java.KoinJavaComponent.inject
+
+/**
+ * 按个人、群组、全局的优先级将查询参数解析为真实玩家昵称。
+ *
+ * @author LoMu
+ * Date 2026/8/16
+ */
+internal fun resolveStatisticsNickname(
+    inputNickname: String,
+    groupId: String,
+    senderId: String,
+    aliasRepository: PlayerAliasRepository,
+): String = aliasRepository.resolveAlias(inputNickname, groupId, senderId) ?: inputNickname
 
 @BotCommand(
     "查询统计",
@@ -35,15 +49,22 @@ class QueryStatisticsCommand : CommandEvent {
     )
 
     private val repository: StatisticsRepository by inject(StatisticsRepository::class.java)
+    private val aliasRepository: PlayerAliasRepository by inject(PlayerAliasRepository::class.java)
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
-        val nickname = command["nickname"]?.trim()?.takeIf(String::isNotEmpty)
-        if (nickname != null && !NickNameUtil.isValidNickname(nickname)) {
-            return "玩家名称不合法".toText()
-        }
+        val inputNickname = command["nickname"]?.trim()?.takeIf(String::isNotEmpty)
 
-        if (nickname != null) {
+        if (inputNickname != null) {
             val senderId = sender.senderOpenId.toString()
+            val nickname = resolveStatisticsNickname(
+                inputNickname = inputNickname,
+                groupId = sender.groupOpenId.toString(),
+                senderId = senderId,
+                aliasRepository = aliasRepository,
+            )
+            if (!NickNameUtil.isValidNickname(nickname)) {
+                return "玩家名称不合法".toText()
+            }
             val totalCount = repository.getNicknameQueryCount(nickname)
             val myCount = repository.getPlayerQueryCount(senderId, nickname)
             return QGMarkdown.create("""
