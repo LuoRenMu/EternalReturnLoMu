@@ -38,6 +38,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
+import love.forte.simbot.message.plus
 import love.forte.simbot.message.toText
 import org.koin.java.KoinJavaComponent.inject
 import java.time.LocalDate
@@ -75,7 +76,7 @@ class SearchPlayerCommand : CommandEvent {
     private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
-        val inputName = command["nickname"]
+        val inputName = command["nickname"]?.lowercase()
         val actualNickname = aliasRepository.resolveAlias(
             alias = inputName ?: PlayerAliasCommand.MY_SELF,
             groupId = sender.groupOpenId.toString(),
@@ -106,18 +107,24 @@ class SearchPlayerCommand : CommandEvent {
                 actualNickname,
                 preheated.characterStats,
             )
-            val rate = appendRedemptionCodeExpiryNotice(
-                rate = renderData.rate,
-                records = newsRepository.findLatestRedemptionCodes(REDEMPTION_CODE_LOOKUP_LIMIT),
-                today = LocalDate.now(),
-            )
             NutDraw.render(
                 SearchPlayerTemplate(),
-                renderData.copy(rate = rate),
+                renderData,
                 outputPath,
             )
+            val findLatestRedemptionCodes = newsRepository.findLatestRedemptionCodes(REDEMPTION_CODE_LOOKUP_LIMIT)
+            val expiringCodes = findLatestRedemptionCodes.asSequence()
+                .filter { it.isRedemptionCodeExpiringTomorrow(LocalDate.now()) }
+                .mapNotNull { it.code?.trim()?.takeIf(String::isNotEmpty) }
+                .distinct()
+                .toList()
             statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
-            OfflineImage.fileOfflineImage(outputPath.toString())
+            val result = OfflineImage.fileOfflineImage(outputPath.toString())
+            if (expiringCodes.isNotEmpty()){
+                result.plus("即将过期的兑换码:${expiringCodes.joinToString { "," }}".toText())
+            }
+            result
+
         }
     }
 
@@ -207,18 +214,4 @@ class SearchPlayerCommand : CommandEvent {
     companion object {
         private const val REDEMPTION_CODE_LOOKUP_LIMIT = 50
     }
-}
-
-internal fun appendRedemptionCodeExpiryNotice(
-    rate: String,
-    records: List<EternalReturnNewsRecord>,
-    today: LocalDate,
-): String {
-    val expiringCodes = records.asSequence()
-        .filter { it.isRedemptionCodeExpiringTomorrow(today) }
-        .mapNotNull { it.code?.trim()?.takeIf(String::isNotEmpty) }
-        .distinct()
-        .toList()
-    if (expiringCodes.isEmpty()) return rate
-    return "$rate（兑换码即将过期：${expiringCodes.joinToString("、")}）"
 }
