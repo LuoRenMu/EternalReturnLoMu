@@ -119,12 +119,11 @@ class SearchPlayerCommand : CommandEvent {
                 .distinct()
                 .toList()
             statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
-            val result = OfflineImage.fileOfflineImage(outputPath.toString())
             if (expiringCodes.isNotEmpty()){
-                result.plus("即将过期的兑换码:${expiringCodes.joinToString { "," }}".toText())
+                OfflineImage.fileOfflineImage(outputPath.toString()).plus("即将过期的兑换码:${expiringCodes.joinToString(",")}".toText())
+            }else{
+                OfflineImage.fileOfflineImage(outputPath.toString())
             }
-            result
-
         }
     }
 

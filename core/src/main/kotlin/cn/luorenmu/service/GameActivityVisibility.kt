@@ -1,6 +1,7 @@
 package cn.luorenmu.service
 
 import cn.luorenmu.repository.entity.EternalReturnNewsRecord
+import cn.luorenmu.service.GameActivityVisibility.toLocalDateOrNull
 import java.time.LocalDate
 
 /**
@@ -31,3 +32,5 @@ object GameActivityVisibility {
         return runCatching { LocalDate.parse(value.take(10)) }.getOrNull()
     }
 }
+
+
