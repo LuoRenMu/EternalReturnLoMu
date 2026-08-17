@@ -34,6 +34,8 @@
 
 ## OneBot 部署教程
 
+DAK.GG 请求端点、参数及完整传输对象字段见 [DAK.GG API 与传输对象](docs/dakgg-api.md)。
+
 ### 1. 准备环境
 
 - 安装 Java 17 或更高版本，并确认 `java -version` 可以正常执行。

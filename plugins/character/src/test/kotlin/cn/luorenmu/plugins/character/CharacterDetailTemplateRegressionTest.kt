@@ -62,9 +62,19 @@ class CharacterDetailTemplateRegressionTest {
         assertTrue(mainWeaponTier.bounds.right - mainWeaponTier.bounds.left <= 18f)
         assertTrue(otherWeaponTier.bounds.right - otherWeaponTier.bounds.left <= 20f)
         assertEquals(0, otherWeapon.descendants().count { it.node is NutImage })
-        assertEquals(Color.makeRGB(235, 237, 243), otherWeapon.node.style.background)
+        assertEquals(Color.makeRGB(242, 242, 242), otherWeapon.node.style.background)
         assertEquals("实验体排名 #1 / 10", (ranking.node as NutText).value)
         assertTrue(ranking.node.style.fontSize >= 12f)
+    }
+
+    @Test
+    fun `detail palette follows the neutral player query colors`() {
+        val root = CharacterDetailTemplate().build(characterDetail()).root
+        val hero = assertNotNull(root.findById("detail-hero"))
+
+        assertEquals(Color.makeRGB(245, 245, 245), root.style.background)
+        assertEquals(Color.makeRGB(32, 32, 32), root.style.color)
+        assertEquals(Color.makeRGB(54, 57, 68), hero.style.background)
     }
 
     @Test

@@ -144,8 +144,12 @@ class SearchPlayerTemplateRegressionTest {
     fun `header displays the assembled performance rating`() {
         val rate = "嗯~~~厉害喵，非常厉害喵！"
         val root = SearchPlayerTemplate().build(player(matchType = "排位").copy(rate = rate)).root
+        val describe = assertNotNull(root.findById("describe")) as NutText
 
-        assertEquals(rate, (assertNotNull(root.findById("describe")) as NutText).value)
+        assertEquals(rate, describe.value)
+        assertEquals(Color.makeRGB(54, 57, 68), describe.style.background)
+        assertEquals(Color.makeRGB(242, 190, 72), describe.style.color)
+        assertEquals(12f, describe.style.fontSize)
     }
 
     @Test

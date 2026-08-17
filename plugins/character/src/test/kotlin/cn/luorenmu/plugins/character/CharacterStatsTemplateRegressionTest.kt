@@ -37,6 +37,7 @@ class CharacterStatsTemplateRegressionTest {
         val character = assertNotNull(layout.findById("stats-character-0"))
         val weapon = assertNotNull(layout.findById("stats-weapon-0"))
         val tier = assertNotNull(layout.findById("stats-tier-0"))
+        val rank = assertNotNull(layout.findById("stats-rank-0"))
         val winRate = assertNotNull(layout.findById("stats-win-rate-0"))
         val damage = assertNotNull(layout.findById("stats-damage-0"))
 
@@ -44,6 +45,7 @@ class CharacterStatsTemplateRegressionTest {
         assertTrue((weapon.node as NutImage).source?.endsWith("/weapon.png") == true)
         assertTrue(tier.node.style.backgroundImage?.endsWith("/character-tier-A.svg") == true)
         assertTrue(tier.node !is NutImage)
+        assertEquals("#3", (rank.node as NutText).value)
         assertEquals("胜率 20.00%", (winRate.node as NutText).value)
         assertEquals("伤害 12,345", (damage.node as NutText).value)
         assertTrue(damage.bounds.top >= winRate.bounds.bottom)
@@ -75,6 +77,8 @@ class CharacterStatsTemplateRegressionTest {
                 characterImgUrl = "/character.png",
                 weaponImgUrl = "/weapon.png",
                 tier = "A",
+                rank = 3,
+                rankSize = 43,
                 winRate = "20.00%",
                 averageDamage = 12_345,
             )

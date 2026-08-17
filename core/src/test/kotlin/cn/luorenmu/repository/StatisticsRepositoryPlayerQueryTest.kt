@@ -21,13 +21,13 @@ class StatisticsRepositoryPlayerQueryTest {
             val repository = StatisticsRepository(manager)
 
             repository.recordPlayerQuery("Alpha", "user-a")
-            repository.recordPlayerQuery("Alpha", "user-a")
-            repository.recordPlayerQuery("Alpha", "user-b")
+            repository.recordPlayerQuery("ALPHA", "user-a")
+            repository.recordPlayerQuery("alpha", "user-b")
             repository.recordPlayerQuery("Beta", "user-a")
 
             assertEquals(3, repository.getNicknameQueryCount("Alpha"))
             assertEquals(2, repository.getPlayerQueryCount("user-a", "Alpha"))
-            assertEquals(listOf("Beta", "Alpha"), repository.getPlayerQueryHistory("user-a").map { it.nickname })
+            assertEquals(listOf("beta", "alpha"), repository.getPlayerQueryHistory("user-a").map { it.nickname })
         } finally {
             manager.close()
             directory.toFile().deleteRecursively()

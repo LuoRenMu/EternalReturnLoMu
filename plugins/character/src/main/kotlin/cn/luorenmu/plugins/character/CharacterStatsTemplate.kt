@@ -152,6 +152,25 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
                         "stats-tier-$index",
                     )
                 }
+                text(
+                    player.rankingLabel(),
+                    CssStyle(
+                        width = px(28),
+                        height = px(18),
+                        position = Position.ABSOLUTE,
+                        right = 0f,
+                        top = 0f,
+                        fontSize = 8f,
+                        fontWeight = 800,
+                        color = Color.WHITE,
+                        textAlign = TextAlign.CENTER,
+                        verticalAlign = VerticalAlign.CENTER,
+                        background = Color.makeRGB(62, 68, 84),
+                        border = Border(2f, Color.WHITE),
+                        borderRadius = 9f,
+                    ),
+                    id = "stats-rank-$index",
+                )
                 element(
                     CssStyle(
                         width = px(27),
@@ -194,6 +213,9 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
         textAlign = TextAlign.CENTER,
         verticalAlign = VerticalAlign.CENTER,
     )
+
+    private fun CharacterStats.CharacterStatsPlayer.rankingLabel(): String =
+        if (rank > 0) "#$rank" else "--"
 
     private fun String?.resolve(base: String): String? = this
         ?.takeIf(String::isNotBlank)

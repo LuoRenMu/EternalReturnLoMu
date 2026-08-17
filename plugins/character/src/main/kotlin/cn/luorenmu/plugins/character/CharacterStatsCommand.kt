@@ -77,6 +77,6 @@ class CharacterStatsCommand : CommandEvent {
     }
 
     private companion object {
-        const val CACHE_VERSION = "v1"
+        const val CACHE_VERSION = "v2"
     }
 }

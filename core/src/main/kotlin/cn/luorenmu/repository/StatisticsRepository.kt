@@ -22,6 +22,7 @@ import org.ktorm.dsl.select
 import org.ktorm.dsl.update
 import org.ktorm.dsl.where
 import java.time.LocalDateTime
+import java.util.Locale
 
 /**
  * 统计信息仓储层，负责命令使用记录和昵称查询记录的持久化操作。
@@ -133,6 +134,7 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
      */
     open fun incrementNicknameQueryCount(nickname: String) {
         require(nickname.isNotBlank()) { "nickname 不能为空" }
+        val normalizedNickname = nickname.lowercase(Locale.ROOT)
 
         withDatabase(operationName = "incrementNicknameQueryCount", defaultValue = Unit) { database ->
             val now = LocalDateTime.now()
@@ -140,13 +142,13 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
             val updatedRows = database.update(NicknameQueries) {
                 set(it.queryCount, it.queryCount + 1)
                 set(it.lastQueryAt, now)
-                where { it.nickname eq nickname }
+                where { it.nickname eq normalizedNickname }
             }
 
             if (updatedRows == 0) {
                 try {
                     database.insert(NicknameQueries) {
-                        set(it.nickname, nickname)
+                        set(it.nickname, normalizedNickname)
                         set(it.queryCount, 1)
                         set(it.firstQueryAt, now)
                         set(it.lastQueryAt, now)
@@ -156,12 +158,12 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
                     database.update(NicknameQueries) {
                         set(it.queryCount, it.queryCount + 1)
                         set(it.lastQueryAt, now)
-                        where { it.nickname eq nickname }
+                        where { it.nickname eq normalizedNickname }
                     }
                 }
             }
 
-            logger.debug { "更新昵称查询计数: $nickname" }
+            logger.debug { "更新昵称查询计数: $normalizedNickname" }
         }
     }
 
@@ -169,20 +171,21 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
     open fun recordPlayerQuery(nickname: String, senderId: String) {
         require(nickname.isNotBlank()) { "nickname must not be blank" }
         require(senderId.isNotBlank()) { "senderId must not be blank" }
+        val normalizedNickname = nickname.lowercase(Locale.ROOT)
 
-        incrementNicknameQueryCount(nickname)
+        incrementNicknameQueryCount(normalizedNickname)
         withDatabase(operationName = "recordPlayerQuery", defaultValue = Unit) { database ->
             val now = LocalDateTime.now()
             val updatedRows = database.update(PlayerQueryHistory) {
                 set(it.queryCount, it.queryCount + 1)
                 set(it.lastQueryAt, now)
-                where { (it.senderId eq senderId) and (it.nickname eq nickname) }
+                where { (it.senderId eq senderId) and (it.nickname eq normalizedNickname) }
             }
             if (updatedRows == 0) {
                 try {
                     database.insert(PlayerQueryHistory) {
                         set(it.senderId, senderId)
-                        set(it.nickname, nickname)
+                        set(it.nickname, normalizedNickname)
                         set(it.queryCount, 1)
                         set(it.firstQueryAt, now)
                         set(it.lastQueryAt, now)
@@ -191,7 +194,7 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
                     database.update(PlayerQueryHistory) {
                         set(it.queryCount, it.queryCount + 1)
                         set(it.lastQueryAt, now)
-                        where { (it.senderId eq senderId) and (it.nickname eq nickname) }
+                        where { (it.senderId eq senderId) and (it.nickname eq normalizedNickname) }
                     }
                 }
             }
@@ -226,7 +229,10 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
         return withDatabase(operationName = "getPlayerQueryCount", defaultValue = 0L) { database ->
             database.from(PlayerQueryHistory)
                 .select(PlayerQueryHistory.queryCount)
-                .where { (PlayerQueryHistory.senderId eq senderId) and (PlayerQueryHistory.nickname eq nickname) }
+                .where {
+                    (PlayerQueryHistory.senderId eq senderId) and
+                        (PlayerQueryHistory.nickname eq nickname.lowercase(Locale.ROOT))
+                }
                 .map { row -> row[PlayerQueryHistory.queryCount] ?: 0L }
                 .firstOrNull() ?: 0L
         }
@@ -245,7 +251,7 @@ open class StatisticsRepository(private val dbManager: DatabaseManager) {
             database
                 .from(NicknameQueries)
                 .select(NicknameQueries.queryCount)
-                .where { NicknameQueries.nickname eq nickname }
+                .where { NicknameQueries.nickname eq nickname.lowercase(Locale.ROOT) }
                 .map { row -> row[NicknameQueries.queryCount] ?: 0L }
                 .firstOrNull() ?: 0L
         }

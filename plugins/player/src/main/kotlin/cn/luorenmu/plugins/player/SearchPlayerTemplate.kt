@@ -53,7 +53,16 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                         Text("ξ( ✿＞◡❛)", textStyle(11f, white, 18f))
                     }
                 }
-                Text(data.rate, textStyle(12f, Color.makeRGB(209, 207, 207), 34f).copy(background = darkHeader, textAlign = TextAlign.CENTER, verticalAlign = VerticalAlign.CENTER, width = percent(100)), id = "describe")
+                Text(
+                    data.rate,
+                    textStyle(12f, Color.makeRGB(242, 190, 72), 34f).copy(
+                        background = darkHeader,
+                        textAlign = TextAlign.CENTER,
+                        verticalAlign = VerticalAlign.CENTER,
+                        width = percent(100),
+                    ),
+                    id = "describe",
+                )
             }
 
             Row(CssStyle(width = px(1250), height = px(bodyHeight), gap = 20f, alignItems = AlignItems.START), id = "body") {
@@ -169,7 +178,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                         }
                     }
                 }
-                Row(CssStyle(width = px(350), height = px(75), justifyContent = JustifyContent.SPACE_BETWEEN, alignItems = AlignItems.CENTER)) {
+                Row(CssStyle(width = px(370), height = px(75), justifyContent = JustifyContent.SPACE_BETWEEN, alignItems = AlignItems.CENTER)) {
                     metric("${match.tk} / ${match.kill} / ${match.assist}", "TK / K / A")
                     metric(match.dmg, "DMG")
                     when {

@@ -15,6 +15,8 @@ data class CharacterStats(
         val characterImgUrl: String,
         val weaponImgUrl: String,
         val tier: String,
+        val rank: Int,
+        val rankSize: Int,
         val winRate: String,
         val averageDamage: Int,
     )

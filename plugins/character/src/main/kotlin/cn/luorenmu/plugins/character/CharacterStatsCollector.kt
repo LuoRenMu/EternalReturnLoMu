@@ -61,6 +61,8 @@ open class CharacterStatsCollector {
                 ),
                 weaponImgUrl = ImageResourcesType.Weapon.getGeneralPath(weapon.key.toString()),
                 tier = weapon.tier,
+                rank = weapon.rank?.count ?: 0,
+                rankSize = weapon.rank?.size ?: 0,
                 winRate = winRate(weapon.win, weapon.count),
                 averageDamage = averageDamage(weapon.damageToPlayer, weapon.count),
             )

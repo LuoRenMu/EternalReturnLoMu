@@ -15,18 +15,18 @@ import org.jetbrains.skia.Color
  * Date 2026/8/16 15:30
  */
 class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
-    private val pageBg = Color.makeRGB(239, 242, 248)
+    private val pageBg = Color.makeRGB(245, 245, 245)
     private val card = Color.WHITE
-    private val ink = Color.makeRGB(34, 38, 54)
-    private val muted = Color.makeRGB(119, 126, 150)
-    private val line = Color.makeRGB(222, 226, 237)
-    private val soft = Color.makeRGB(247, 248, 252)
-    private val dark = Color.makeRGB(35, 39, 58)
-    private val accent = Color.makeRGB(112, 87, 217)
-    private val accentSoft = Color.makeRGB(240, 237, 255)
-    private val skillAccent = Color.makeRGB(244, 103, 79)
-    private val green = Color.makeRGB(24, 161, 108)
-    private val red = Color.makeRGB(224, 82, 82)
+    private val ink = Color.makeRGB(32, 32, 32)
+    private val muted = Color.makeRGB(128, 128, 128)
+    private val line = Color.makeRGB(230, 230, 230)
+    private val soft = Color.makeRGB(247, 247, 247)
+    private val dark = Color.makeRGB(54, 57, 68)
+    private val accent = Color.makeRGB(112, 122, 138)
+    private val accentSoft = Color.makeRGB(240, 242, 245)
+    private val skillAccent = Color.makeRGB(164, 112, 91)
+    private val green = Color.makeRGB(62, 132, 102)
+    private val red = Color.makeRGB(178, 91, 91)
     private val white = Color.WHITE
 
     override fun build(data: CharacterDetail): TemplateDocument {
@@ -52,7 +52,7 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
         return TemplateDocument(
             1180,
             height,
-            document(CssStyle(width = px(1180), height = px(height), padding = Edges(28f), gap = 16f, background = pageBg, color = ink)) {
+            document(CssStyle(width = px(1180), height = px(height), padding = Edges(28f), gap = 16f, background = pageBg, color = ink), id = "character-detail") {
                 hero(data, analysis, weapon, base)
 
                 if (otherWeapons.isNotEmpty()) {
@@ -60,7 +60,7 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
                 }
 
                 if (skillPlans.isNotEmpty()) {
-                    element(cardStyle(skillHeight.toFloat()).copy(border = Border(2f, accent))) {
+                    element(cardStyle(skillHeight.toFloat())) {
                         sectionHeader("推荐技能学习")
                         element(CssStyle(width = percent(100), flexGrow = 1f, padding = Edges(10f, 14f, 14f, 14f), gap = 8f)) {
                             skillPlans.forEachIndexed { index, plan -> skillPlan(index, plan, weapon.skillBySlot, base) }
@@ -137,34 +137,34 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
         weapon: CharacterDetail.WeaponBuild,
         base: String,
     ) {
-        element(cardStyle(150f).copy(direction = FlexDirection.ROW, padding = Edges(18f), gap = 16f, background = dark, border = Border())) {
-            image(data.imageUrl.resolve(base), CssStyle(width = px(112), height = px(112), borderRadius = 14f, border = Border(2f, Color.makeRGB(77, 82, 108)), objectFit = ObjectFit.COVER))
+        element(cardStyle(150f).copy(direction = FlexDirection.ROW, padding = Edges(18f), gap = 16f, background = dark, border = Border()), id = "detail-hero") {
+            image(data.imageUrl.resolve(base), CssStyle(width = px(112), height = px(112), borderRadius = 14f, border = Border(2f, Color.makeRGB(92, 96, 108)), objectFit = ObjectFit.COVER))
             element(CssStyle(width = px(275), height = px(112), gap = 4f)) {
                 element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(34), gap = 10f, alignItems = AlignItems.CENTER)) {
                     characterTierIcon(characterTierIconUrl(analysis.characterTier).resolve(base), 26f, "detail-tier-icon")
                     text(data.name, txt(27f, white, 34f, 700).copy(width = px(239)), id = "detail-character-name")
                 }
-                text(data.title, txt(12f, Color.makeRGB(184, 189, 210), 19f))
+                text(data.title, txt(12f, Color.makeRGB(200, 201, 205), 19f))
                 element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(24), gap = 5f)) {
                     data.archetypes.filter { it.isNotBlank() && it != "None" }.take(3).forEach { tag ->
-                        text(tag, CssStyle(width = px(tag.length * 13 + 18), height = px(22), padding = Edges(2f, 8f), fontSize = 10f, fontWeight = 600, color = Color.makeRGB(215, 208, 255), background = Color.makeRGB(68, 62, 101), borderRadius = 11f, textAlign = TextAlign.CENTER))
+                        text(tag, CssStyle(width = px(tag.length * 13 + 18), height = px(22), padding = Edges(2f, 8f), fontSize = 10f, fontWeight = 600, color = Color.makeRGB(220, 222, 226), background = Color.makeRGB(75, 79, 91), borderRadius = 11f, textAlign = TextAlign.CENTER))
                     }
                 }
-                text("${analysis.matchingModeLabel} · ${analysis.teamModeLabel} · ${analysis.tierLabel}", txt(11f, Color.makeRGB(164, 170, 194), 18f))
-                text("版本 ${analysis.patchLabel} · ${analysis.updatedLabel}", txt(10f, Color.makeRGB(132, 140, 169), 16f))
+                text("${analysis.matchingModeLabel} · ${analysis.teamModeLabel} · ${analysis.tierLabel}", txt(11f, Color.makeRGB(175, 178, 186), 18f))
+                text("版本 ${analysis.patchLabel} · ${analysis.updatedLabel}", txt(10f, Color.makeRGB(145, 150, 161), 16f))
             }
-            element(CssStyle(direction = FlexDirection.ROW, width = px(224), height = px(112), padding = Edges(10f), gap = 10f, alignItems = AlignItems.CENTER, background = Color.makeRGB(45, 49, 70), borderRadius = 13f)) {
-                image(weapon.iconUrl.resolve(base), CssStyle(width = px(58), height = px(58), padding = Edges(6f), background = Color.makeRGB(16, 18, 27), borderRadius = 12f, objectFit = ObjectFit.CONTAIN))
+            element(CssStyle(direction = FlexDirection.ROW, width = px(224), height = px(112), padding = Edges(10f), gap = 10f, alignItems = AlignItems.CENTER, background = Color.makeRGB(65, 68, 79), borderRadius = 13f)) {
+                image(weapon.iconUrl.resolve(base), CssStyle(width = px(58), height = px(58), padding = Edges(6f), background = Color.makeRGB(39, 41, 48), borderRadius = 12f, objectFit = ObjectFit.CONTAIN))
                 element(CssStyle(flexGrow = 1f, height = px(92), gap = 2f, justifyContent = JustifyContent.CENTER)) {
                     element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(24), gap = 5f, alignItems = AlignItems.CENTER)) {
                         characterTierIcon(characterTierIconUrl(weapon.tier).resolve(base), 18f, "main-weapon-tier-icon")
                         text(weapon.weapon, txt(15f, white, 24f, 700).copy(flexGrow = 1f), id = "main-weapon-name")
                     }
-                    text("${"%.1f".format(weapon.tierScore)} 分", txt(11f, Color.makeRGB(205, 199, 244), 18f, 600))
+                    text("${"%.1f".format(weapon.tierScore)} 分", txt(11f, Color.makeRGB(200, 202, 208), 18f, 600))
                     text("RP变动 ${signed(weapon.rpChange)}", txt(10f, rpColor(weapon.rpChange), 16f, 700), id = "main-weapon-rp")
                     text(
                         "实验体排名 #${weapon.rank} / ${weapon.rankSize}",
-                        CssStyle(width = percent(100), height = px(20), padding = Edges(2f, 6f), fontSize = 12f, fontWeight = 700, color = Color.makeRGB(255, 222, 122), background = Color.makeRGB(63, 58, 91), borderRadius = 6f),
+                        CssStyle(width = percent(100), height = px(20), padding = Edges(2f, 6f), fontSize = 12f, fontWeight = 700, color = Color.makeRGB(222, 193, 125), background = Color.makeRGB(77, 74, 67), borderRadius = 6f),
                         id = "main-weapon-ranking",
                     )
                 }
@@ -186,7 +186,7 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
         skills: Map<String, CharacterDetail.SkillSlot>,
         base: String,
     ) {
-        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(56), padding = Edges(7f, 10f), gap = 10f, alignItems = AlignItems.CENTER, background = if (index == 0) accentSoft else soft, border = Border(1f, if (index == 0) Color.makeRGB(207, 198, 247) else line), borderRadius = 11f)) {
+        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(56), padding = Edges(7f, 10f), gap = 10f, alignItems = AlignItems.CENTER, background = if (index == 0) accentSoft else soft, border = Border(1f, if (index == 0) Color.makeRGB(207, 211, 218) else line), borderRadius = 11f)) {
             text("${index + 1}", CssStyle(width = px(34), height = px(34), padding = Edges(6f), fontSize = 14f, fontWeight = 700, color = white, background = if (index == 0) accent else Color.makeRGB(150, 156, 178), borderRadius = 17f, textAlign = TextAlign.CENTER))
             element(CssStyle(width = px(154), height = px(40), justifyContent = JustifyContent.CENTER)) {
                 text("升级优先", txt(9f, muted, 14f, 600))
@@ -237,7 +237,7 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
     }
 
     private fun ElementBuilder.loadoutRow(index: Int, build: CharacterDetail.ItemBuild, base: String) {
-        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(48), padding = Edges(5f, 9f), gap = 8f, alignItems = AlignItems.CENTER, background = if (index == 0) Color.makeRGB(255, 244, 241) else soft, borderRadius = 10f)) {
+        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(48), padding = Edges(5f, 9f), gap = 8f, alignItems = AlignItems.CENTER, background = if (index == 0) Color.makeRGB(248, 245, 243) else soft, borderRadius = 10f)) {
             text("方案 ${index + 1}", txt(10f, if (index == 0) skillAccent else muted, 24f, 700).copy(width = px(52)))
             element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(38), gap = 8f, alignItems = AlignItems.CENTER)) {
                 build.items.take(5).forEach { item ->
@@ -286,7 +286,7 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
         element(cardStyle(104f).copy(direction = FlexDirection.ROW, padding = Edges(12f, 14f), gap = 8f, alignItems = AlignItems.CENTER), id = "other-weapons-panel") {
             text("其他武器", txt(12f, ink, 24f, 700).copy(width = px(72), textAlign = TextAlign.CENTER))
             weapons.forEachIndexed { index, weapon ->
-                element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(78), padding = Edges(7f), gap = 7f, alignItems = AlignItems.CENTER, background = Color.makeRGB(235, 237, 243), borderRadius = 10f), id = "other-weapon-$index") {
+                element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(78), padding = Edges(7f), gap = 7f, alignItems = AlignItems.CENTER, background = Color.makeRGB(242, 242, 242), borderRadius = 10f), id = "other-weapon-$index") {
                     characterTierIcon(characterTierIconUrl(weapon.tier).resolve(base), 20f, "other-weapon-tier-icon-$index")
                     element(CssStyle(flexGrow = 1f, height = px(62), justifyContent = JustifyContent.CENTER)) {
                         text(weapon.weapon, txt(11f, ink, 17f, 700), id = "other-weapon-name-$index")
@@ -309,8 +309,8 @@ class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
     }
 
     private fun ElementBuilder.heroStat(label: String, value: Any?, valueColor: Int = white) {
-        element(CssStyle(width = px(135), height = px(52), padding = Edges(6f, 8f), background = Color.makeRGB(45, 49, 70), borderRadius = 10f, alignItems = AlignItems.CENTER)) {
-            text(label, txt(9f, Color.makeRGB(148, 156, 184), 15f, 600).copy(textAlign = TextAlign.CENTER))
+        element(CssStyle(width = px(135), height = px(52), padding = Edges(6f, 8f), background = Color.makeRGB(65, 68, 79), borderRadius = 10f, alignItems = AlignItems.CENTER)) {
+            text(label, txt(9f, Color.makeRGB(170, 173, 180), 15f, 600).copy(textAlign = TextAlign.CENTER))
             text(value, txt(14f, valueColor, 23f, 700).copy(textAlign = TextAlign.CENTER))
         }
     }
