@@ -12,6 +12,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -44,6 +45,7 @@ class EternalReturnNewsTask(
 
     companion object {
         private const val CONTENT_FETCH_DELAY_MS = 500L
+        private const val DEFAULT_ACTIVITY_WEEKS = 2L
     }
 
     /** 启动定时任务，每 30 分钟拉取一次。 */
@@ -119,22 +121,52 @@ class EternalReturnNewsTask(
         return saved
     }
 
-    private fun ParsedNews.toRecord(): EternalReturnNewsRecord {
+    internal fun ParsedNews.toRecord(now: LocalDateTime = LocalDateTime.now()): EternalReturnNewsRecord {
         val activity = redemptionCode
+        val code = activity?.code.normalizeCode()
+        val activityDetails = activity?.takeIf { it.isGameActivity || code != null }
+        val startTime = activityDetails?.let { details ->
+            details.startDate.toDateOrNull()
+                ?.atTime(details.startHours.validHour(), details.startMinutes.validMinute())
+                ?: now.toLocalDate().atStartOfDay()
+        }
+        val endTime = activityDetails?.let { details ->
+            details.endDate.toDateOrNull()
+                ?.atTime(details.endHours.validHour(), details.endMinutes.validMinute())
+                ?: startTime!!.plusWeeks(DEFAULT_ACTIVITY_WEEKS)
+        }
+        val isActivity = activityDetails != null
         return EternalReturnNewsRecord(
             articleId = articleId,
             title = title,
             thumbnailUrl = thumbnailUrl,
             createdAt = createdAt,
             contentText = contentText,
-            isGameActivity = activity?.isGameActivity == true || activity?.isRedemptionCode == true,
-            isRedemptionCode = activity?.isRedemptionCode == true,
-            code = activity?.code,
+            eventStartTime = startTime,
+            eventEndTime = endTime,
+            // 兼容旧版本：旧列继续同步写入，但新业务逻辑不再读取它们。
+            isGameActivity = isActivity,
+            isRedemptionCode = code != null,
+            code = code,
             reward = activity?.reward,
             note = activity?.note,
-            startDate = activity?.startDate,
-            endDate = activity?.endDate,
+            startDate = startTime?.toLocalDate()?.toString(),
+            endDate = endTime?.toLocalDate()?.toString(),
         )
+    }
+
+    private fun String?.toDateOrNull(): LocalDate? =
+        this?.trim()?.takeIf { it.isNotEmpty() }?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }
+
+    private fun Int.validHour(): Int = takeIf { it in 0..23 } ?: 0
+
+    private fun Int.validMinute(): Int = takeIf { it in 0..59 } ?: 0
+
+    private fun String?.normalizeCode(): String? {
+        val value = this?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        return value.takeUnless {
+            it.lowercase() == "null" || it in setOf("无", "没有", "无兑换码", "无兑换码活动", "详见活动页面")
+        }
     }
 
     private fun parseCreatedAt(raw: String?): LocalDateTime? {

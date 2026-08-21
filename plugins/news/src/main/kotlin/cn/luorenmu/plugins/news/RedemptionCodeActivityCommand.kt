@@ -11,12 +11,13 @@ import cn.luorenmu.nutdraw.NutDraw
 import cn.luorenmu.repository.NewsRepository
 import cn.luorenmu.repository.entity.EternalReturnNewsRecord
 import cn.luorenmu.service.GameActivityVisibility.displayStatus
-import cn.luorenmu.service.GameActivityVisibility.isVisibleOn
+import cn.luorenmu.service.GameActivityVisibility.displayPeriod
+import cn.luorenmu.service.GameActivityVisibility.isVisibleAt
 import love.forte.simbot.component.qguild.message.QGMarkdown
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import org.koin.java.KoinJavaComponent.inject
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * @author LoMu
@@ -39,9 +40,10 @@ class RedemptionCodeActivityCommand : CommandEvent {
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         val limit = command["limit"]?.toIntOrNull()?.coerceIn(MIN_LIMIT, MAX_LIMIT) ?: DEFAULT_LIMIT
-        val today = LocalDate.now()
+        val now = LocalDateTime.now()
+        val today = now.toLocalDate()
         val records = newsRepository.findLatestGameActivities(LOOKUP_LIMIT)
-            .filter { it.isVisibleOn(today) }
+            .filter { it.isVisibleAt(now) }
             .take(limit)
 
         if (records.isEmpty()) {
@@ -53,29 +55,23 @@ class RedemptionCodeActivityCommand : CommandEvent {
             ActivityTemplate(),
             RedemptionCodeActivityPage(
                 generatedDate = today.toString(),
-                items = records.map { it.toPageItem(today) },
+                items = records.map { it.toPageItem(now) },
             ),
             outputPath,
         )
         return OfflineImage.fileOfflineImage(outputPath.toString())
     }
 
-    private fun EternalReturnNewsRecord.toPageItem(today: LocalDate): RedemptionCodeActivityPage.Item {
+    private fun EternalReturnNewsRecord.toPageItem(now: LocalDateTime): RedemptionCodeActivityPage.Item {
         return RedemptionCodeActivityPage.Item(
             title = title,
             code = code?.trim()?.takeIf { it.isNotBlank() },
             reward = reward?.compact() ?: "",
             note = note?.takeIf { it.isNotBlank() && it != reward }?.compact() ?: "",
             period = displayPeriod(),
-            status = displayStatus(today),
+            status = displayStatus(now),
             thumbnailUrl = thumbnailUrl?.trim()?.takeIf { it.isNotBlank() },
         )
-    }
-
-    private fun EternalReturnNewsRecord.displayPeriod(): String {
-        val start = startDate?.takeIf { it.isNotBlank() } ?: "未注明"
-        val end = endDate?.takeIf { it.isNotBlank() } ?: "未注明"
-        return "$start 至 $end"
     }
 
     private fun String.compact(maxLength: Int = 140): String {

@@ -3,6 +3,7 @@ package cn.luorenmu.repository
 import cn.luorenmu.common.util.DatabaseManager
 import cn.luorenmu.repository.entity.EternalReturnNewsRecord
 import cn.luorenmu.repository.table.EternalReturnNews
+import cn.luorenmu.service.GameActivityVisibility.hasRedemptionCode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.ktorm.database.Database
 import org.ktorm.dsl.QueryRowSet
@@ -10,6 +11,7 @@ import org.ktorm.dsl.desc
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.from
 import org.ktorm.dsl.insert
+import org.ktorm.dsl.isNotNull
 import org.ktorm.dsl.limit
 import org.ktorm.dsl.map
 import org.ktorm.dsl.or
@@ -75,10 +77,11 @@ open class NewsRepository(private val dbManager: DatabaseManager) {
             database
                 .from(EternalReturnNews)
                 .select()
-                .where { EternalReturnNews.isRedemptionCode eq true }
+                .where { EternalReturnNews.code.isNotNull() }
                 .orderBy(EternalReturnNews.processedAt.desc())
                 .limit(limit)
                 .map { row -> mapRow(row) }
+                .filter { it.hasRedemptionCode() }
         }
     }
 
@@ -90,7 +93,11 @@ open class NewsRepository(private val dbManager: DatabaseManager) {
             database
                 .from(EternalReturnNews)
                 .select()
-                .where { (EternalReturnNews.isGameActivity eq true) or (EternalReturnNews.isRedemptionCode eq true) }
+                .where {
+                    EternalReturnNews.eventStartTime.isNotNull() or
+                        (EternalReturnNews.isGameActivity eq true) or
+                        EternalReturnNews.code.isNotNull()
+                }
                 .orderBy(EternalReturnNews.processedAt.desc())
                 .limit(limit)
                 .map { row -> mapRow(row) }

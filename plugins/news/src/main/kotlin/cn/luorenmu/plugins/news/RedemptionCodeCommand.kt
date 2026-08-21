@@ -6,13 +6,13 @@ import cn.luorenmu.command.entity.CommandOptional
 import cn.luorenmu.command.entity.MessageSender
 import cn.luorenmu.common.annotation.BotCommand
 import cn.luorenmu.repository.NewsRepository
-import cn.luorenmu.repository.entity.EternalReturnNewsRecord
 import cn.luorenmu.service.GameActivityVisibility.displayStatus
-import cn.luorenmu.service.GameActivityVisibility.isVisibleOn
+import cn.luorenmu.service.GameActivityVisibility.displayPeriod
+import cn.luorenmu.service.GameActivityVisibility.isVisibleAt
 import love.forte.simbot.component.qguild.message.QGMarkdown
 import love.forte.simbot.message.Message
 import org.koin.java.KoinJavaComponent.inject
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * @author LoMu
@@ -35,9 +35,9 @@ class RedemptionCodeCommand : CommandEvent {
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         val limit = command["limit"]?.toIntOrNull()?.coerceIn(MIN_LIMIT, MAX_LIMIT) ?: DEFAULT_LIMIT
-        val today = LocalDate.now()
+        val now = LocalDateTime.now()
         val records = newsRepository.findLatestRedemptionCodes(LOOKUP_LIMIT)
-            .filter { it.isVisibleOn(today) }
+            .filter { it.isVisibleAt(now) }
             .take(limit)
 
         if (records.isEmpty()) {
@@ -50,7 +50,7 @@ class RedemptionCodeCommand : CommandEvent {
                 appendLine()
                 appendLine("${index + 1}. **${record.title}**")
                 appendLine("兑换码: ${record.code.displayCode()}")
-                appendLine("状态: ${record.displayStatus(today)}")
+                appendLine("状态: ${record.displayStatus(now)}")
                 record.reward?.takeIf { it.isNotBlank() }?.let {
                     appendLine("奖励: ${it.compact()}")
                 }
@@ -65,12 +65,6 @@ class RedemptionCodeCommand : CommandEvent {
     private fun String?.displayCode(): String {
         val code = this?.trim()
         return if (code.isNullOrBlank()) "详见活动页面" else "`$code`"
-    }
-
-    private fun EternalReturnNewsRecord.displayPeriod(): String {
-        val start = startDate?.takeIf { it.isNotBlank() } ?: "未注明"
-        val end = endDate?.takeIf { it.isNotBlank() } ?: "未注明"
-        return "$start 至 $end"
     }
 
     private fun String.compact(maxLength: Int = 120): String {
