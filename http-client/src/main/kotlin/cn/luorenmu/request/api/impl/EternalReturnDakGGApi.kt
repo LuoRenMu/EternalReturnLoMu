@@ -201,13 +201,32 @@ sealed class EternalReturnDakGGApi<T>(
             allowStructuredMapKeys = true
         }
 
-        private val nextDataRegex = Regex("""(?s)<script id="__NEXT_DATA__"[^>]*>(.*?)</script>""")
-
         override suspend fun execute(): CharacterAnalysisResponse {
             val html = call().bodyAsText()
-            val match = nextDataRegex.find(html)
+            return json.decodeFromString(extractCharacterAnalysisPayload(html))
+        }
+    }
+
+    internal companion object {
+        private val scriptRegex = Regex("""(?is)<script\b([^>]*)>(.*?)</script\s*>""")
+        private val nextDataIdRegex = Regex(
+            """(?i)\bid\s*=\s*(?:"__NEXT_DATA__"|'__NEXT_DATA__'|__NEXT_DATA__)"""
+        )
+
+        fun extractCharacterAnalysisPayload(html: String): String {
+            val scripts = scriptRegex.findAll(html)
+            val nextData = scripts.firstOrNull { match ->
+                nextDataIdRegex.containsMatchIn(match.groupValues[1])
+            }?.groupValues?.get(2)
+            if (!nextData.isNullOrBlank()) return nextData
+
+            // 兼容页面框架迁移期间 id 被移除或改名，但统计快照仍内嵌在 JSON script 的情况。
+            return scriptRegex.findAll(html).firstOrNull { match ->
+                val payload = match.groupValues[2]
+                payload.contains("\"dehydratedState\"") &&
+                    payload.contains("\"characterDetailStatSnapshot\"")
+            }?.groupValues?.get(2)
                 ?: throw MessageReplyException("角色详情页解析失败,请稍后再试")
-            return json.decodeFromString(match.groupValues[1])
         }
     }
 
