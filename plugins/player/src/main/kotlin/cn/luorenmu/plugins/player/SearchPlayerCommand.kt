@@ -26,8 +26,9 @@ import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.request.entity.module.DakGGRank
 import cn.luorenmu.request.entity.module.DakGGTeamMode
-import cn.luorenmu.service.ResourcesDownloadService
 import cn.luorenmu.service.GameActivityVisibility.isRedemptionCodeExpiringTomorrow
+import cn.luorenmu.service.ResourcesDownloadService
+import cn.luorenmu.service.GameActivityVisibility.isVisibleOn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.CoroutineScope

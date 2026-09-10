@@ -38,7 +38,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
         }
         val leftHeight = leftSections.sum() + (leftSections.size - 1).coerceAtLeast(0) * 30f
         val bodyHeight = max(leftHeight, summaryHeight + matchesHeight + 30)
-        val height = (40 + bodyHeight + 30).toInt()
+        val height = (90 + bodyHeight + 30).toInt()
         val base = data.httpServer
 
         return TemplateDocument(1290, height, Document(CssStyle(width = px(1290), height = px(height), padding = Edges(20f), gap = 20f, background = pageBg, color = ink), id = "content-container") {
