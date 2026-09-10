@@ -52,7 +52,7 @@ class QueryStatisticsCommand : CommandEvent {
     private val aliasRepository: PlayerAliasRepository by inject(PlayerAliasRepository::class.java)
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
-        val inputNickname = command["nickname"]?.trim()?.takeIf(String::isNotEmpty)
+        val inputNickname = command["nickname"]?.trim()?.takeIf(String::isNotEmpty)?.lowercase()
 
         if (inputNickname != null) {
             val senderId = sender.senderOpenId.toString()
