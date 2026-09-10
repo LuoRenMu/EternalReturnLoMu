@@ -82,14 +82,18 @@ sealed class EternalReturnDakGGApi<T>(
      */
     protected suspend inline fun <reified R> handleResponse(
         nickname: String,
-        response: HttpResponse,
     ): R {
-        return try {
-            response.body()
-        } catch (e: JsonConvertException) {
-            nameFoundCheck(nickname, response.bodyAsText())
-            log.error { "DakGG服务器返回非预期数据,无法正常处理 ${e.printStack()}" }
-            throw MessageReplyException("DakGG服务器返回非预期数据,无法正常处理")
+        return RequestManager.retryTransientRequest(
+            onRetry = { RequestManager.cacheMap[cacheTime]?.invalidate(url) },
+        ) {
+            val response = call()
+            try {
+                response.body()
+            } catch (e: JsonConvertException) {
+                nameFoundCheck(nickname, response.bodyAsText())
+                log.error { "DakGG服务器返回非预期数据,无法正常处理 ${e.printStack()}" }
+                throw MessageReplyException("DakGG服务器返回非预期数据,无法正常处理")
+            }
         }
     }
 
@@ -245,7 +249,7 @@ sealed class EternalReturnDakGGApi<T>(
                 "/v1/players/${URLEncoder.encode(nickname, "UTF-8")}/profile"
             ) {
             override suspend fun execute(): DakGGProfileResponse {
-                return handleResponse<DakGGProfileResponse>(nickname, call())
+                return handleResponse<DakGGProfileResponse>(nickname)
             }
         }
 
@@ -319,7 +323,7 @@ sealed class EternalReturnDakGGApi<T>(
                 }/matches?${if (seasonType == null) "" else "season=$seasonType"}&matchingMode=${matchingMode.dakGGMode}&teamMode=${teamMode.value}&page=${page}"
             ) {
             override suspend fun execute(): DakGGMatchesResponse {
-                return handleResponse<DakGGMatchesResponse>(nickname, call())
+                return handleResponse<DakGGMatchesResponse>(nickname)
             }
         }
     }

@@ -25,10 +25,12 @@ import io.ktor.network.sockets.SocketTimeoutException
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import java.net.ConnectException
-import java.net.SocketException
+import java.io.EOFException
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -56,7 +58,9 @@ object RequestManager {
         map
     }
 
-    private val client = HttpClient(CIO) {
+    private val client = createHttpClient()
+
+    internal fun createHttpClient() = HttpClient(CIO) {
         engine {
             maxConnectionsCount = 1000
             endpoint {
@@ -75,20 +79,11 @@ object RequestManager {
             socketTimeoutMillis = 60000
         }
         install(HttpRequestRetry) {
-            maxRetries = 5
-            retryOnServerErrors(maxRetries = 3)
+            maxRetries = RETRY_COUNT
+            retryIf { _, response -> response.status.value in 500..599 }
 
             retryOnExceptionIf { _, cause ->
-                when (cause) {
-                    is SocketTimeoutException,
-                    is ConnectTimeoutException,
-                    is ClientRequestException,
-                    is ConnectException,
-                    is HttpRequestTimeoutException,
-                        -> true
-
-                    else -> false
-                }
+                isRetryableRequestException(cause)
             }
             exponentialDelay()
 
@@ -116,6 +111,48 @@ object RequestManager {
                 HttpHeaders.UserAgent,
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"
             )
+        }
+    }
+
+    internal fun isRetryableRequestException(exception: Throwable): Boolean {
+        var current: Throwable? = exception
+        val visited = mutableSetOf<Throwable>()
+        while (current != null && visited.add(current)) {
+            if (current is EOFException ||
+                current is IOException ||
+                current is SocketTimeoutException ||
+                current is ConnectTimeoutException ||
+                current is HttpRequestTimeoutException ||
+                current is ClosedReceiveChannelException
+            ) {
+                return true
+            }
+            current = current.cause
+        }
+        return false
+    }
+
+    @PublishedApi
+    internal suspend fun <T> retryTransientRequest(
+        maxRetries: Int = RETRY_COUNT,
+        onRetry: () -> Unit = {},
+        block: suspend () -> T,
+    ): T {
+        var retry = 0
+        while (true) {
+            try {
+                return block()
+            } catch (e: Exception) {
+                if (e is ForbiddenException) throw e
+                if (!isRetryableRequestException(e)) throw e
+                if (retry >= maxRetries) {
+                    throw ForbiddenException("DakGG服务器连接不稳定，请稍后再试").also { it.initCause(e) }
+                }
+                retry++
+                onRetry()
+                log.warn(e) { "Transient HTTP failure, retrying request ($retry/$maxRetries)" }
+                delay((250L shl (retry - 1)).coerceAtMost(4_000L))
+            }
         }
     }
 
@@ -161,9 +198,10 @@ object RequestManager {
             val currentTimeMillis = System.currentTimeMillis()
             try {
                 return@withKeyLock executeRequest(api)
-            } catch (e: SocketException) {
-                log.debug { "SocketException : ${api.baseUrl}${api.url} ->${e.printStack()}" }
-                throw ForbiddenException("DakGG服务器拒绝了本次请求")
+            } catch (e: Exception) {
+                if (!isRetryableRequestException(e)) throw e
+                log.warn(e) { "DakGG request remained unavailable after retries: ${api.baseUrl}${api.url}" }
+                throw ForbiddenException("DakGG服务器连接不稳定，请稍后再试").also { it.initCause(e) }
             } finally {
                 if (api is ResourceApi) {
                     log.debug { "call stream file: ${api.path} from ${api.baseUrl}${api.url}" }
