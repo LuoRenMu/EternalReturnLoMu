@@ -151,6 +151,21 @@ class PlayerPerformanceRaterTest {
     }
 
     @Test
+    fun `insufficient rating varies when queried repeatedly without games`() {
+        listOf(emptyList(), listOf(game(gameId = 1))).forEach { games ->
+            val messages = (1..20).map {
+                PlayerPerformanceRater.evaluateSamples(
+                    games = games,
+                    characterBaselines = emptyMap(),
+                    matchingMode = MatchingMode.Rank,
+                ).message
+            }
+
+            assertTrue(messages.distinct().size > 1)
+        }
+    }
+
+    @Test
     fun `rating copy contains more than twenty stable alternatives`() {
         assertTrue(PlayerPerformanceRater.messages.values.flatten().size > 20)
         assertTrue(PlayerPerformanceRater.messages.values.all { it.isNotEmpty() })

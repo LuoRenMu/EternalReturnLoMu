@@ -177,6 +177,7 @@ internal object PlayerPerformanceRater {
 
     private fun rating(tier: Tier, score: Double?, games: List<GamePerformance>): Rating {
         val candidates = messages.getValue(tier)
+        if (tier == Tier.INSUFFICIENT) return Rating(tier, score, candidates.random())
         val stableKey = games.fold(17L) { hash, game -> hash * 31 + game.gameId }
         val message = candidates[Math.floorMod(stableKey, candidates.size.toLong()).toInt()]
         return Rating(tier, score, message)
