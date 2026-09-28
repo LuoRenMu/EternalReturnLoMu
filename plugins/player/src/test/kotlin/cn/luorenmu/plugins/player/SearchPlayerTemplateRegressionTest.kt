@@ -8,6 +8,7 @@ import cn.luorenmu.nutdraw.dom.NutNode
 import cn.luorenmu.nutdraw.dom.NutText
 import cn.luorenmu.nutdraw.layout.FlexLayoutEngine
 import cn.luorenmu.nutdraw.layout.LayoutBox
+import cn.luorenmu.nutdraw.render.CjkFontResolver
 import cn.luorenmu.service.entity.EternalReturnPlayRender
 import org.jetbrains.skia.Color
 import kotlin.test.Test
@@ -94,10 +95,64 @@ class SearchPlayerTemplateRegressionTest {
             val metric = assertNotNull(root.findById("match-rp-game-1"))
             val value = assertNotNull(root.findById("match-rp-value-game-1"))
 
-            assertEquals(px(108f), metric.style.width)
+            assertEquals(px(100f), metric.style.width)
             assertEquals(expectedColor, value.style.color)
             assertEquals(if (rpChange > 0) "6800 (+$rpChange)" else "6800 ($rpChange)", (value as NutText).value)
         }
+    }
+
+    @Test
+    fun `large damage and rp values keep match metrics aligned`() {
+        val source = player(matchType = "排位")
+        val data = source.copy(matches = listOf(
+            source.matches.single().copy(gameId = "large", dmg = 12345, rp = 123456, rpChange = 123),
+            source.matches.single().copy(gameId = "small", dmg = 999, rp = 900, rpChange = -1),
+        ))
+        val document = SearchPlayerTemplate().build(data)
+        val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+        val largeDamage = assertNotNull(layout.findById("match-dmg-large"))
+        val smallDamage = assertNotNull(layout.findById("match-dmg-small"))
+        val largeRp = assertNotNull(layout.findById("match-rp-large"))
+        val smallRp = assertNotNull(layout.findById("match-rp-small"))
+
+        assertEquals(smallDamage.bounds.left, largeDamage.bounds.left)
+        assertEquals(smallRp.bounds.left, largeRp.bounds.left)
+        assertTrue(largeDamage.bounds.right <= largeRp.bounds.left)
+        assertEquals(px(100f), largeRp.node.style.width)
+        assertEquals(14f, assertNotNull(layout.findById("match-rp-value-large")).node.style.fontSize)
+        val fonts = CjkFontResolver()
+        listOf("match-dmg-value-large", "match-rp-value-large").forEach { id ->
+            val value = assertNotNull(layout.findById(id))
+            val text = value.node as NutText
+            val renderedWidth = fonts.runs(text.value, text.style.fontSize, text.style.fontWeight).sumOf { it.width.toDouble() }
+            assertTrue(renderedWidth <= value.bounds.width, "$id text exceeds its column")
+        }
+    }
+
+    @Test
+    fun `all match types use the same four metric boxes`() {
+        listOf("排位", "普通", "钴协议").forEach { type ->
+            val document = SearchPlayerTemplate().build(player(matchType = type))
+            val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+            val ids = listOf("match-tk-game-1", "match-dmg-game-1",
+                when (type) { "排位" -> "match-rp-game-1"; "普通" -> "match-kda-game-1"; else -> "match-empty-game-1" },
+                if (type == "钴协议") "infusions-game-1" else "match-route-game-1")
+            val boxes = ids.map { assertNotNull(layout.findById(it)) }
+            assertTrue(boxes.all { it.bounds.width == 100f })
+            assertTrue(boxes.all { it.bounds.height == 48f && it.bounds.top == boxes.first().bounds.top })
+            assertTrue(boxes.zipWithNext().all { (left, right) -> right.bounds.left - left.bounds.right == 3f })
+            assertTrue(boxes.all { it.bounds.bottom <= assertNotNull(layout.findById("match-game-1")).bounds.bottom })
+        }
+    }
+
+    @Test
+    fun `cobalt infusion label sits close to its icons`() {
+        val document = SearchPlayerTemplate().build(player(matchType = "钴协议"))
+        val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+        val icons = assertNotNull(layout.findById("infusion-icons-game-1"))
+        val label = assertNotNull(layout.findById("infusion-label-game-1"))
+
+        assertTrue(label.bounds.top - icons.bounds.top <= 20f)
     }
 
     @Test

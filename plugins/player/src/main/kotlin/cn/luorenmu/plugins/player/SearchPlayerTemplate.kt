@@ -16,6 +16,7 @@ import kotlin.math.max
  * Date 2026/8/16 15:30
  */
 class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
+    private val matchMetricWidth = 100f
     private val pageBg = Color.makeRGB(245, 245, 245)
     private val white = Color.WHITE
     private val ink = Color.makeRGB(32, 32, 32)
@@ -194,9 +195,9 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                         }
                     }
                 }
-                Row(CssStyle(width = px(370), height = px(75), justifyContent = JustifyContent.SPACE_BETWEEN, alignItems = AlignItems.CENTER)) {
-                    metric("${match.tk} / ${match.kill} / ${match.assist}", "TK / K / A")
-                    metric(match.dmg, "DMG")
+                Row(CssStyle(width = px(409), height = px(75), gap = 3f, alignItems = AlignItems.CENTER), id = "match-metrics-${match.gameId}") {
+                    metric("${match.tk} / ${match.kill} / ${match.assist}", "TK / K / A", id = "match-tk-${match.gameId}")
+                    metric(match.dmg, "DMG", id = "match-dmg-${match.gameId}", valueId = "match-dmg-value-${match.gameId}")
                     when {
                         isRank -> {
                             val change = if (match.rpChange > 0) "+${match.rpChange}" else match.rpChange.toString()
@@ -208,15 +209,15 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                             metric(
                                 value = "${match.rp} ($change)",
                                 label = "RP",
-                                width = 108f,
                                 valueColor = color,
                                 id = "match-rp-${match.gameId}",
                                 valueId = "match-rp-value-${match.gameId}",
                             )
                         }
-                        !isCobalt -> metric(String.format("%.2f", match.kda), "KDA")
+                        !isCobalt -> metric(String.format("%.2f", match.kda), "KDA", id = "match-kda-${match.gameId}")
+                        else -> Column(CssStyle(width = px(matchMetricWidth), height = px(48)), id = "match-empty-${match.gameId}") {}
                     }
-                    if (isCobalt) infusionMetric(match, base) else metric(match.routeId, "路径ID")
+                    if (isCobalt) infusionMetric(match, base) else metric(match.routeId, "路径ID", id = "match-route-${match.gameId}")
                 }
                 Row(CssStyle(wrap = FlexWrap.WRAP, width = px(128), height = px(55), gap = 2f, justifyContent = JustifyContent.CENTER)) {
                     match.equips.take(5).forEach { equip ->
@@ -295,19 +296,18 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
     private fun ElementBuilder.metric(
         value: Any?,
         label: String,
-        width: Float = 72f,
         valueColor: Int = ink,
         id: String? = null,
         valueId: String? = null,
     ) {
-        Column(CssStyle(width = px(width), height = px(48), alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER), id = id) {
+        Column(CssStyle(width = px(matchMetricWidth), height = px(48), alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER), id = id) {
             Text(value, recordTextStyle(14f, valueColor, 22f).copy(textAlign = TextAlign.CENTER), id = valueId)
             Text(label, recordTextStyle(12f, muted, 18f).copy(textAlign = TextAlign.CENTER))
         }
     }
     private fun ElementBuilder.infusionMetric(match: EternalReturnPlayRender.EternalReturnPlayerMatchData, base: String) {
-        Column(CssStyle(width = px(72), height = px(55), alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER), id = "infusions-${match.gameId}") {
-            Row(CssStyle(wrap = FlexWrap.WRAP, width = px(60), height = px(38), gap = 2f, justifyContent = JustifyContent.CENTER)) {
+        Column(CssStyle(width = px(matchMetricWidth), height = px(48), alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER), id = "infusions-${match.gameId}") {
+            Row(CssStyle(wrap = FlexWrap.WRAP, width = px(60), height = px(18), gap = 2f, justifyContent = JustifyContent.CENTER), id = "infusion-icons-${match.gameId}") {
                 match.infusions.orEmpty().take(3).forEachIndexed { index, infusion ->
                     Column(CssStyle(width = px(18), height = px(18), background = Color.makeRGB(240, 241, 246), borderRadius = 3f), id = "infusion-${match.gameId}-$index") {
                         if (infusion.imageUrl.isNotBlank()) {
@@ -319,7 +319,7 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                     }
                 }
             }
-            Text("灌注", recordTextStyle(12f, muted, 17f).copy(textAlign = TextAlign.CENTER))
+            Text("灌注", recordTextStyle(12f, muted, 17f).copy(textAlign = TextAlign.CENTER), id = "infusion-label-${match.gameId}")
         }
     }
     private fun panel(height: Float, width: Float) = CssStyle(width = px(width), height = px(height), background = white, border = Border(1f, line), borderRadius = 10f, gap = 0f)
