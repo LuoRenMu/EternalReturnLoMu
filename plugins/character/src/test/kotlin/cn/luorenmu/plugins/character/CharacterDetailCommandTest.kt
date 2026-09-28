@@ -38,4 +38,13 @@ class CharacterDetailCommandTest {
     fun descriptionIsComplete() {
         assertTrue(command.description.isNotBlank())
     }
+
+    @Test
+    fun characterPluginKeepsCharacterEquipmentButNotItemQuery() {
+        val aliases = CharacterPlugin().commands.mapNotNull {
+            it.javaClass.getAnnotation(BotCommand::class.java)?.alias
+        }
+        assertTrue("查询角色装备" in aliases)
+        assertFalse("查询装备" in aliases)
+    }
 }

@@ -443,13 +443,12 @@ open class CharacterDetailCollector(
         if (denominator > 0) numerator.toDouble() / denominator else 0.0
 
     private fun itemGradeNum(grade: String): Int = when (grade) {
-        "Common" -> 1
         "Uncommon" -> 2
         "Rare" -> 3
         "Epic" -> 4
         "Legend" -> 5
         "Mythic" -> 6
-        else -> 0
+        else -> 1
     }
 
     private fun formatUpdated(updatedAt: Long): String {

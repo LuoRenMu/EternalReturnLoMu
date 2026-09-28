@@ -22,5 +22,8 @@ class RealCharacterDetailPreviewTest {
         cn.luorenmu.nutdraw.NutDraw.render(CharacterDetailTemplate(), detail, output)
         assertTrue(Files.size(output) > 100)
         println("Real character detail preview retained at: $output")
+        val equipmentOutput = output.resolveSibling("character-equipment-real.png")
+        cn.luorenmu.nutdraw.NutDraw.render(CharacterDetailTemplate(equipmentOnly = true), detail, equipmentOutput)
+        assertTrue(Files.size(equipmentOutput) > 100)
     }
 }

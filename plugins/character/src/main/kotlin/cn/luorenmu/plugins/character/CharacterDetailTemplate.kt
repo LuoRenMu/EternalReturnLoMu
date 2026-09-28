@@ -7,341 +7,243 @@ import cn.luorenmu.nutdraw.template.ImageTemplate
 import cn.luorenmu.nutdraw.template.TemplateDocument
 import cn.luorenmu.service.entity.CharacterDetail
 import org.jetbrains.skia.Color
+import java.util.Locale
 
-/**
- * Compact character guide with skill learning plans as the primary visual focus.
- *
- * @author LoMu
- * Date 2026/8/16 15:30
- */
-class CharacterDetailTemplate : ImageTemplate<CharacterDetail> {
-    private val pageBg = Color.makeRGB(245, 245, 245)
-    private val card = Color.WHITE
-    private val ink = Color.makeRGB(32, 32, 32)
-    private val muted = Color.makeRGB(128, 128, 128)
-    private val line = Color.makeRGB(230, 230, 230)
-    private val soft = Color.makeRGB(247, 247, 247)
-    private val dark = Color.makeRGB(54, 57, 68)
-    private val accent = Color.makeRGB(112, 122, 138)
-    private val accentSoft = Color.makeRGB(240, 242, 245)
-    private val skillAccent = Color.makeRGB(164, 112, 91)
-    private val green = Color.makeRGB(62, 132, 102)
-    private val red = Color.makeRGB(178, 91, 91)
-    private val white = Color.WHITE
+/** Readable chat-image guide: full-width sections, real game assets, no microtype. */
+class CharacterDetailTemplate(private val equipmentOnly: Boolean = false) : ImageTemplate<CharacterDetail> {
+    private val ink = Color.makeRGB(24, 29, 36)
+    private val muted = Color.makeRGB(79, 89, 103)
+    private val blue = Color.makeRGB(35, 78, 181)
+    private val soft = Color.makeRGB(240, 243, 248)
+    private val line = Color.makeRGB(210, 217, 228)
 
     override fun build(data: CharacterDetail): TemplateDocument {
         val analysis = data.analysis
-        if (analysis == null || analysis.weapons.isEmpty()) return emptyDocument(data)
-        val weapon = analysis.weapons.first()
-        val otherWeapons = analysis.weapons.drop(1).take(4)
-        val skillPlans = weapon.skillBuilds.take(4)
-        val tacticals = weapon.tacticals.take(4)
-        val augments = weapon.augments.take(4)
-        val itemBuilds = weapon.itemBuilds.take(4)
-        val equipmentGroups = weapon.topEquipments.groupBy { it.slot }.entries.take(5)
-        val otherWeaponsHeight = if (otherWeapons.isNotEmpty()) 104 else 0
-        val skillHeight = if (skillPlans.isNotEmpty()) 58 + 18 + skillPlans.size * 64 else 0
-        val guideHeight = if (tacticals.isNotEmpty() || augments.isNotEmpty()) 244 else 0
-        val loadoutHeight = if (itemBuilds.isNotEmpty() || equipmentGroups.isNotEmpty()) 322 else 0
-        val infusionHeight = if (weapon.infusions.isNotEmpty()) 122 else 0
-        val playerHeight = if (analysis.topPlayers.isNotEmpty()) 88 else 0
-        val blocks = listOf(otherWeaponsHeight, skillHeight, guideHeight, loadoutHeight, infusionHeight, playerHeight).count { it > 0 }
-        val height = 28 + 150 + otherWeaponsHeight + skillHeight + guideHeight + loadoutHeight + infusionHeight + playerHeight + (blocks * 16) + 28
+        val weapon = analysis?.weapons?.firstOrNull()
+        if (analysis == null || weapon == null) return TemplateDocument(1000, 220,
+            document(CssStyle(width = px(1000), height = px(220), padding = Edges(32f), background = Color.WHITE)) {
+                text(data.name, type(38, 60, weight = 800))
+                text("当前模式或段位暂无数据，请换一个筛选条件再试。", type(22, 60, muted))
+            })
         val base = data.httpServer
-
-        return TemplateDocument(
-            1180,
-            height,
-            document(CssStyle(width = px(1180), height = px(height), padding = Edges(28f), gap = 16f, background = pageBg, color = ink), id = "character-detail") {
-                hero(data, analysis, weapon, base)
-
-                if (otherWeapons.isNotEmpty()) {
-                    otherWeaponsPanel(otherWeapons, base)
-                }
-
-                if (skillPlans.isNotEmpty()) {
-                    element(cardStyle(skillHeight.toFloat())) {
-                        sectionHeader("推荐技能学习")
-                        element(CssStyle(width = percent(100), flexGrow = 1f, padding = Edges(10f, 14f, 14f, 14f), gap = 8f)) {
-                            skillPlans.forEachIndexed { index, plan -> skillPlan(index, plan, weapon.skillBySlot, base) }
+        val others = if (equipmentOnly) emptyList() else analysis.weapons.drop(1).take(4)
+        val skills = if (equipmentOnly) emptyList() else weapon.skillBuilds.take(4)
+        val tactics = if (equipmentOnly) emptyList() else weapon.tacticals.take(4)
+        val augments = if (equipmentOnly) emptyList() else weapon.augments.take(4)
+        val builds = weapon.itemBuilds.take(4)
+        val equipment = weapon.topEquipments.groupBy { it.slot }.entries.take(5)
+        val infusions = if (equipmentOnly) emptyList() else weapon.infusions.take(10)
+        val players = if (equipmentOnly) emptyList() else analysis.topPlayers.take(8)
+        val heights = listOf(
+            342,
+            if (others.isNotEmpty()) 64 + others.size * 56 else 0,
+            if (skills.isNotEmpty()) 64 + skills.size * 124 else 0,
+            if (tactics.isNotEmpty()) 64 + 120 else 0,
+            if (augments.isNotEmpty()) 64 + augments.size * 126 else 0,
+            if (builds.isNotEmpty()) 64 + builds.size * 156 else 0,
+            if (equipment.isNotEmpty()) 64 + equipment.size * 172 else 0,
+            if (infusions.isNotEmpty()) 64 + ((infusions.size + 4) / 5) * 112 else 0,
+            if (players.isNotEmpty()) 64 + ((players.size + 3) / 4) * 82 else 0,
+        ).filter { it > 0 }
+        val height = 64 + heights.sum() + (heights.size - 1) * 24
+        return TemplateDocument(1000, height, document(
+            CssStyle(width = px(1000), height = px(height), padding = Edges(32f), gap = 24f, background = Color.WHITE, color = ink),
+            id = "character-detail",
+        ) {
+            element(column(342), id = "detail-hero") {
+                element(row(180, 24)) {
+                    image(data.imageUrl.resolve(base), CssStyle(width = px(180), height = px(180), objectFit = ObjectFit.COVER, borderRadius = 12f))
+                    element(CssStyle(flexGrow = 1f, height = px(180), gap = 6f)) {
+                        element(row(52, 12)) {
+                            characterTierIcon(characterTierIconUrl(analysis.characterTier).resolve(base), 28f, "detail-tier-icon")
+                            text(data.name, type(38, 52, weight = 800).copy(width = CssSize.Auto, flexGrow = 1f), id = "detail-character-name")
+                            text(characterRankingLabel(weapon.rank, weapon.rankSize),
+                                type(28, 52, blue, 800).copy(width = px(210), textAlign = TextAlign.END),
+                                id = "detail-character-ranking")
                         }
+                        text(listOf(data.title, characterRoleLabels(data.archetypes)).filter(String::isNotBlank).joinToString(" · "), type(20, 30, muted), id = "detail-character-role")
+                        text("${analysis.matchingModeLabel} · ${analysis.teamModeLabel} · ${analysis.tierLabel}", type(20, 32, blue, 700))
+                        text("版本 ${analysis.patchLabel} · ${analysis.updatedLabel}", type(16, 28, muted))
                     }
                 }
-
-                if (guideHeight > 0) {
-                    element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(guideHeight), gap = 16f)) {
-                        element(cardStyle(guideHeight.toFloat()).copy(width = px(430))) {
-                            sectionHeader("推荐战术技能", "tactical-header")
-                            element(CssStyle(direction = FlexDirection.ROW, wrap = FlexWrap.WRAP, width = percent(100), flexGrow = 1f, padding = Edges(10f, 14f, 14f, 14f), gap = 8f)) {
-                                tacticals.forEachIndexed { index, pick -> tacticalCard(index, pick, base) }
-                            }
-                        }
-                        element(cardStyle(guideHeight.toFloat()).copy(width = px(678)), id = "augment-panel") {
-                            sectionHeader("推荐潜能", "augment-header")
-                            element(CssStyle(width = percent(100), flexGrow = 1f, padding = Edges(8f, 14f, 14f, 14f), gap = 6f)) {
-                                augments.forEachIndexed { index, augment -> augmentRow(index, augment, base) }
-                            }
-                        }
+                element(row(56, 12).copy(background = soft, padding = Edges(10f, 12f))) {
+                    characterTierIcon(characterTierIconUrl(weapon.tier).resolve(base), 20f, "main-weapon-tier-icon")
+                    text(weapon.weapon, type(22, 34, weight = 800).copy(width = px(140)), id = "main-weapon-name")
+                    text("评分 ${decimal(weapon.tierScore)}", type(18, 34).copy(width = px(132)))
+                    text("主武器排名 ${characterRankingLabel(weapon.rank, weapon.rankSize)}", type(18, 34, blue, 700).copy(width = px(290)), id = "main-weapon-ranking")
+                    text("RP ${signed(weapon.rpChange)}", type(20, 34, blue, 700).copy(width = CssSize.Auto, flexGrow = 1f), id = "main-weapon-rp")
+                }
+                element(row(106, 12)) {
+                    metric("胜率", pct(weapon.winRate))
+                    metric("登场率", pct(weapon.pickRate))
+                    metric("前三率", pct(weapon.top3Rate))
+                    metric("平均名次", decimal(weapon.avgRank))
+                    metric("平均击杀", decimal(weapon.avgKills))
+                    metric("对局数", weapon.games.toString())
+                }
+            }
+            if (others.isNotEmpty()) section("其他武器", 64 + others.size * 56, "other-weapons-panel") {
+                others.forEachIndexed { i, w ->
+                    element(row(56, 12).copy(background = soft, padding = Edges(10f, 12f)), id = "other-weapon-$i") {
+                        characterTierIcon(characterTierIconUrl(w.tier).resolve(base), 22f, "other-weapon-tier-icon-$i")
+                        text(w.weapon, type(20, 34, weight = 700).copy(width = px(150)), id = "other-weapon-name-$i")
+                        text("评分 ${decimal(w.tierScore)}", type(18, 34).copy(width = px(150)))
+                        text("登场 ${pct(w.pickRate)}", type(18, 34).copy(width = px(180)))
+                        text("胜率 ${pct(w.winRate)} · RP ${signed(w.rpChange)}", type(18, 34, blue, 700).copy(width = CssSize.Auto, flexGrow = 1f), id = "other-weapon-rp-$i")
                     }
                 }
-
-                if (loadoutHeight > 0) {
-                    element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(loadoutHeight), gap = 16f)) {
-                        element(cardStyle(loadoutHeight.toFloat()).copy(width = px(710))) {
-                            sectionHeader("最终装备方案", "loadout-header")
-                            element(CssStyle(width = percent(100), flexGrow = 1f, padding = Edges(8f, 14f, 14f, 14f), gap = 6f)) {
-                                itemBuilds.forEachIndexed { index, build -> loadoutRow(index, build, base) }
-                            }
+            }
+            if (skills.isNotEmpty()) section("技能加点", 64 + skills.size * 124, "skill-panel") {
+                skills.forEachIndexed { i, plan ->
+                    element(column(124).copy(padding = Edges(8f, 12f), background = if (i == 0) soft else Color.WHITE), id = "skill-plan-$i") {
+                        element(row(36, 12)) {
+                            text("方案 ${i + 1}   ${plan.priority.joinToString(" → ")}", type(22, 34, blue, 700).copy(width = px(490)))
+                            text("登场 ${pct(plan.pickRate)}   胜率 ${pct(plan.winRate)}", type(18, 34).copy(width = CssSize.Auto, flexGrow = 1f, textAlign = TextAlign.END))
                         }
-                        element(cardStyle(loadoutHeight.toFloat()).copy(width = px(398)), id = "equipment-panel") {
-                            sectionHeader("物品选择统计", "equipment-header")
-                            element(CssStyle(width = percent(100), flexGrow = 1f, padding = Edges(8f, 12f, 12f, 12f), gap = 4f)) {
-                                equipmentGroups.forEachIndexed { slotIndex, (slot, equipments) ->
-                                    equipmentSlotRow(slotIndex, slot, equipments.take(5), base)
+                        element(row(70, 8)) {
+                            plan.order.take(15).forEachIndexed { level, slot ->
+                                element(CssStyle(width = px(52), height = px(70), alignItems = AlignItems.CENTER)) {
+                                    image(weapon.skillBySlot[slot]?.iconUrl.resolve(base), CssStyle(width = px(42), height = px(42), borderRadius = 6f))
+                                    text("${level + 1} $slot", type(16, 26, muted).copy(textAlign = TextAlign.CENTER))
                                 }
                             }
                         }
                     }
                 }
-
-                if (infusionHeight > 0) {
-                    element(cardStyle(infusionHeight.toFloat())) {
-                        sectionHeader("灌注选择")
-                        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), flexGrow = 1f, padding = Edges(7f, 14f, 12f, 14f), gap = 8f)) {
-                            weapon.infusions.take(10).forEach { compactPick(it, base) }
+            }
+            if (tactics.isNotEmpty()) section("战术技能", 184, "tactical-panel", "tactical-header") {
+                element(row(120, 12)) {
+                    tactics.forEach { pick ->
+                        element(CssStyle(width = px(225), height = px(120), padding = Edges(12f), background = soft, borderRadius = 8f)) {
+                            element(row(48, 10)) {
+                                image(pick.iconUrl.resolve(base), CssStyle(width = px(44), height = px(44), objectFit = ObjectFit.CONTAIN))
+                                text(pick.name, type(20, 44, weight = 700).copy(width = CssSize.Auto, flexGrow = 1f))
+                            }
+                            text("登场 ${pct(pick.pickRate)}", type(18, 26, muted))
+                            text("胜率 ${pct(pick.winRate)}", type(18, 26, blue, 700))
                         }
                     }
                 }
-
-                if (playerHeight > 0) {
-                    element(cardStyle(playerHeight.toFloat()).copy(direction = FlexDirection.ROW, padding = Edges(12f, 16f), gap = 10f, alignItems = AlignItems.CENTER)) {
-                        text("高分玩家", txt(13f, ink, 26f, 700).copy(width = px(76)))
-                        analysis.topPlayers.take(8).forEach { player ->
-                            element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(46), padding = Edges(6f, 8f), gap = 6f, alignItems = AlignItems.CENTER, background = soft, borderRadius = 9f)) {
-                                image(player.tierIconUrl.resolve(base), CssStyle(width = px(28), height = px(28), objectFit = ObjectFit.CONTAIN))
-                                element(CssStyle(flexGrow = 1f, height = px(34))) {
-                                    text(player.name, txt(10f, ink, 17f, 600))
-                                    text(player.mmr, txt(9f, muted, 15f))
+            }
+            if (augments.isNotEmpty()) section("潜能搭配", 64 + augments.size * 126, "augment-panel", "augment-header") {
+                augments.forEachIndexed { i, augment ->
+                    element(row(126, 16).copy(padding = Edges(8f, 12f), background = if (i % 2 == 0) soft else Color.WHITE)) {
+                        element(CssStyle(width = px(210), height = px(108), gap = 4f)) {
+                            element(row(44, 10)) {
+                                image(augment.core.iconUrl.resolve(base), CssStyle(width = px(40), height = px(40), objectFit = ObjectFit.CONTAIN))
+                                text(augment.core.name, type(20, 42, weight = 700).copy(width = CssSize.Auto, flexGrow = 1f))
+                            }
+                            text("方案 ${i + 1}", type(18, 26, blue, 700))
+                            text("登场 ${pct(augment.core.pickRate)}", type(18, 26, muted))
+                        }
+                        element(row(108, 8).copy(width = CssSize.Auto, flexGrow = 1f)) {
+                            augment.subs.take(6).forEachIndexed { j, sub ->
+                                element(CssStyle(width = px(105), height = px(108), alignItems = AlignItems.CENTER, gap = 6f)) {
+                                    image(sub.iconUrl.resolve(base), CssStyle(width = px(44), height = px(44), objectFit = ObjectFit.CONTAIN))
+                                    text(sub.name, type(16, 54, weight = 600).copy(textAlign = TextAlign.CENTER), id = "augment-sub-name-$i-$j")
                                 }
                             }
                         }
                     }
                 }
-            },
-        )
-    }
-
-    private fun ElementBuilder.hero(
-        data: CharacterDetail,
-        analysis: CharacterDetail.CharacterAnalysis,
-        weapon: CharacterDetail.WeaponBuild,
-        base: String,
-    ) {
-        element(cardStyle(150f).copy(direction = FlexDirection.ROW, padding = Edges(18f), gap = 16f, background = dark, border = Border()), id = "detail-hero") {
-            image(data.imageUrl.resolve(base), CssStyle(width = px(112), height = px(112), borderRadius = 14f, border = Border(2f, Color.makeRGB(92, 96, 108)), objectFit = ObjectFit.COVER))
-            element(CssStyle(width = px(275), height = px(112), gap = 4f)) {
-                element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(34), gap = 10f, alignItems = AlignItems.CENTER)) {
-                    characterTierIcon(characterTierIconUrl(analysis.characterTier).resolve(base), 26f, "detail-tier-icon")
-                    text(data.name, txt(27f, white, 34f, 700).copy(width = px(239)), id = "detail-character-name")
-                }
-                text(data.title, txt(12f, Color.makeRGB(200, 201, 205), 19f))
-                element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(24), gap = 5f)) {
-                    data.archetypes.filter { it.isNotBlank() && it != "None" }.take(3).forEach { tag ->
-                        text(tag, CssStyle(width = px(tag.length * 13 + 18), height = px(22), padding = Edges(2f, 8f), fontSize = 10f, fontWeight = 600, color = Color.makeRGB(220, 222, 226), background = Color.makeRGB(75, 79, 91), borderRadius = 11f, textAlign = TextAlign.CENTER))
-                    }
-                }
-                text("${analysis.matchingModeLabel} · ${analysis.teamModeLabel} · ${analysis.tierLabel}", txt(11f, Color.makeRGB(175, 178, 186), 18f))
-                text("版本 ${analysis.patchLabel} · ${analysis.updatedLabel}", txt(10f, Color.makeRGB(145, 150, 161), 16f))
             }
-            element(CssStyle(direction = FlexDirection.ROW, width = px(224), height = px(112), padding = Edges(10f), gap = 10f, alignItems = AlignItems.CENTER, background = Color.makeRGB(65, 68, 79), borderRadius = 13f)) {
-                image(weapon.iconUrl.resolve(base), CssStyle(width = px(58), height = px(58), padding = Edges(6f), background = Color.makeRGB(39, 41, 48), borderRadius = 12f, objectFit = ObjectFit.CONTAIN))
-                element(CssStyle(flexGrow = 1f, height = px(92), gap = 2f, justifyContent = JustifyContent.CENTER)) {
-                    element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(24), gap = 5f, alignItems = AlignItems.CENTER)) {
-                        characterTierIcon(characterTierIconUrl(weapon.tier).resolve(base), 18f, "main-weapon-tier-icon")
-                        text(weapon.weapon, txt(15f, white, 24f, 700).copy(flexGrow = 1f), id = "main-weapon-name")
-                    }
-                    text("${"%.1f".format(weapon.tierScore)} 分", txt(11f, Color.makeRGB(200, 202, 208), 18f, 600))
-                    text("RP变动 ${signed(weapon.rpChange)}", txt(10f, rpColor(weapon.rpChange), 16f, 700), id = "main-weapon-rp")
-                    text(
-                        "实验体排名 #${weapon.rank} / ${weapon.rankSize}",
-                        CssStyle(width = percent(100), height = px(20), padding = Edges(2f, 6f), fontSize = 12f, fontWeight = 700, color = Color.makeRGB(222, 193, 125), background = Color.makeRGB(77, 74, 67), borderRadius = 6f),
-                        id = "main-weapon-ranking",
-                    )
-                }
-            }
-            element(CssStyle(direction = FlexDirection.ROW, wrap = FlexWrap.WRAP, flexGrow = 1f, height = px(112), gap = 7f)) {
-                heroStat("登场率", pct(weapon.pickRate))
-                heroStat("胜率", pct(weapon.winRate), green)
-                heroStat("TOP3", pct(weapon.top3Rate))
-                heroStat("平均名次", "#${"%.1f".format(weapon.avgRank)}")
-                heroStat("平均击杀", "%.1f".format(weapon.avgKills))
-                heroStat("对局数", weapon.games)
-            }
-        }
-    }
-
-    private fun ElementBuilder.skillPlan(
-        index: Int,
-        plan: CharacterDetail.SkillBuild,
-        skills: Map<String, CharacterDetail.SkillSlot>,
-        base: String,
-    ) {
-        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(56), padding = Edges(7f, 10f), gap = 10f, alignItems = AlignItems.CENTER, background = if (index == 0) accentSoft else soft, border = Border(1f, if (index == 0) Color.makeRGB(207, 211, 218) else line), borderRadius = 11f)) {
-            text("${index + 1}", CssStyle(width = px(34), height = px(34), padding = Edges(6f), fontSize = 14f, fontWeight = 700, color = white, background = if (index == 0) accent else Color.makeRGB(150, 156, 178), borderRadius = 17f, textAlign = TextAlign.CENTER))
-            element(CssStyle(width = px(154), height = px(40), justifyContent = JustifyContent.CENTER)) {
-                text("升级优先", txt(9f, muted, 14f, 600))
-                text(plan.priority.joinToString("  >  "), txt(13f, ink, 21f, 700))
-            }
-            element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(42), gap = 4f, alignItems = AlignItems.CENTER)) {
-                plan.order.take(15).forEachIndexed { _, slot ->
-                    val skill = skills[slot]
-                    element(CssStyle(width = px(31), height = px(42), alignItems = AlignItems.CENTER)) {
-                        image(skill?.iconUrl.resolve(base), CssStyle(width = px(29), height = px(29), borderRadius = 6f, border = Border(1f, line), objectFit = ObjectFit.CONTAIN))
-                        text(slot, txt(8f, muted, 11f, 600).copy(textAlign = TextAlign.CENTER))
-                    }
-                }
-            }
-            element(CssStyle(width = px(158), height = px(38), alignItems = AlignItems.END, justifyContent = JustifyContent.CENTER)) {
-                text("登场 ${pct(plan.pickRate)}", txt(10f, muted, 17f, 600).copy(textAlign = TextAlign.END))
-                text("胜率 ${pct(plan.winRate)}", txt(11f, green, 18f, 700).copy(textAlign = TextAlign.END))
-            }
-        }
-    }
-
-    private fun ElementBuilder.tacticalCard(index: Int, pick: CharacterDetail.Pick, base: String) {
-        element(CssStyle(direction = FlexDirection.ROW, width = px(195), height = px(66), padding = Edges(8f), gap = 8f, alignItems = AlignItems.CENTER, background = if (index == 0) accentSoft else soft, border = Border(1f, line), borderRadius = 11f)) {
-            image(pick.iconUrl.resolve(base), CssStyle(width = px(42), height = px(42), borderRadius = 9f, objectFit = ObjectFit.CONTAIN))
-            element(CssStyle(flexGrow = 1f, height = px(44), justifyContent = JustifyContent.CENTER)) {
-                text(pick.name, txt(11f, ink, 18f, 700))
-                text("登场 ${pct(pick.pickRate)}", txt(9f, muted, 14f))
-                text("胜率 ${pct(pick.winRate)}", txt(9f, green, 14f, 600))
-            }
-        }
-    }
-
-    private fun ElementBuilder.augmentRow(index: Int, augment: CharacterDetail.Augment, base: String) {
-        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(38), padding = Edges(4f, 8f), gap = 6f, alignItems = AlignItems.CENTER, background = if (index == 0) accentSoft else soft, borderRadius = 9f)) {
-            text("${index + 1}", txt(10f, accent, 22f, 700).copy(width = px(18), textAlign = TextAlign.CENTER))
-            image(augment.core.iconUrl.resolve(base), CssStyle(width = px(30), height = px(30), borderRadius = 7f, border = Border(2f, accent), objectFit = ObjectFit.CONTAIN))
-            text(augment.core.name, txt(10f, ink, 22f, 700).copy(width = px(96)))
-            element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(30), gap = 5f, alignItems = AlignItems.CENTER)) {
-                augment.subs.take(6).forEachIndexed { subIndex, sub ->
-                    element(CssStyle(width = px(58), height = px(30), alignItems = AlignItems.CENTER)) {
-                        image(sub.iconUrl.resolve(base), CssStyle(width = px(19), height = px(19), borderRadius = 5f, objectFit = ObjectFit.CONTAIN))
-                        text(sub.name, txt(6f, ink, 10f, 600).copy(width = px(58), textAlign = TextAlign.CENTER), id = "augment-sub-name-$index-$subIndex")
-                    }
-                }
-            }
-            text(pct(augment.core.pickRate), txt(9f, muted, 20f, 600).copy(width = px(52), textAlign = TextAlign.END))
-        }
-    }
-
-    private fun ElementBuilder.loadoutRow(index: Int, build: CharacterDetail.ItemBuild, base: String) {
-        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(48), padding = Edges(5f, 9f), gap = 8f, alignItems = AlignItems.CENTER, background = if (index == 0) Color.makeRGB(248, 245, 243) else soft, borderRadius = 10f)) {
-            text("方案 ${index + 1}", txt(10f, if (index == 0) skillAccent else muted, 24f, 700).copy(width = px(52)))
-            element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(38), gap = 8f, alignItems = AlignItems.CENTER)) {
-                build.items.take(5).forEach { item ->
-                    element(CssStyle(direction = FlexDirection.ROW, width = px(88), height = px(38), padding = Edges(3f), gap = 4f, alignItems = AlignItems.CENTER, background = card, border = Border(1f, line), borderRadius = 8f)) {
-                        element(CssStyle(width = px(32), height = px(32), padding = Edges(2f), backgroundImage = item.bgUrl.resolve(base), borderRadius = 6f)) {
-                            image(item.iconUrl.resolve(base), CssStyle(width = percent(100), height = percent(100), objectFit = ObjectFit.CONTAIN))
+            if (builds.isNotEmpty()) section("成装方案", 64 + builds.size * 156, "loadout-panel", "loadout-header") {
+                builds.forEachIndexed { i, build ->
+                    element(column(156).copy(padding = Edges(8f, 12f), background = if (i % 2 == 0) soft else Color.WHITE), id = "loadout-row-$i") {
+                        element(row(36, 16)) {
+                            text("方案 ${i + 1}", type(22, 34, blue, 700).copy(width = px(250)))
+                            text("登场 ${pct(build.pickRate)}   胜率 ${pct(build.winRate)}", type(18, 34).copy(width = CssSize.Auto, flexGrow = 1f, textAlign = TextAlign.END))
                         }
-                        text(item.name, txt(8f, ink, 22f, 600).copy(flexGrow = 1f))
+                        element(row(104, 12)) {
+                            build.items.take(5).forEach { item -> itemLabel(item.name, item.iconUrl, item.bgUrl, base) }
+                        }
                     }
                 }
             }
-            element(CssStyle(width = px(104), height = px(36), alignItems = AlignItems.END)) {
-                text("登场 ${pct(build.pickRate)}", txt(9f, muted, 16f).copy(textAlign = TextAlign.END))
-                text("胜率 ${pct(build.winRate)}", txt(10f, green, 17f, 700).copy(textAlign = TextAlign.END))
-            }
-        }
-    }
-
-    private fun ElementBuilder.equipmentSlotRow(
-        slotIndex: Int,
-        slot: String,
-        equipments: List<CharacterDetail.EquipmentSlotPick>,
-        base: String,
-    ) {
-        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(46), gap = 4f, alignItems = AlignItems.CENTER), id = "equipment-slot-$slotIndex") {
-            text(slot, txt(9f, muted, 22f, 600).copy(width = px(32), textAlign = TextAlign.CENTER))
-            equipments.forEachIndexed { itemIndex, equipment ->
-                element(CssStyle(direction = FlexDirection.ROW, width = px(64), height = px(42), padding = Edges(3f), gap = 2f, alignItems = AlignItems.CENTER, background = soft, border = Border(1f, line), borderRadius = 8f), id = "equipment-item-$slotIndex-$itemIndex") {
-                    element(CssStyle(width = px(24), height = px(24), padding = Edges(2f), background = card, backgroundImage = equipment.bgUrl.resolve(base), borderRadius = 6f)) {
-                        image(equipment.iconUrl.resolve(base), CssStyle(width = percent(100), height = percent(100), objectFit = ObjectFit.CONTAIN))
-                    }
-                    element(CssStyle(width = px(32), height = px(34), justifyContent = JustifyContent.CENTER)) {
-                        text(equipment.name, txt(6f, ink, 11f, 600).copy(width = px(32), textAlign = TextAlign.CENTER), id = "equipment-name-$slotIndex-$itemIndex")
-                        text("选${pct(equipment.pickRate)}", txt(6f, muted, 11f, 600).copy(width = px(32), textAlign = TextAlign.CENTER), id = "equipment-pick-rate-$slotIndex-$itemIndex")
-                        text("胜${pct(equipment.winRate)}", txt(6f, green, 11f, 700).copy(width = px(32), textAlign = TextAlign.CENTER), id = "equipment-win-rate-$slotIndex-$itemIndex")
+            if (equipment.isNotEmpty()) section("单件装备选择", 64 + equipment.size * 172, "equipment-panel", "equipment-header") {
+                equipment.forEachIndexed { i, (slot, items) ->
+                    element(column(172), id = "equipment-slot-$i") {
+                        text(slot, type(20, 32, blue, 700))
+                        element(row(140, 12)) {
+                            items.take(5).forEachIndexed { j, item ->
+                                element(CssStyle(width = px(177), height = px(132), padding = Edges(8f), background = soft, borderRadius = 8f), id = "equipment-item-$i-$j") {
+                                    element(row(68, 8)) {
+                                        itemIcon(item.iconUrl, item.bgUrl, base, 46)
+                                        text(item.name, type(16, 66, weight = 600).copy(width = CssSize.Auto, flexGrow = 1f), id = "equipment-name-$i-$j")
+                                    }
+                                    text("选择 ${pct(item.pickRate)}", type(18, 24, muted), id = "equipment-pick-rate-$i-$j")
+                                    text("胜率 ${pct(item.winRate)}", type(18, 24, blue, 700), id = "equipment-win-rate-$i-$j")
+                                }
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
-
-    private fun ElementBuilder.otherWeaponsPanel(
-        weapons: List<CharacterDetail.WeaponBuild>,
-        base: String,
-    ) {
-        element(cardStyle(104f).copy(direction = FlexDirection.ROW, padding = Edges(12f, 14f), gap = 8f, alignItems = AlignItems.CENTER), id = "other-weapons-panel") {
-            text("其他武器", txt(12f, ink, 24f, 700).copy(width = px(72), textAlign = TextAlign.CENTER))
-            weapons.forEachIndexed { index, weapon ->
-                element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(78), padding = Edges(7f), gap = 7f, alignItems = AlignItems.CENTER, background = Color.makeRGB(242, 242, 242), borderRadius = 10f), id = "other-weapon-$index") {
-                    characterTierIcon(characterTierIconUrl(weapon.tier).resolve(base), 20f, "other-weapon-tier-icon-$index")
-                    element(CssStyle(flexGrow = 1f, height = px(62), justifyContent = JustifyContent.CENTER)) {
-                        text(weapon.weapon, txt(11f, ink, 17f, 700), id = "other-weapon-name-$index")
-                        text("${"%.1f".format(weapon.tierScore)} 分 · 登场 ${pct(weapon.pickRate)}", txt(8f, muted, 14f, 600))
-                        text("胜率 ${pct(weapon.winRate)} · RP ${signed(weapon.rpChange)}", txt(8f, rpColor(weapon.rpChange), 14f, 600), id = "other-weapon-rp-$index")
+            if (infusions.isNotEmpty()) section("灌注选择", 64 + ((infusions.size + 4) / 5) * 112, "infusion-panel") {
+                infusions.chunked(5).forEach { picks ->
+                    element(row(112, 12)) {
+                        picks.forEach { pick ->
+                            element(CssStyle(width = px(177), height = px(112))) {
+                                itemLabel(pick.name, pick.iconUrl, pick.bgUrl, base, 82)
+                                text("选择 ${pct(pick.pickRate)}", type(18, 28, blue))
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
-
-    private fun ElementBuilder.compactPick(pick: CharacterDetail.Pick, base: String) {
-        element(CssStyle(direction = FlexDirection.ROW, flexGrow = 1f, height = px(48), padding = Edges(5f), gap = 5f, alignItems = AlignItems.CENTER, background = soft, borderRadius = 9f)) {
-            image(pick.iconUrl.resolve(base), CssStyle(width = px(34), height = px(34), borderRadius = 7f, objectFit = ObjectFit.CONTAIN))
-            element(CssStyle(flexGrow = 1f, height = px(34), justifyContent = JustifyContent.CENTER)) {
-                text(pick.name, txt(9f, ink, 16f, 600))
-                text(pct(pick.pickRate), txt(8f, green, 13f, 600))
+            if (players.isNotEmpty()) section("高分玩家", 64 + ((players.size + 3) / 4) * 82, "players-panel") {
+                players.chunked(4).forEach { group ->
+                    element(row(82, 12)) {
+                        group.forEach { player ->
+                            element(CssStyle(direction = FlexDirection.ROW, width = px(225), height = px(74), gap = 10f, padding = Edges(8f), background = soft, alignItems = AlignItems.CENTER)) {
+                                image(player.tierIconUrl.resolve(base), CssStyle(width = px(40), height = px(40), objectFit = ObjectFit.CONTAIN))
+                                element(CssStyle(flexGrow = 1f, height = px(58))) {
+                                    text(player.name, type(16, 32, weight = 600))
+                                    text("${player.mmr} 分", type(18, 26, muted))
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        }
+        })
     }
 
-    private fun ElementBuilder.heroStat(label: String, value: Any?, valueColor: Int = white) {
-        element(CssStyle(width = px(135), height = px(52), padding = Edges(6f, 8f), background = Color.makeRGB(65, 68, 79), borderRadius = 10f, alignItems = AlignItems.CENTER)) {
-            text(label, txt(9f, Color.makeRGB(170, 173, 180), 15f, 600).copy(textAlign = TextAlign.CENTER))
-            text(value, txt(14f, valueColor, 23f, 700).copy(textAlign = TextAlign.CENTER))
-        }
-    }
-
-    private fun ElementBuilder.sectionHeader(title: String, id: String? = null) {
-        element(CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px( 48), padding = Edges( 11f, 16f), justifyContent = JustifyContent.SPACE_BETWEEN, alignItems = AlignItems.CENTER), id = id) {
-            element(CssStyle(flexGrow = 1f, height = px(  28f), justifyContent = JustifyContent.CENTER)) {
-                text(title, txt( 15f, ink,  20f, 700))
+    private fun ElementBuilder.section(title: String, height: Int, id: String, headerId: String = "$id-header", content: ElementBuilder.() -> Unit) {
+        element(column(height), id = id) {
+            element(row(64, 12), id = headerId) {
+                text(title, type(26, 48, weight = 800))
+                element(CssStyle(position = Position.ABSOLUTE, left = 0f, bottom = 8f, width = percent(100), height = px(2), background = line), id = "$headerId-divider")
             }
-            element(CssStyle(position = Position.ABSOLUTE, left = 0f, bottom = 0f, width = percent(100), height = px(1), background = line), id = id?.let { "$it-divider" })
+            content()
         }
     }
 
-    private fun emptyDocument(data: CharacterDetail) = TemplateDocument(
-        1180,
-        230,
-        document(CssStyle(width = px(1180), height = px(230), padding = Edges(28f), background = pageBg)) {
-            element(cardStyle(174f).copy(alignItems = AlignItems.CENTER, justifyContent = JustifyContent.CENTER)) {
-                text("${data.name} · 暂无角色分析数据", txt(14f, muted, 30f, 600).copy(textAlign = TextAlign.CENTER))
-            }
-        },
-    )
-
-    private fun cardStyle(height: Float) = CssStyle(width = percent(100), height = px(height), background = card, border = Border(1f, line), borderRadius = 15f)
-    private fun txt(size: Float, color: Int, height: Float, weight: Int = 400) = CssStyle(width = percent(100), height = px(height), fontSize = size, fontWeight = weight, color = color)
-    private fun pct(value: Double) = "%.1f%%".format(value)
-    private fun signed(value: Double) = if (value > 0.0) "+%.1f".format(value) else "%.1f".format(value)
-    private fun rpColor(value: Double) = when {
-        value > 0.0 -> green
-        value < 0.0 -> red
-        else -> muted
+    private fun ElementBuilder.metric(label: String, value: String) {
+        element(CssStyle(width = px(146), height = px(106), justifyContent = JustifyContent.CENTER)) {
+            text(value, type(30, 46, blue, 800))
+            text(label, type(18, 30, muted))
+        }
     }
+
+    private fun ElementBuilder.itemLabel(name: String, icon: String?, bg: String?, base: String, height: Int = 104) {
+        element(CssStyle(direction = FlexDirection.ROW, width = px(172), height = px(height), gap = 8f, alignItems = AlignItems.CENTER)) {
+            itemIcon(icon, bg, base, 48)
+            text(name, type(18, 80, weight = 600).copy(width = CssSize.Auto, flexGrow = 1f))
+        }
+    }
+
+    private fun ElementBuilder.itemIcon(icon: String?, bg: String?, base: String, size: Int) {
+        element(CssStyle(width = px(size), height = px(size), backgroundImage = bg.resolve(base), borderRadius = 6f)) {
+            image(icon.resolve(base), CssStyle(width = percent(100), height = percent(100), objectFit = ObjectFit.CONTAIN))
+        }
+    }
+
+    private fun column(height: Int) = CssStyle(width = percent(100), height = px(height))
+    private fun row(height: Int, gap: Int) = CssStyle(direction = FlexDirection.ROW, width = percent(100), height = px(height), gap = gap.toFloat(), alignItems = AlignItems.CENTER)
+    private fun type(size: Int, height: Int, color: Int = ink, weight: Int = 400) = CssStyle(width = percent(100), height = px(height), fontSize = size.toFloat(), fontWeight = weight, color = color, verticalAlign = VerticalAlign.CENTER)
+    private fun decimal(value: Double) = String.format(Locale.ROOT, "%.1f", value)
+    private fun pct(value: Double) = "${decimal(value)}%"
+    private fun signed(value: Double) = (if (value > 0) "+" else "") + decimal(value)
     private fun String?.resolve(base: String) = this?.takeIf(String::isNotBlank)?.let { if (it.startsWith("http") || it.startsWith("file:")) it else base.trimEnd('/') + "/" + it.trimStart('/') }
 }

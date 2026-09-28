@@ -70,6 +70,6 @@ class CharacterDetailCommand : CommandEvent {
     }
 
     private companion object {
-        const val CACHE_VERSION = "v2"
+        const val CACHE_VERSION = "v5"
     }
 }
