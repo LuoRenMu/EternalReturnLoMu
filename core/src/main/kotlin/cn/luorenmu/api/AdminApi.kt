@@ -248,7 +248,11 @@ fun Route.adminRouting() {
         val table = call.parameters["table"].orEmpty()
         val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 200) ?: 50
         val offset = call.request.queryParameters["offset"]?.toIntOrNull()?.coerceAtLeast(0) ?: 0
-        runCatching { databaseService.page(table, limit, offset) }
+        val filterColumn = call.request.queryParameters["filterColumn"]
+        val filter = call.request.queryParameters["filter"]
+        val sortColumn = call.request.queryParameters["sortColumn"]
+        val sortDirection = call.request.queryParameters["sortDirection"] ?: "asc"
+        runCatching { databaseService.page(table, limit, offset, filterColumn, filter, sortColumn, sortDirection) }
             .onSuccess { call.respondJson(AdminResponse(data = it)) }
             .onFailure {
                 exceptionRepository.record(it, "admin.database.page", "table=$table; limit=$limit; offset=$offset")

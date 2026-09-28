@@ -9,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 /**
  *
@@ -81,6 +82,44 @@ class DatabaseManagerSqliteTest {
                 )
             )
             assertEquals("/updated", admin.page("command_usage", 10, 0).rows.single()["command_name"])
+        } finally {
+            manager.close()
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun adminDatabaseFiltersTextAndSortsIntegersAcrossPages() {
+        val directory = Files.createTempDirectory("lomu-admin-filter-test")
+        val manager = DatabaseManager(DatabaseBackend.SQLITE, directory.resolve("filter.db"))
+        try {
+            manager.initialize()
+            manager.useConnection { connection ->
+                connection.prepareStatement(
+                    "INSERT INTO command_usage(command_name, nickname, group_id, sender_id, timestamp) VALUES (?, ?, ?, ?, ?)"
+                ).use { statement ->
+                    listOf("Alice", "Bob", "ALICE%", "Alice_").forEach { nickname ->
+                        statement.setString(1, "/test")
+                        statement.setString(2, nickname)
+                        statement.setString(3, "group")
+                        statement.setString(4, "sender")
+                        statement.setString(5, "2026-09-27 12:00:00")
+                        statement.executeUpdate()
+                    }
+                }
+            }
+            val admin = AdminDatabaseService(manager)
+            val first = admin.page("command_usage", 1, 0, "nickname", "alice", "id", "desc")
+            val second = admin.page("command_usage", 1, 1, "nickname", "alice", "id", "desc")
+            assertEquals(3, first.total)
+            assertEquals("Alice_", first.rows.single()["nickname"])
+            assertEquals("ALICE%", second.rows.single()["nickname"])
+            assertEquals(1, admin.page("command_usage", 10, 0, "nickname", "%").total)
+            assertEquals("ALICE%", admin.page("command_usage", 10, 0, "nickname", "%").rows.single()["nickname"])
+            assertEquals("Alice", admin.page("command_usage", 1, 0, sortColumn = "id").rows.single()["nickname"])
+            assertFailsWith<IllegalArgumentException> { admin.page("command_usage", 10, 0, sortColumn = "nickname") }
+            assertFailsWith<IllegalArgumentException> { admin.page("command_usage", 10, 0, filterColumn = "id", filter = "1") }
+            assertFailsWith<IllegalArgumentException> { admin.page("command_usage", 10, 0, sortColumn = "id; DROP TABLE command_usage") }
         } finally {
             manager.close()
             directory.toFile().deleteRecursively()

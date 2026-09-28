@@ -7,6 +7,7 @@ import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Types
+import java.util.Locale
 
 /**
  *
@@ -26,17 +27,53 @@ class AdminDatabaseService(private val databaseManager: DatabaseManager) {
         }
     }
 
-    fun page(tableName: String, limit: Int, offset: Int): AdminTablePage =
+    fun page(
+        tableName: String,
+        limit: Int,
+        offset: Int,
+        filterColumn: String? = null,
+        filter: String? = null,
+        sortColumn: String? = null,
+        sortDirection: String = "asc",
+    ): AdminTablePage =
         databaseManager.useConnection { connection ->
             val table = describe(connection, tableName)
-            val order = table.primaryKeys.firstOrNull()?.let { " ORDER BY ${quote(it)} DESC" }.orEmpty()
-            val sql = "SELECT * FROM ${qualified(table.name)}$order LIMIT ? OFFSET ?"
+            val search = filter?.trim()?.takeIf(String::isNotEmpty)
+            val searchedColumn = if (search != null) {
+                require(!filterColumn.isNullOrBlank()) { "请选择查询字段" }
+                table.columns.firstOrNull { it.name == filterColumn && it.jdbcType in TEXT_TYPES }
+                    ?: throw IllegalArgumentException("不支持查询的字段: $filterColumn")
+            } else null
+            val sortedColumn = sortColumn?.takeIf(String::isNotBlank)?.let { column ->
+                table.columns.firstOrNull { it.name == column && it.jdbcType in INTEGER_TYPES }
+                    ?: throw IllegalArgumentException("不支持排序的字段: $column")
+            }
+            require(sortDirection.equals("asc", true) || sortDirection.equals("desc", true)) { "排序方向无效" }
+            val where = searchedColumn?.let { " WHERE LOWER(${quote(it.name)}) LIKE ? ESCAPE '!'" }.orEmpty()
+            val order = when {
+                sortedColumn != null -> {
+                    val direction = sortDirection.uppercase(Locale.ROOT)
+                    val tieBreak = table.primaryKeys.filter { it != sortedColumn.name }
+                        .joinToString { ", ${quote(it)} DESC" }
+                    " ORDER BY ${quote(sortedColumn.name)} $direction$tieBreak"
+                }
+                else -> table.primaryKeys.firstOrNull()?.let { " ORDER BY ${quote(it)} DESC" }.orEmpty()
+            }
+            val sql = "SELECT * FROM ${qualified(table.name)}$where$order LIMIT ? OFFSET ?"
             val rows = connection.prepareStatement(sql).use { statement ->
-                statement.setInt(1, limit)
-                statement.setInt(2, offset)
+                var index = 1
+                if (search != null) statement.setString(index++, "%${escapeLike(search.lowercase(Locale.ROOT))}%")
+                statement.setInt(index++, limit)
+                statement.setInt(index, offset)
                 statement.executeQuery().use { result -> result.toRows(table.columns) }
             }
-            AdminTablePage(table.name, table.columns, table.primaryKeys, rows, countRows(connection, databaseManager.schema(), table.name), limit, offset)
+            val total = if (search == null) countRows(connection, databaseManager.schema(), table.name) else {
+                connection.prepareStatement("SELECT COUNT(*) FROM ${qualified(table.name)}$where").use { statement ->
+                    statement.setString(1, "%${escapeLike(search.lowercase(Locale.ROOT))}%")
+                    statement.executeQuery().use { result -> result.next(); result.getLong(1) }
+                }
+            }
+            AdminTablePage(table.name, table.columns, table.primaryKeys, rows, total, limit, offset)
         }
 
     fun update(tableName: String, request: AdminRowUpdate): Boolean =
@@ -125,6 +162,7 @@ class AdminDatabaseService(private val databaseManager: DatabaseManager) {
     private fun qualified(table: String, schema: String? = databaseManager.schema()) =
         if (schema == null) quote(table) else "${quote(schema)}.${quote(table)}"
     private fun quote(identifier: String) = "\"${identifier.replace("\"", "\"\"")}\""
+    private fun escapeLike(value: String) = value.replace("!", "!!").replace("%", "!%").replace("_", "!_")
 
     private data class TableDescription(
         val name: String,
@@ -134,6 +172,8 @@ class AdminDatabaseService(private val databaseManager: DatabaseManager) {
 
     companion object {
         private val IDENTIFIER = Regex("[A-Za-z_][A-Za-z0-9_]*")
+        private val INTEGER_TYPES = setOf(Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT)
+        private val TEXT_TYPES = setOf(Types.CHAR, Types.VARCHAR, Types.LONGVARCHAR, Types.NCHAR, Types.NVARCHAR, Types.LONGNVARCHAR)
     }
 }
 

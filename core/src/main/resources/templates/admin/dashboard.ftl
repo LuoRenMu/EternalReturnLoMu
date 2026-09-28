@@ -32,6 +32,9 @@
         .plugin-upload .field { flex:1; min-width:0; }
         .plugin-actions { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1rem; }
         .plugin-reply { margin-top:1rem; }
+        .database-filter .control { width:auto; min-width:10rem; }
+        .database-filter input.control { flex:1; min-width:12rem; max-width:24rem; }
+        table thead th button { cursor:pointer; }
         @media (max-width:767px) { .plugin-upload { align-items:stretch; flex-direction:column; } }
     </style>
 </head>
@@ -87,13 +90,19 @@
             </section>
 
             <section x-show="view === 'database'" x-cloak>
-                <div class="mb-5 flex items-start justify-between"><div><h2 class="text-2xl font-black text-lomu-900">数据库</h2><p class="mt-1 text-sm text-[#9b7187]">分页查看所有业务表，点击记录进行修改。</p></div><button class="button" @click="loadTables()">刷新表</button></div>
+                <div class="mb-5 flex items-start justify-between"><div><h2 class="text-2xl font-black text-lomu-900">数据库</h2><p class="mt-1 text-sm text-[#9b7187]">文本字段可查询，整数列点击表头排序；点击记录可修改。</p></div><button class="button" @click="loadTables()">刷新表</button></div>
                 <div class="panel min-h-140 md:grid md:grid-cols-[220px_minmax(0,1fr)]">
                     <aside class="flex gap-2 overflow-auto border-b border-lomu-200 bg-gradient-to-b from-lomu-50 to-[#f8f0ff] p-3 md:block md:border-b-0 md:border-r">
                         <template x-for="item in tables" :key="item.name"><button class="mb-1 flex min-w-40 justify-between rounded-2xl px-3 py-2 text-left text-sm hover:bg-white" :class="table?.table === item.name && 'bg-white text-lomu-600 shadow'" @click="selectTable(item.name)"><span x-text="item.name"></span><small x-text="item.rowCount"></small></button></template>
                     </aside>
                     <div class="min-w-0"><div class="panel-head"><h3 class="font-black" x-text="table?.table || '选择数据表'"></h3><span class="pill" x-text="table ? table.total + ' rows' : '0 rows'"></span></div>
-                        <div class="max-h-150 overflow-auto"><table class="w-full whitespace-nowrap text-left text-sm" x-show="table"><thead><tr><template x-for="column in table?.columns || []" :key="column.name"><th class="sticky top-0 bg-lomu-50 px-3 py-2 text-xs text-[#a15f80]"><span x-text="column.name"></span><small x-show="column.primaryKey"> (PK)</small></th></template></tr></thead><tbody><template x-for="(row,index) in table?.rows || []" :key="index"><tr class="cursor-pointer border-t border-lomu-100 hover:bg-lomu-50" @click="openEditor(row)"><template x-for="column in table.columns" :key="column.name"><td class="max-w-80 overflow-hidden text-ellipsis px-3 py-2" x-text="displayValue(row[column.name])"></td></template></tr></template></tbody></table><div class="grid min-h-60 place-items-center text-[#9b7187]" x-show="!table">请选择左侧数据表</div></div>
+                        <div class="database-filter flex flex-wrap items-center gap-2 border-b border-lomu-100 p-3" x-show="table">
+                            <label class="text-xs text-[#9b7187]" for="database-filter-column">文本查询</label>
+                            <select id="database-filter-column" class="control" x-model="filterColumn" :disabled="!textColumns.length" @change="applyFilter()"><option value="">选择字段</option><template x-for="column in textColumns" :key="column.name"><option :value="column.name" x-text="column.name"></option></template></select>
+                            <input class="control" type="search" x-model="filterValue" :disabled="!filterColumn" @input.debounce.300ms="applyFilter()" @keydown.enter.prevent="applyFilter()" placeholder="输入关键词（包含匹配）" aria-label="查询关键词">
+                            <button class="button" x-show="filterColumn || filterValue || sortColumn" @click="filterColumn = ''; filterValue = ''; sortColumn = ''; sortDirection = 'asc'; applyFilter()">清除筛选和排序</button>
+                        </div>
+                        <div class="max-h-150 overflow-auto"><table class="w-full whitespace-nowrap text-left text-sm" x-show="table"><thead><tr><template x-for="column in table?.columns || []" :key="column.name"><th class="sticky top-0 bg-lomu-50 px-3 py-2 text-xs text-[#a15f80]"><button x-show="isIntegerColumn(column)" type="button" class="font-bold" @click="toggleSort(column)" :title="'按 ' + column.name + ' 排序'" :aria-label="'按 ' + column.name + ' 排序'" x-text="column.name + (sortColumn === column.name ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : ' ↕')"></button><span x-show="!isIntegerColumn(column)" x-text="column.name"></span><small x-show="column.primaryKey"> (PK)</small></th></template></tr></thead><tbody><template x-for="(row,index) in table?.rows || []" :key="index"><tr class="cursor-pointer border-t border-lomu-100 hover:bg-lomu-50" @click="openEditor(row)"><template x-for="column in table.columns" :key="column.name"><td class="max-w-80 overflow-hidden text-ellipsis px-3 py-2" x-text="displayValue(row[column.name])"></td></template></tr></template></tbody></table><div class="grid min-h-60 place-items-center text-[#9b7187]" x-show="!table">请选择左侧数据表</div></div>
                         <div class="flex items-center justify-end gap-3 border-t border-lomu-100 p-3"><button class="button" :disabled="!table || table.offset === 0" @click="previousPage()">上一页</button><span x-text="pageLabel"></span><button class="button" :disabled="!table || table.offset + table.limit >= table.total" @click="nextPage()">下一页</button></div>
                     </div>
                 </div>

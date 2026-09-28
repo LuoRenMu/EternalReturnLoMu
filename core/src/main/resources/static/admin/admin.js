@@ -67,6 +67,11 @@ document.addEventListener("alpine:init", () => {
         table: null,
         offset: 0,
         limit: 50,
+        filterColumn: "",
+        filterValue: "",
+        sortColumn: "",
+        sortDirection: "asc",
+        tableRequestId: 0,
         editOpen: false,
         editRow: null,
         editValues: {},
@@ -241,12 +246,53 @@ document.addEventListener("alpine:init", () => {
         },
 
         async selectTable(name, offset = 0) {
-            try {
-                this.offset = offset;
-                this.table = await this.api(`/api/admin/database/tables/${encodeURIComponent(name)}?limit=${this.limit}&offset=${offset}`);
-            } catch (error) {
-                this.notify(error.message, true);
+            if (this.table?.table !== name) {
+                this.filterColumn = "";
+                this.filterValue = "";
+                this.sortColumn = "";
+                this.sortDirection = "asc";
             }
+            const requestId = ++this.tableRequestId;
+            const query = new URLSearchParams({ limit: String(this.limit), offset: String(offset) });
+            if (this.filterColumn && this.filterValue.trim()) {
+                query.set("filterColumn", this.filterColumn);
+                query.set("filter", this.filterValue.trim());
+            }
+            if (this.sortColumn) {
+                query.set("sortColumn", this.sortColumn);
+                query.set("sortDirection", this.sortDirection);
+            }
+            try {
+                const page = await this.api(`/api/admin/database/tables/${encodeURIComponent(name)}?${query}`);
+                if (requestId !== this.tableRequestId) return;
+                this.offset = offset;
+                this.table = page;
+            } catch (error) {
+                if (requestId === this.tableRequestId) this.notify(error.message, true);
+            }
+        },
+
+        isIntegerColumn(column) {
+            return [-6, 5, 4, -5].includes(column.jdbcType);
+        },
+
+        isTextColumn(column) {
+            return [1, 12, -1, -15, -9, -16].includes(column.jdbcType);
+        },
+
+        get textColumns() {
+            return (this.table?.columns || []).filter((column) => this.isTextColumn(column));
+        },
+
+        applyFilter() {
+            if (this.table) this.selectTable(this.table.table, 0);
+        },
+
+        toggleSort(column) {
+            if (!this.table || !this.isIntegerColumn(column)) return;
+            this.sortDirection = this.sortColumn === column.name && this.sortDirection === "asc" ? "desc" : "asc";
+            this.sortColumn = column.name;
+            this.selectTable(this.table.table, 0);
         },
 
         get pageLabel() {
