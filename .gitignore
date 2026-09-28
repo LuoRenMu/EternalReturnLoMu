@@ -56,3 +56,4 @@ bin/
 /plugins/*.jar
 /plugins/.cache/
 /plugins/plugin-state.properties
+/data/image-integrity.properties

@@ -7,6 +7,7 @@ import cn.luorenmu.api.resourcesRouting
 import cn.luorenmu.common.util.DatabaseManager
 import cn.luorenmu.common.util.DatabaseBackend
 import cn.luorenmu.common.util.PathUtils
+import cn.luorenmu.common.util.ResourceCheckUtil
 import cn.luorenmu.command.plugin.CommandPlugins
 import cn.luorenmu.request.ApiKeyConfig
 import cn.luorenmu.repository.NewsRepository
@@ -59,6 +60,11 @@ fun Application.moduleCore(adapter: Adapter, serverPort: Int = ConfigFile.config
     AdminAccessToken.configure(ConfigFile.config.adminToken)
     println("管理后台访问令牌已从 config.json 加载")
     println("管理后台地址: $HTTP_SERVER_URL/")
+    runCatching { ResourceCheckUtil.checkExistingImages() }
+        .onSuccess { result ->
+            logger.info { "图片资源检查完成: 校验 ${result.checked}，跳过 ${result.skipped}，损坏 ${result.invalid}" }
+        }
+        .onFailure { error -> logger.warn(error) { "图片资源启动检查失败，后续按需下载时仍会校验" } }
     CommandPlugins.initialize(adapter, PathUtils.pathResolve(paths = arrayOf("plugins")))
     ApiKeyConfig.apiKeyMap = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
     configureRouting()

@@ -31,10 +31,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.EOFException
 import java.io.IOException
-import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-import java.util.UUID
 
 /**
  *
@@ -226,36 +223,20 @@ object RequestManager {
 
         withKeyLock("resource:$target") {
             if (ResourceCheckUtil.checkResource(target)) return@withKeyLock
-            Files.createDirectories(target.parent)
-            val temporary = target.resolveSibling(".${target.fileName}.${UUID.randomUUID()}.part")
             var lastException: Exception? = null
-            try {
-                repeat(maxRetries) { attempt ->
-                    try {
-                        val readBytes = call(api).readBytes()
-                        require(readBytes.isNotEmpty()) { "Downloaded resource is empty: $target" }
-                        withContext(Dispatchers.IO) {
-                            Files.write(temporary, readBytes)
-                            try {
-                                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-                            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
-                                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING)
-                            }
-                        }
-                        ResourceCheckUtil.markResourceValid(target)
-                        return@withKeyLock
-                    } catch (e: Exception) {
-                        lastException = e
-                        Files.deleteIfExists(temporary)
-                        log.warn { "callStream retry ${attempt + 1}/$maxRetries: $target => $e" }
-                    }
+            repeat(maxRetries) { attempt ->
+                try {
+                    val readBytes = call(api).readBytes()
+                    withContext(Dispatchers.IO) { ResourceCheckUtil.installVerified(target, readBytes) }
+                    return@withKeyLock
+                } catch (e: Exception) {
+                    lastException = e
+                    log.warn { "callStream retry ${attempt + 1}/$maxRetries: $target => $e" }
                 }
-                ResourceCheckUtil.markResourceInvalid(target)
-                log.error(lastException) { "Failed to download file: $target from ${api.baseUrl}${api.url}" }
-                throw checkNotNull(lastException)
-            } finally {
-                Files.deleteIfExists(temporary)
             }
+            ResourceCheckUtil.markResourceInvalid(target)
+            log.error(lastException) { "Failed to download file: $target from ${api.baseUrl}${api.url}" }
+            throw checkNotNull(lastException)
         }
     }
 }
