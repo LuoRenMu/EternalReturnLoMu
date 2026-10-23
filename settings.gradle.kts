@@ -12,3 +12,6 @@ include("plugins:player")
 include("plugins:tier")
 include("plugins:news")
 include("plugins:query-statistics")
+
+include("qq-rich-media")
+include("plugins:test")

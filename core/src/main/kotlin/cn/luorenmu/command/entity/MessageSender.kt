@@ -14,6 +14,11 @@ data class MessageSender(
     var message: String,
     var plainText:String,
 ){
+    /** Verified positive identity from a QQ event; null means unavailable, NOT a normal member.
+     * Kept outside the primary constructor to preserve existing plugin constructor/copy ABI.
+     */
+    var qqGroupMemberRole: String? = null
+
     init {
         plainText = plainText.trim()
     }
