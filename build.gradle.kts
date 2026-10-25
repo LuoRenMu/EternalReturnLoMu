@@ -24,9 +24,10 @@ version = lomuCoreVersion
 
 allprojects {
     repositories {
+        // Prefer the upstream repository: a mirror's 5xx aborts resolution before fallback.
+        mavenCentral()
         maven(url = "https://maven.aliyun.com/repository/public/")
         maven(url = "https://jitpack.io")
-        mavenCentral()
     }
 }
 
