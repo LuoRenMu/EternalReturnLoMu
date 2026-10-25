@@ -19,6 +19,15 @@ class TypefaceResolver(
     private val cache = ConcurrentHashMap<Long, Typeface>()
     private val families = config.families.toTypedArray()
     private val languages = config.languages.toTypedArray()
+    private val koreanTypefaces: Pair<Typeface, Typeface> by lazy {
+        val bytes = checkNotNull(javaClass.getResourceAsStream("/fonts/NotoSansKR-wght.ttf")) {
+            "Bundled Noto Sans KR font is missing"
+        }.use { it.readBytes() }
+        val regular = checkNotNull(fontManager.makeFromData(Data.makeFromBytes(bytes))) {
+            "Bundled Noto Sans KR font cannot be loaded"
+        }
+        regular to regular.makeClone(FontVariation("wght", 700f))
+    }
 
     // System fallback glyph advances differ across hosts (e.g. DejaVu Sans makes a 14px RP value 107px).
     // Bundle Latin glyphs so fixed-width numeric columns measure and render identically everywhere.
@@ -37,6 +46,10 @@ class TypefaceResolver(
         return cache.computeIfAbsent(key) {
             if (codePoint in 32..126) {
                 return@computeIfAbsent if (style.weight >= FontStyle.BOLD.weight) asciiTypefaces.second else asciiTypefaces.first
+            }
+            if (Character.UnicodeScript.of(codePoint) == Character.UnicodeScript.HANGUL) {
+                val bundled = if (style.weight >= FontStyle.BOLD.weight) koreanTypefaces.second else koreanTypefaces.first
+                if (bundled.getUTF32Glyph(codePoint).toInt() != 0) return@computeIfAbsent bundled
             }
             fontManager.matchFamiliesStyleCharacter(families, style, languages, codePoint)
                 ?: fontManager.matchFamiliesStyle(families, style)

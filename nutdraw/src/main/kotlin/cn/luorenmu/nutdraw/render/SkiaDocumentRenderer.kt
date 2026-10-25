@@ -35,9 +35,19 @@ class SkiaDocumentRenderer(
     private val lineChartRenderer = LineChartRenderer(fontResolver)
     suspend fun render(root: NutNode, output: Path, width: Int, height: Int): Path = withContext(Dispatchers.IO) {
         output.parent?.let(Files::createDirectories)
+        val layout = layoutEngine.layout(root, width.toFloat(), height.toFloat())
+        val remoteSources = linkedSetOf<String>()
+        fun collect(box: LayoutBox) {
+            listOfNotNull(box.node.style.backgroundImage, (box.node as? NutImage)?.source)
+                .filter { it.startsWith("https://") || it.startsWith("http://") }
+                .forEach(remoteSources::add)
+            box.children.forEach(::collect)
+        }
+        collect(layout)
+        val unavailable = imageLoader.prefetch(remoteSources)
         Surface.makeRasterN32Premul(width, height + NUTDRAW_FOOTER_HEIGHT).use { surface ->
             surface.canvas.clear(root.style.background)
-            draw(surface.canvas, layoutEngine.layout(root, width.toFloat(), height.toFloat()))
+            draw(surface.canvas, layout, unavailable)
             drawFooter(surface.canvas, width, height)
             Files.write(output, checkNotNull(surface.makeImageSnapshot().encodeToData(EncodedImageFormat.PNG)).bytes)
         }
@@ -75,7 +85,7 @@ class SkiaDocumentRenderer(
         canvas.restore()
     }
 
-    private fun draw(canvas: Canvas, box: LayoutBox) {
+    private fun draw(canvas: Canvas, box: LayoutBox, unavailable: Set<String>) {
         val style = box.node.style
         val shape = style.cornerRadii?.let { radii ->
             RRect.makeComplexLTRB(box.bounds.left, box.bounds.top, box.bounds.right, box.bounds.bottom, floatArrayOf(
@@ -84,7 +94,7 @@ class SkiaDocumentRenderer(
             ))
         } ?: RRect.makeXYWH(box.bounds.left, box.bounds.top, box.bounds.width, box.bounds.height, style.borderRadius)
         if (Color.getA(style.background) > 0) canvas.drawRRect(shape, Paint().apply { color = style.background; isAntiAlias = true })
-        style.backgroundImage?.let { source ->
+        style.backgroundImage?.takeUnless { it in unavailable }?.let { source ->
             imageLoader.load(source)?.use { image ->
                 canvas.save()
                 canvas.clipRRect(shape, true)
@@ -95,9 +105,9 @@ class SkiaDocumentRenderer(
         if (style.border.width > 0f) canvas.drawRRect(shape, Paint().apply { color = style.border.color; mode = PaintMode.STROKE; strokeWidth = style.border.width; isAntiAlias = true })
         when (val node = box.node) {
             is NutText -> drawText(canvas, node, box)
-            is NutImage -> drawImage(canvas, node, box)
+            is NutImage -> if (node.source !in unavailable) drawImage(canvas, node, box)
             is NutLineChart -> lineChartRenderer.draw(canvas, node, box.bounds)
-            is NutElement -> box.children.forEach { draw(canvas, it) }
+            is NutElement -> box.children.forEach { draw(canvas, it, unavailable) }
         }
     }
 
