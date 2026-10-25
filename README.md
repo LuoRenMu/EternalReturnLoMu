@@ -1,213 +1,102 @@
 # EternalReturnLoMu
 
-<div style="text-align: center">
-<img src="docs/images/LoMu-logo.png" style="width: 30%" alt="lomu">
-</div>
+<p align="center">
+  <img src="docs/images/LoMu-logo.png" width="180" alt="EternalReturnLoMu">
+</p>
 
-永恒轮回战绩查询机器人，支持 QQ 官方机器人和 OneBot 11。项目提供玩家战绩、角色数据、段位统计、兑换码与查询统计等命令，并附带带令牌认证的 Web 管理后台。
+永恒轮回数据查询机器人，支持 **QQ 官方机器人** 与 **OneBot 11**。以图片展示玩家战绩、对局结算、角色与装备分析，并提供群宠追踪、B站直播通知、活动兑换码及 Web 管理后台。
 
-## 命令效果
+## 玩家战绩与对局
 
-以下图片均由真实运行环境和实时接口数据生成，角色强度与统计数值会随版本更新发生变化。
+- **玩家查询**：展示段位、RP、近期对局、角色、装备、伤害和 KDA，标注服务器及对局 ID；RP 涨跌用不同颜色区分。
+- **对局详情**：展示各队伍的结算数据，按队伍区分颜色，焦点玩家昵称突出为红色；包含五件装备、武器、天赋和战术技能。
+- **玩家别名**：支持个人与群内别名、自身昵称绑定、别名列表及删除；QQ 提供 Markdown 操作按钮。
+- **查询统计**：记录玩家累计被查询次数及个人查询次数；热门玩家会获得额外评价文案。
+- **段位统计**：查看服务器段位分布及永恒、半神分段数据。
 
-### `/查询角色 席琳`
+## 角色与装备分析
 
-展示角色评级、武器流派、技能加点、出装、潜能与高分玩家。
+- **角色详情**：按模式、段位和武器筛选，展示角色表现、出装及高分玩家。
+- **技能推荐**：展示前两套技能方案、技能图标和优先升满顺序，不堆叠逐级加点步骤。
+- **多武器选择**：角色拥有多种武器时，QQ 显示武器选择按钮，将对应命令填入输入框。
+- **角色排行**：覆盖全部角色与武器组合，展示排名、胜率等统计，缺少数据时明确提示。
+- **装备查询**：支持装备名称、拼音及 ID，展示属性、品质背景、合成树与高使用率角色。
 
-![查询角色 席琳](docs/images/command-character-xilin.png)
+## 群宠战绩追踪
 
-### `/角色数据`
+发现订阅玩家的新对局后，向群内主动发送最新一局战绩图片，并附带：
 
-紧凑展示当前段位下全部角色及武器的评级、胜率和平均伤害。
+> 主人，您的宠物"xxx"刚刚进行了一场对局喵~
 
-![角色数据](docs/images/command-character-stats.png)
+- 每群最多订阅 **3 位玩家**，每次有效 **7 天**，到期自动停止；重复添加不延长有效期。
+- 订阅前校验昵称并确认玩家存在；首次记录当前对局作为基线，不补发历史战绩。
+- 根据玩家活跃程度调整检查间隔，同一玩家跨群共享查询与图片生成，避免重复请求。
+- 一次发现多场新对局时只发送最新一局；查询或发送失败保留订阅和进度，退避后重试。
+- 群主关闭主动消息或权限无法确认时暂停检查，恢复权限后继续；玩家被明确确认不存在时停止对应任务。
+- 持久化记录成功推送次数，取消订阅不清空累计统计。
 
-### `/查询玩家 <玩家名称>`
+群宠推送仅支持 **QQ 官方机器人群聊**，需要开启群主动消息权限。
 
-![查询玩家](docs/images/search2.png)
+## B站直播通知
 
-![玩家段位](docs/images/search1.png)
+- 在指定 Eternal Return 群申领权限后，由群主订阅直播间，并检查群主动消息权限。
+- 每群和每位用户各限 **1 个直播间**；同一用户可在多个自己管理的群使用同一个房间。
+- 首次订阅正在直播的房间会立即排入补发任务，不等待常规轮询；未开播或轮播不误报开播。
+- 自动发送开播与下播提醒，封面和文字合并为一条消息，展示 UP 主、直播标题、直播时长及房间号，不附带 HTTP 链接。
+- 同一直播间跨群共享查询，按直播场次去重，重载或状态抖动不会反复提醒；成功开播／下播通知均计入累计推送次数。
 
-### `/段位统计`
+直播通知仅支持 **QQ 官方机器人群聊**。
 
+## 活动、兑换码与最新更新
+
+- **官方文章分析**：定时扫描官方文章，结合 AI 识别活动和兑换码，绑定文章 ID 并按兑换码去重。
+- **活动与兑换码查询**：展示有效内容；玩家查询会在兑换码首次发现当天和到期最后一天附带文字提醒。
+- **兑换码主动提醒**：向开启主动消息的群发送首次发现和即将结束的兑换码，避免重复推送。
+- **最新补丁摘要**：只分析最新一篇官方更新，角色调整注明具体角色，并展示正文中的实际图片。
+- **更新图片缓存**：按文章 ID 持久化保存摘要图片，重复查询可直接复用；保留“更新公告”“更新日志”别名。
+
+## Web 管理后台
+
+- **运行状态**：查看服务时间、运行时长、CPU、内存、Java、适配器及实际数据库状态。
+- **插件管理**：启停、上传、热更新和重载独立插件，配置插件停用时的回复。
+- **命令调试**：查看当前启用命令、填写参数、预览文本和图片结果。
+- **数据库管理**：浏览与编辑数据，文本字段支持筛选，整数列支持排序。
+- **异常记录**：集中查看命令及运行异常；管理页面与 API 使用令牌保护。
+- **QQ 自定义菜单**：读取、编辑、排序、预览和清空 C2C 菜单，支持填入消息、链接、二级菜单和开关。
+- **QQ 指令面板**：管理群聊、单聊、文字子频道、频道私信四种场景的面板，配置元素、备注、管理员限制及群／用户生效范围。
+- **操作确认**：线上菜单覆盖、面板修改和删除均需确认；读取和预览不会自动发布配置。
+
+QQ 菜单与面板管理仅在 QQ 适配器连接时可用，实际能力受 QQ 接口权限及客户端支持范围限制。
+
+## 跨平台与运行保障
+
+- 支持 Windows x64、Linux x64 图片生成，包含中文／韩文混排和固定尺寸数字排版支持。
+- 图片资源首次启动检查、下载后完整性校验、校验结果持久化及损坏资源按需恢复。
+- 图片缓存、资源预取及并发请求合并，减少重复下载和渲染等待。
+- 支持 PostgreSQL 与 SQLite 持久化，订阅、提醒与推送进度在重启后保留。
+- 心跳检查覆盖机器人与数据服务状态，异常时可通过 SMTP 邮件告警。
+- OneBot 对不支持的 QQ Markdown 元素提供文本降级；QQ 专属主动推送和菜单能力不会在 OneBot 中冒充可用。
+
+## 功能示例
+
+示例仅展示功能效果，实际数据与样式以当前版本为准。
+
+<details>
+<summary>角色详情与角色排行</summary>
+
+![角色详情](docs/images/command-character-xilin.png)
+![角色排行](docs/images/command-character-stats.png)
+
+</details>
+
+<details>
+<summary>玩家战绩与段位统计</summary>
+
+![玩家战绩](docs/images/search2.png)
 ![段位统计](docs/images/tier.png)
 
-## OneBot 部署教程
+</details>
 
-DAK.GG 请求端点、参数及完整传输对象字段见 [DAK.GG API 与传输对象](docs/dakgg-api.md)。
+## 许可证
 
-### 1. 准备环境
-
-- 安装 Java 17 或更高版本，并确认 `java -version` 可以正常执行。
-- 准备兼容 OneBot 11 的 QQ 实现，例如 NapCatQQ。
-- 从 GitHub Actions 下载并解压 `onebot-3.0.0.zip`；带 `v*` 标签的版本也会附加到对应 GitHub Release。也可以在项目根目录执行：
-
-```powershell
-.\gradlew.bat test stageDistributions
-```
-
-Linux/macOS 使用：
-
-```bash
-./gradlew test stageDistributions
-```
-
-本地构建结果位于 `build/distributions/onebot`。
-
-### 2. 检查目录结构
-
-将完整 OneBot 构建产物放在同一目录，不要只复制主程序 JAR：
-
-```text
-onebot/
-├─ onebot-3.0.0.jar
-└─ plugins/
-   ├─ character-1.0.0.jar
-   ├─ news-1.0.0.jar
-   ├─ player-1.0.0.jar
-   ├─ query-statistics-1.0.0.jar
-   └─ tier-1.0.0.jar
-```
-
-`config.json`、SQLite 数据库、日志和渲染图片都会以主程序 JAR 所在目录为基准生成。
-
-### 3. 首次启动
-
-进入 JAR 所在目录后执行：
-
-```bash
-java -jar onebot-3.0.0.jar
-```
-
-首次启动会在 JAR 同级创建默认 `config.json`。此时 OneBot 地址尚未配置，机器人会跳过 QQ 连接，但管理后台仍会启动。编辑配置后重启程序即可。
-
-OneBot 管理后台使用 `config.json` 的 `port` 字段，默认是 `8080`。也可以仅为本次启动临时覆盖：
-
-```bash
-java -jar onebot-3.0.0.jar --port=5752
-```
-
-如果端口被占用，程序会自动继续尝试后续端口，请以控制台打印的实际地址为准。
-
-### 4. 配置 OneBot 11 服务
-
-在 OneBot 实现中启用以下两个服务：
-
-1. HTTP API 服务，用于机器人主动发送消息。
-2. 正向 WebSocket 服务，用于机器人接收群消息事件。
-
-例如将 HTTP API 监听在 `127.0.0.1:3000`，正向 WebSocket 监听在 `127.0.0.1:3001`。端口可以自行修改，但必须与 `config.json` 保持一致。
-
-当前程序只从配置中读取 HTTP 与 WebSocket 地址；OneBot 端的 HTTP/WS Access Token 请保持为空。`adminToken` 是 Web 管理后台令牌，与 OneBot Access Token 无关。
-
-### 5. 配置 `config.json`
-
-下面是可直接修改的完整示例，请替换令牌、地址和数据库密码，不要把真实密钥提交到 Git：
-
-```json
-{
-  "port": 8080,
-  "adminToken": "change-this-admin-token",
-  "apiKey": "",
-  "other": {
-    "one_bot_http": "http://127.0.0.1:3000",
-    "one_bot_ws": "ws://127.0.0.1:3001"
-  },
-  "postgres": {
-    "host": "127.0.0.1",
-    "port": 5432,
-    "database": "bot_db",
-    "user": "postgres",
-    "password": "change-this-password",
-    "schema": "public"
-  },
-  "ai": {
-    "apiKey": "",
-    "model": "Qwen/Qwen3-VL-30B-A3B-Thinking",
-    "baseUrl": "https://api.siliconflow.cn/v1"
-  }
-}
-```
-
-字段说明：
-
-| 字段 | OneBot 部署说明 |
-| --- | --- |
-| `adminToken` | Web 管理后台登录令牌，不能为空，建议使用足够长的随机字符串。 |
-| `apiKey` | 永恒轮回官方 Open API Key；不使用相关接口时可以留空。 |
-| `other.one_bot_http` | OneBot 11 HTTP API 根地址，必须包含 `http://` 或 `https://`。 |
-| `other.one_bot_ws` | OneBot 11 正向 WebSocket 地址，必须包含 `ws://` 或 `wss://`。 |
-| `postgres` | QQ 官方机器人使用的 PostgreSQL 配置；OneBot 模式默认使用本地 SQLite，因此无需额外部署 PostgreSQL。 |
-| `ai` | 可选 AI 服务配置；不使用 AI 功能时将 `apiKey` 留空。 |
-| `port` | 服务端口；QQ 官方机器人和 OneBot 管理后台统一读取此字段，默认是 `8080`。 |
-
-`other` 是一个键值对象。部署 OneBot 时请保留 `one_bot_http` 和 `one_bot_ws`；QQ 官方机器人使用的 `app_id`、`secret`、`token` 不需要填写。
-
-### 6. 启动并验证
-
-重启 OneBot 实现，再启动机器人：
-
-```bash
-java -jar onebot-3.0.0.jar
-```
-
-控制台出现 OneBot 连接成功、插件加载完成和管理后台地址后，访问：
-
-```text
-http://127.0.0.1:8080/
-```
-
-输入 `config.json` 中的 `adminToken` 登录。在管理后台可以查看运行状态、管理插件，并在 Debug 页面选择当前可用命令进行测试。
-
-在 QQ 群中发送以下命令验证消息收发：
-
-```text
-/帮助
-/查询角色 席琳
-/角色数据
-```
-
-OneBot 不支持 QQ 官方机器人的 Markdown 消息元素，因此程序会自动转为保留换行的普通文本；图片命令不受影响。
-
-### 7. 运行时文件
-
-```text
-onebot/
-├─ config.json
-├─ data/lomu.db
-├─ logs/
-├─ resources/render/
-├─ plugins/
-└─ onebot-3.0.0.jar
-```
-
-- `data/lomu.db`：OneBot 本地 SQLite 数据库。
-- `resources/render`：命令生成的图片。
-- `plugins`：命令插件及插件状态文件。
-- `logs`：运行日志和错误日志。
-
-更新版本前建议备份 `config.json`、`data` 和 `plugins/plugin-state.properties`。
-
-### 常见问题
-
-**启动后提示“OneBot 地址未配置”**
-
-检查 `other.one_bot_http` 和 `other.one_bot_ws` 是否同时存在，修改后需要重启机器人。
-
-**提示“请先启动 OneBot 服务”或连接失败**
-
-确认 OneBot 实现已经登录 QQ，HTTP API 与正向 WebSocket 均已启用，并检查协议、IP、端口是否完全一致。
-
-**群消息没有响应**
-
-确认 OneBot 实现确实上报群消息事件、机器人 QQ 在目标群中，并先使用 `/帮助` 测试。再到管理后台检查插件是否启用以及异常日志。
-
-**无法打开管理后台**
-
-查看启动日志中的实际端口。远程部署时还需检查防火墙；不要将管理后台直接暴露到公网。
-
-## 相关链接
-
-- 仓库：<https://github.com/LuoRenMu/EternalReturnLoMu>
-- QQ 群：`654087758`
-- 原始项目：[onebot-lomu](https://github.com/LuoRenMu/onebot-lomu)
+本项目自有代码采用 [GNU AGPL-3.0-or-later](LICENSE)。第三方依赖、字体及前端资源保留各自许可证，见 [第三方声明](THIRD_PARTY_NOTICES.md)。
