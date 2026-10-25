@@ -33,6 +33,16 @@ allprojects {
 subprojects {
     group = rootProject.group
     version = if (path.startsWith(":plugins:")) lomuPluginVersion else lomuCoreVersion
+    tasks.withType<Jar>().configureEach {
+        filesMatching(listOf("META-INF/LICENSE-AGPL-3.0.txt", "META-INF/THIRD_PARTY_NOTICES.md")) {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+        from(rootProject.file("LICENSE")) {
+            into("META-INF")
+            rename { "LICENSE-AGPL-3.0.txt" }
+        }
+        from(rootProject.file("THIRD_PARTY_NOTICES.md")) { into("META-INF") }
+    }
 }
 
 dependencies {

@@ -1,4 +1,4 @@
-name: Build OneBot distribution
+name: Build and release distributions
 
 on:
   workflow_dispatch:
@@ -9,29 +9,43 @@ on:
         type: string
   pull_request:
   push:
-    branches:
-      - master
-    tags:
-      - "v*"
+    branches: [master]
+    tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: build-distributions-${{ github.ref }}
+  group: build-distributions-${{ github.ref }}-${{ inputs.release_tag }}
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Test and build
+    name: Test and build distributions
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
+    outputs:
+      core: ${{ steps.versions.outputs.core }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: codex_test
+          POSTGRES_PASSWORD: codex_test
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U codex_test -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      GROUP_PET_PG_TEST_URL: jdbc:postgresql://127.0.0.1:5432/postgres?user=codex_test&password=codex_test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.LOMU }}
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -39,51 +53,85 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Make Gradle wrapper executable
-        run: chmod +x gradlew
 
       - name: Read versions
         id: versions
         shell: bash
         run: |
-          echo "core=$(grep '^lomuCoreVersion=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+          chmod +x gradlew
+          core=$(grep '^lomuCoreVersion=' gradle.properties | cut -d= -f2)
+          echo "core=$core" >> "$GITHUB_OUTPUT"
 
-      - name: Test and build OneBot with plugins
-        run: ./gradlew clean test :onebot:jar stageCommandPlugins verifyVersions --stacktrace
+      - name: Verify Web editor behavior
+        run: node --test core/src/test/js/qq-menu-panel.test.cjs
 
-      - name: Package OneBot distribution
-        shell: bash
+      - name: Test and build both adapters and plugins
+        run: ./gradlew clean test :qgbot:jar :onebot:jar stageCommandPlugins verifyVersions --max-workers=2 -Pkotlin.compiler.execution.strategy=in-process -Dorg.gradle.jvmargs=-Xmx2g --stacktrace
+
+      - name: Package licensed distributions and checksums
         run: |
-          package_dir="build/release/onebot-${{ steps.versions.outputs.core }}"
-          mkdir -p "$package_dir/plugins"
-          cp "onebot/build/libs/onebot-${{ steps.versions.outputs.core }}.jar" "$package_dir/"
-          cp build/command-plugins/*.jar "$package_dir/plugins/"
-          test -f "$package_dir/onebot-${{ steps.versions.outputs.core }}.jar"
-          test "$(find "$package_dir/plugins" -maxdepth 1 -type f -name '*.jar' | wc -l)" -gt 0
-          cd build/release
-          zip -r "onebot-${{ steps.versions.outputs.core }}.zip" "onebot-${{ steps.versions.outputs.core }}"
+          python -m unittest discover -s tools/tests
+          python tools/package_distributions.py
 
-      - name: Upload OneBot archive
+      - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
-          name: onebot-${{ steps.versions.outputs.core }}
-          path: build/release/onebot-${{ steps.versions.outputs.core }}.zip
+          name: distributions-${{ steps.versions.outputs.core }}
+          path: |
+            build/release/*.zip
+            build/release/SHA256SUMS
           if-no-files-found: error
           compression-level: 0
+          retention-days: 7
 
-      - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != ''
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != ''
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
+
+      - name: Download verified distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: distributions-${{ needs.build.outputs.core }}
+          path: build/release
+
+      - name: Publish release assets
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          CORE_VERSION: ${{ needs.build.outputs.core }}
         run: |
-          archive="build/release/onebot-${{ steps.versions.outputs.core }}.zip"
+          set -euo pipefail
+          [[ "$RELEASE_TAG" == "v$CORE_VERSION" ]] || { echo "Tag and core version mismatch"; exit 1; }
+          tagged_sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_TAG" --jq .sha)
+          [[ "$tagged_sha" == "$(git rev-parse HEAD)" ]] || { echo "Tag/source mismatch"; exit 1; }
+          (cd build/release && sha256sum --check SHA256SUMS)
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "$archive" --clobber
+            gh release upload "$RELEASE_TAG" build/release/*.zip build/release/SHA256SUMS --clobber
+          elif [[ -f "docs/releases/$RELEASE_TAG.md" ]]; then
+            gh release create "$RELEASE_TAG" build/release/*.zip build/release/SHA256SUMS --verify-tag --title "$RELEASE_TAG" --notes-file "docs/releases/$RELEASE_TAG.md" --latest
           else
-            gh release create "$RELEASE_TAG" "$archive" --generate-notes --title "$RELEASE_TAG"
+            gh release create "$RELEASE_TAG" build/release/*.zip build/release/SHA256SUMS --verify-tag --title "$RELEASE_TAG" --generate-notes --latest
           fi
