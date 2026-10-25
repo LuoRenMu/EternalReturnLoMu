@@ -28,7 +28,7 @@ import java.time.Instant
 class GroupPetPlugin : CommandPlugin {
     override val id = "group-pet"
     override val name = "群宠战绩订阅"
-    override val version = "1.2.5"
+    override val version = "1.2.7"
     private val databaseManager: DatabaseManager by inject(DatabaseManager::class.java)
     private val repository by lazy {
         GroupPetRepository(PathUtils.pathResolve(paths = arrayOf("data", "group-pet.db")), databaseManager)
@@ -69,7 +69,7 @@ class GroupPetPlugin : CommandPlugin {
                     BackgroundPolls.awaitNext(BackgroundPolls.Kind.PLAYER)
                     try {
                         val count = service.tick()
-                        if (count > 0) log.info { "群宠新对局已发送：$count 条" }
+                        if (count > 0) log.info { "群宠主动消息已发送：$count 条" }
                     } catch (error: Exception) {
                         currentCoroutineContext().ensureActive()
                         log.warn { "群宠扫描失败：${error.javaClass.simpleName}" }

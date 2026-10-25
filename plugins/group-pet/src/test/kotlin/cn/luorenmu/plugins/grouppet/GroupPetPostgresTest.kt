@@ -56,6 +56,100 @@ class GroupPetPostgresTest {
         } finally { manager.close() }
     }
 
+    @Test fun `postgres imports sqlite reminder markers and pending expiry retry without rewriting the source`() = fixture { manager, _, _ ->
+        val path = root.resolve("inactivity.db")
+        val sqlite = GroupPetRepository(path)
+        sqlite.add("group", "member", snapshot(), now)
+        val row = sqlite.list("group").single()
+        assertTrue(sqlite.claim(row, "notifier", now + 120_000))
+        sqlite.finish(row.copy(inactivityMatchId = row.lastMatchId), "notifier")
+        val marked = sqlite.list("group").single()
+        assertTrue(sqlite.claimExpiry(marked, "expiry", row.expiresAt))
+        sqlite.deferExpiry(marked, "expiry", row.expiresAt + 300_000, 1, "到期提醒：IOException")
+        val bytes = Files.readAllBytes(path)
+        val postgres = GroupPetRepository(path, manager)
+        assertEquals(row.lastMatchId, postgres.list("group").single().inactivityMatchId)
+        assertEquals(row.expiresAt, postgres.list("group").single().expiresAt)
+        assertEquals(row.expiresAt + 300_000, postgres.list("group").single().expiryNoticeNextAt)
+        assertContentEquals(bytes, Files.readAllBytes(path))
+        assertEquals(row.lastMatchId, GroupPetRepository(path, manager).list("group").single().inactivityMatchId)
+    }
+
+    @Test fun `postgres expiry queue persists delays guards renewal and completes once`() = fixture { manager, _, _ ->
+        val path = root.resolve("none-expiry.db")
+        val repo = GroupPetRepository(path, manager)
+        repo.add("group", "member", snapshot(), now)
+        val row = repo.list("group").single()
+        val end = row.expiresAt
+        assertTrue(repo.expiredDue(end - 1).isEmpty())
+        val expired = repo.expiredDue(end).single()
+        assertTrue(repo.claimExpiry(expired, "first", end))
+        repo.deferExpiry(expired, "first", end + 300_000, 1, "retry")
+        val restarted = GroupPetRepository(path, manager)
+        assertTrue(restarted.expiredDue(end + 299_999).isEmpty())
+        assertFalse(restarted.claimExpiry(expired, "stale", end + 300_000))
+        val retry = restarted.expiredDue(end + 300_000).single()
+        assertTrue(restarted.claimExpiry(retry, "retry", end + 300_000))
+        assertTrue(restarted.ownsExpiry(retry, "retry", end + 300_000))
+        assertTrue(restarted.completeExpiry(retry, "retry"))
+        assertFalse(restarted.completeExpiry(retry, "retry"))
+        assertTrue(restarted.expiredDue(end + 300_000).isEmpty())
+        repo.add("group", "member", snapshot(), now)
+        val old = repo.expiredDue(end).single()
+        assertTrue(repo.claimExpiry(old, "old-owner", end))
+        assertTrue(repo.add("group", "member", snapshot().copy(latest = PetMatch(999, end, 41)), end))
+        assertFalse(repo.ownsExpiry(old, "old-owner", end))
+        assertFalse(repo.completeExpiry(old, "old-owner"))
+        assertEquals(0, repo.deferExpiry(old, "old-owner", end + 300_000, 1, "stale"))
+        assertEquals(999L, repo.list("group").single().lastMatchId)
+    }
+
+    @Test fun `postgres old schema upgrade rolls back on failed import then preserves existing data on retry`() = fixture { manager, url, schema ->
+        val ddl = checkNotNull(javaClass.getResourceAsStream("/sql/group-pet-postgresql.sql"))
+            .bufferedReader().use { it.readText() }.replace(", inactivity_match_id BIGINT", "")
+            .replace("expiry_notice_next_at BIGINT NOT NULL DEFAULT 0,", "")
+        assertFalse(ddl.contains("inactivity_match_id"))
+        manager.useConnection { c -> c.createStatement().use { sql ->
+            ddl.split(';').map(String::trim).filter(String::isNotEmpty).forEach(sql::execute)
+            sql.execute("""INSERT INTO group_pet(group_id,player_id,nickname,requester_id,last_match_id,last_match_time,next_check_at,expires_at)
+                VALUES ('existing',77,'existing','member',5000000001,$now,$now,${now + 604_800_000})""")
+        } }
+        val path = root.resolve("broken-old-inactivity.db")
+        Class.forName("org.sqlite.JDBC")
+        DriverManager.getConnection("jdbc:sqlite:$path").use { c -> c.createStatement().use { sql ->
+            sql.execute("""CREATE TABLE group_pet(group_id TEXT,player_id INTEGER,nickname TEXT,requester_id TEXT,
+                last_match_id INTEGER,last_match_time INTEGER,next_check_at INTEGER,failures INTEGER,last_error TEXT,expires_at INTEGER)""")
+            sql.execute("INSERT INTO group_pet VALUES ('imported',88,NULL,'member',100,1,2,0,NULL,9999999999999)")
+        } }
+        val bytes = Files.readAllBytes(path)
+        assertFails { GroupPetRepository(path, manager).list("existing") }
+        assertContentEquals(bytes, Files.readAllBytes(path))
+        manager.useConnection { c ->
+            c.metaData.getColumns(null, schema, "group_pet", "inactivity_match_id").use { assertFalse(it.next()) }
+            c.metaData.getColumns(null, schema, "group_pet", "expiry_notice_next_at").use { assertFalse(it.next()) }
+            c.createStatement().use { sql -> sql.executeQuery("SELECT last_match_id FROM group_pet WHERE group_id='existing'").use { r ->
+                assertTrue(r.next()); assertEquals(5_000_000_001L, r.getLong(1))
+            } }
+        }
+        DriverManager.getConnection("jdbc:sqlite:$path").use { c -> c.createStatement().use {
+            it.executeUpdate("UPDATE group_pet SET nickname='fixed' WHERE player_id=88")
+        } }
+        val repo = GroupPetRepository(path, manager)
+        val row = repo.list("existing").single()
+        assertEquals(now + 604_800_000, row.expiresAt)
+        assertTrue(repo.claim(row, "notifier", now))
+        repo.finish(row.copy(inactivityMatchId = row.lastMatchId), "notifier")
+        assertEquals(5_000_000_001L, GroupPetRepository(path, manager).list("existing").single().inactivityMatchId)
+        assertFalse(repo.claim(row, "stale-worker", now), "an old snapshot must not overwrite an acknowledged reminder")
+        assertEquals("fixed", repo.list("imported").single().nickname)
+        // The additive nullable column keeps the original old-plugin query valid after upgrade.
+        DriverManager.getConnection(url).use { c -> c.createStatement().use { sql ->
+            sql.executeQuery("SELECT nickname FROM $schema.group_pet WHERE group_id='existing'").use { r ->
+                assertTrue(r.next()); assertEquals("existing", r.getString(1))
+            }
+        } }
+    }
+
     @Test fun `postgres uses primary database persists bigint data and does not create sqlite`() = fixture { manager, _, _ ->
         val path = root.resolve("legacy.db")
         val first = GroupPetRepository(path, manager)

@@ -121,8 +121,9 @@ class GroupPetServiceTest {
     @Test fun `subscriptions expire at seven days persist and can be subscribed again`() = runBlocking {
         val repository = repo()
         var queries = 0
+        val notices = mutableListOf<Message>()
         val service = GroupPetService(repository, { queries++; snapshot() }, { error("no render") },
-            { _, _ -> error("no send") }, clock, permission = { grantedPermission() })
+            { _, message -> notices += message }, clock, permission = { grantedPermission() })
         val start = clock.millis()
         assertEquals("已将 백수 设为群宠。\n有效期 7 天，到期自动停止轮询，可重新订阅。\n出现新对局后主动发送最新一局\n该功能需要群主打开主动发送消息，否则不生效。\n取消：/群宠 取消 백수", service.subscribe(group, "member", "백수"))
         val expiry = start + Duration.ofDays(7).toMillis()
@@ -135,7 +136,8 @@ class GroupPetServiceTest {
         assertTrue(repository.due(expiry).isEmpty())
         assertFalse(repository.claim(repository.list(group).single(), "expired", expiry))
         clock.advance(Duration.ofDays(1))
-        assertEquals(0, service.tick())
+        assertEquals(1, service.tick())
+        assertContains(assertIs<PlainText>(notices.single()).text, "\"LoMu\"已经暂停")
         assertEquals(1, queries)
         assertTrue(service.list(group).isEmpty())
         service.subscribe(group, "member", "백수")

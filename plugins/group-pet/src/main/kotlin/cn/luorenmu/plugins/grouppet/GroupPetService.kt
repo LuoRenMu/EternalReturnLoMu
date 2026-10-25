@@ -74,6 +74,7 @@ internal class GroupPetService(
                 val owner = UUID.randomUUID().toString()
                 if (!repository.claim(row, owner, clock.millis())) continue
                 var phase = "查询战绩"
+                var inactivityMatchId = row.inactivityMatchId
                 try {
                     if (!repository.owns(row, owner, clock.millis())) continue
                     val access = permissions.getOrPut(row.groupId) { permissionStatus(row.groupId) }
@@ -100,6 +101,17 @@ internal class GroupPetService(
                         withTimeout(60_000) { send(row.groupId, checkNotNull(rendered)) }
                         sent++
                         repository.recordPush(row.groupId, playerId, clock.millis())
+                    } else if (latest != null && latest.id == row.lastMatchId && latest.id != inactivityMatchId) {
+                        // Only fresh, consistent match evidence can establish inactivity; missing/regressed history is not proof.
+                        val notice = PetPollingPolicy.inactivityMessage(snapshot.nickname, latest.startedAt, clock.millis())
+                        if (notice != null) {
+                            if (!repository.owns(row, owner, clock.millis())) continue
+                            phase = "主动发送未游玩提醒"
+                            withTimeout(60_000) { send(row.groupId, notice.toText()) }
+                            inactivityMatchId = latest.id
+                            sent++
+                            repository.recordPush(row.groupId, playerId, clock.millis())
+                        }
                     }
                     val matchTime = if (updated || latest?.id == row.lastMatchId) latest?.startedAt ?: row.lastMatchTime else row.lastMatchTime
                     val now = clock.millis()
@@ -109,6 +121,7 @@ internal class GroupPetService(
                         lastMatchTime = matchTime,
                         nextCheckAt = now + PetPollingPolicy.interval(matchTime, now).toMillis(),
                         failures = 0, lastError = null,
+                        inactivityMatchId = inactivityMatchId,
                     ), owner)
                 } catch (error: Exception) {
                     // All request/send failures retain subscriptions; plugin shutdown cancellation must escape.
@@ -125,10 +138,42 @@ internal class GroupPetService(
                     repository.finish(row.copy(
                         nextCheckAt = now + retryDelay.toMillis(),
                         failures = failures, lastError = "$phase：${error.javaClass.simpleName}".take(100),
+                        inactivityMatchId = inactivityMatchId,
                     ), owner)
                 }
             }
         }
-        sent
+        sent + notifyExpired(permissions)
+    }
+
+    private suspend fun notifyExpired(permissions: MutableMap<String, QQGroupPermissionResult>): Int {
+        var sent = 0
+        for (row in repository.expiredDue(clock.millis())) {
+            currentCoroutineContext().ensureActive()
+            val owner = UUID.randomUUID().toString()
+            if (!repository.claimExpiry(row, owner, clock.millis())) continue
+            try {
+                if (!repository.ownsExpiry(row, owner, clock.millis())) continue
+                val access = permissions.getOrPut(row.groupId) { permissionStatus(row.groupId) }
+                if (access.status != QQGroupPermissionStatus.ENABLED) {
+                    repository.deferExpiry(row, owner, clock.millis() + 300_000, 0, groupPetPermissionNotice(access))
+                    continue
+                }
+                if (!repository.ownsExpiry(row, owner, clock.millis())) continue
+                val notice = "主人，\"LoMu\"已经暂停对您的宠物\"${row.nickname}\"监视，如果还需要可以再跟我说哦。为了\"LoMu\"的身心健康，这是必要的喵！"
+                withTimeout(60_000) { send(row.groupId, notice.toText()) }
+                sent++
+                // Persist completion before optional statistics; completed rows cannot be replayed after restart.
+                repository.completeExpiry(row, owner)
+                repository.recordPush(row.groupId, row.playerId, clock.millis())
+            } catch (error: Exception) {
+                currentCoroutineContext().ensureActive()
+                if (error is CancellationException && error !is TimeoutCancellationException) throw error
+                val failures = if (row.expiryNoticeNextAt == 0L) 1 else (row.failures + 1).coerceAtMost(20)
+                repository.deferExpiry(row, owner, clock.millis() + PetPollingPolicy.retry(failures).toMillis(),
+                    failures, "到期提醒：${error.javaClass.simpleName}")
+            }
+        }
+        return sent
     }
 }

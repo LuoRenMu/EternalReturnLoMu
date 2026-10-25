@@ -17,10 +17,20 @@ internal data class PetSubscription(
     val lastMatchId: Long?, val lastMatchTime: Long?, val nextCheckAt: Long,
     val failures: Int = 0, val lastError: String? = null,
     val expiresAt: Long = 0,
+    val inactivityMatchId: Long? = null,
+    val expiryNoticeNextAt: Long = 0,
 )
 
 internal object PetPollingPolicy {
     val subscriptionDuration: Duration = Duration.ofDays(7)
+    val inactivityThreshold: Duration = Duration.ofDays(3)
+
+    fun inactivityMessage(nickname: String, lastMatchTime: Long?, now: Long): String? {
+        if (lastMatchTime == null || lastMatchTime <= 0 || lastMatchTime > now) return null
+        val elapsed = Duration.ofMillis(now - lastMatchTime)
+        if (elapsed < inactivityThreshold) return null
+        return "主人，您的宠物\"$nickname\"已经${elapsed.toDays()}天${elapsed.toHours() % 24}时${elapsed.toMinutes() % 60}分没有游玩了，您应该关注一下他/她的状态喵~"
+    }
     fun interval(lastMatchTime: Long?, now: Long): Duration {
         val age = lastMatchTime?.let { Duration.ofMillis((now - it).coerceAtLeast(0)) }
             ?: return Duration.ofHours(6)
