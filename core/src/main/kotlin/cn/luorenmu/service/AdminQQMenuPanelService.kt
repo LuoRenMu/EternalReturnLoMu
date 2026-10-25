@@ -98,25 +98,24 @@ class AdminQQMenuPanelService(private val client: QQMenuPanelClient? = null) {
     private fun validatePanel(panel: QQCommandPanel) {
         require(panel.items.size in 1..20) { "指令面板必须包含 1–20 个元素。" }
         require((panel.remark?.length ?: 0) <= 255) { "面板备注不能超过 255 个字符。" }
-        panel.items.forEach {
-            require(it.name.isNotBlank() && it.name.length <= 14) { "面板元素名称不能为空且不能超过 14 个字符（QQ 显示宽度约 7 个汉字）。" }
-            require((it.desc?.length ?: 0) <= 30) { "面板元素描述不能超过 30 个字符。" }
+        panel.items.forEachIndexed { index, it ->
+            validateTextWidth(it.name, 14, "面板第 ${index + 1} 项名称")
+            validateTextWidth(it.desc.orEmpty(), 30, "面板第 ${index + 1} 项描述", required = false)
             require(it.type in setOf("command", "link")) { "面板元素类型必须为 command 或 link。" }
             if (it.type == "link") validateLink(it.link)
             else require(it.link == null) { "指令类型不能同时携带链接。" }
         }
     }
     private fun validateMenu(menu: QQCustomMenu) {
-        // These are application safety bounds, not invented QQ platform limits; QQ remains authoritative.
-        require(menu.items.size <= 20) { "本管理页单次最多提交 20 个一级菜单。" }
-        menu.items.forEach { item ->
-            validateMenuName(item.name)
+        require(menu.items.size <= 10) { "QQ 最多支持 10 个一级菜单。" }
+        menu.items.forEachIndexed { index, item ->
+            validateTextWidth(item.name, 10, "第 ${index + 1} 个一级菜单名称")
             require(item.type in setOf("menu", "send_message", "link", "switch")) { "无效的菜单类型。" }
             when (item.type) {
                 "menu" -> {
-                    require(item.subMenuItems != null && item.subMenuItems.size in 1..20) { "二级菜单必须包含 1–20 个菜单项。" }
-                    item.subMenuItems.forEach {
-                        validateMenuName(it.name)
+                    require(item.subMenuItems != null && item.subMenuItems.size in 1..5) { "二级菜单必须包含 1–5 个菜单项。" }
+                    item.subMenuItems.forEachIndexed { childIndex, it ->
+                        validateTextWidth(it.name, 14, "第 ${index + 1} 个菜单的第 ${childIndex + 1} 个二级菜单名称")
                         require(it.type in setOf("send_message", "link")) { "二级菜单只支持填入消息或链接。" }
                         if (it.type == "link") { validateLink(it.link); require(it.sendMessage == null) { "链接菜单不能同时填入消息。" } }
                         else { validateMessage(it.sendMessage); require(it.link == null) { "消息菜单不能同时指定链接。" } }
@@ -132,7 +131,11 @@ class AdminQQMenuPanelService(private val client: QQMenuPanelClient? = null) {
             }
         }
     }
-    private fun validateMenuName(name: String) = require(name.isNotBlank() && name.length <= 128) { "菜单名称不能为空且不能超过 128 个字符，QQ 可能有更严格限制。" }
+    private fun validateTextWidth(value: String, limit: Int, label: String, required: Boolean = true) {
+        require(!required || value.isNotBlank()) { "$label 不能为空。" }
+        val width = value.codePoints().map { if (it <= 0x7f) 1 else 2 }.sum()
+        require(width <= limit) { "$label 显示宽度为 $width/$limit，超出 QQ 限制；ASCII 算 1，中文等非 ASCII 字符算 2。" }
+    }
     private fun validateMessage(text: String?) = require(!text.isNullOrBlank() && text.length <= 2048) { "待填入消息不能为空或超过 2048 个字符。" }
     private fun validateLink(value: String?) {
         val uri = runCatching { URI(value.orEmpty()) }.getOrNull()

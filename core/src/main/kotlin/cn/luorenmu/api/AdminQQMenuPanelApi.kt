@@ -8,6 +8,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.request.header
+import io.ktor.server.request.httpMethod
 import io.ktor.server.routing.*
 import io.ktor.utils.io.core.readBytes
 import kotlinx.coroutines.CancellationException
@@ -59,12 +60,17 @@ private suspend inline fun <reified T> ApplicationCall.qqAdminAction(block: () -
         respondJson(AdminResponse(data = block()))
     } catch (error: TimeoutCancellationException) {
         currentCoroutineContext().ensureActive()
-        respondJson(AdminResponse<Unit>(ok = false, error = "QQ 接口响应超时。修改结果可能已生效，请先重新读取，不要盲目重复创建。"), HttpStatusCode.GatewayTimeout)
+        val advice = if (request.httpMethod == HttpMethod.Get) "请稍后重新读取。"
+            else "修改结果可能已生效，请先重新读取，不要盲目重复创建。"
+        respondJson(AdminResponse<Unit>(ok = false, error = "QQ 接口响应超时。$advice"), HttpStatusCode.GatewayTimeout)
     } catch (error: CancellationException) { throw error
     } catch (error: QQMenuPanelUnavailable) {
         respondJson(AdminResponse<Unit>(ok = false, error = error.message), HttpStatusCode.ServiceUnavailable)
     } catch (error: QQMenuPanelRemoteFailure) {
-        respondJson(AdminResponse<Unit>(ok = false, error = error.message), HttpStatusCode.BadGateway)
+        val advice = if (error.code == null && request.httpMethod != HttpMethod.Get)
+            "修改结果可能已生效，请先重新读取列表，避免重复创建。" else ""
+        respondJson(AdminResponse<Unit>(ok = false, error = error.message.orEmpty() + advice),
+            if (error.isLimitFailure) HttpStatusCode.BadRequest else HttpStatusCode.BadGateway)
     } catch (_: SerializationException) {
         respondJson(AdminResponse<Unit>(ok = false, error = "配置 JSON 格式或字段不正确，请检查后重试。"), HttpStatusCode.BadRequest)
     } catch (error: IllegalArgumentException) {

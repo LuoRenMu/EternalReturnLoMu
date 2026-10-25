@@ -11,6 +11,6 @@ import cn.luorenmu.command.HelpCommand
 internal class CoreCommandPlugin : CommandPlugin {
     override val id = "core"
     override val name = "核心命令"
-    override val version = "3.0.4"
+    override val version = "3.0.5"
     override val commands = listOf(HelpCommand())
 }

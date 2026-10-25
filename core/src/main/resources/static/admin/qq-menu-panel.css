@@ -3,6 +3,7 @@
 .qq-admin .qq-hint { color:#79536b; font-size:.875rem; line-height:1.65; margin:.4rem 0 .8rem; overflow-wrap:anywhere; }
 .qq-admin .qq-status, .qq-admin .qq-feedback { padding:1rem 1.25rem; margin-bottom:1rem; line-height:1.6; }
 .qq-admin .qq-error { color:#9d244f; border-color:#cc618b; }
+.qq-admin .qq-json-input { font-family:ui-monospace,Consolas,monospace; line-height:1.6; min-height:20rem; resize:vertical; }
 .qq-admin .qq-tabs, .qq-admin .qq-actions { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; }
 .qq-admin .qq-tabs { margin:1.25rem 0; }
 .qq-admin .qq-menu-grid { display:grid; grid-template-columns:minmax(0, 1.7fr) minmax(240px, 1fr); gap:1.25rem; align-items:start; }

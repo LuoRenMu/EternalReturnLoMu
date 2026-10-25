@@ -84,5 +84,10 @@ interface QQMenuPanelClient {
 
 class QQMenuPanelUnavailable(message: String) : IllegalStateException(message)
 class QQMenuPanelRemoteFailure(val code: Int?) : RuntimeException(
-    if (code == 11253) "QQ 未授予菜单／指令面板接口权限（11253），请在 QQ 开放平台检查接口权限。"
-    else "QQ 接口请求失败${code?.let { "（错误码 $it）" }.orEmpty()}，请检查接口权限及参数。修改结果可能已生效，请先重新读取列表，避免重复创建。")
+    when (code) {
+        11253 -> "QQ 未授予菜单／指令面板接口权限（11253），请在 QQ 开放平台检查接口权限。"
+        30013, 40030013 -> "QQ 拒绝了超限配置（错误码 $code）。请检查显示宽度：面板名称最多 14、描述最多 30，ASCII 算 1，中文等非 ASCII 字符算 2；一级菜单最多 10 项、名称宽度 10，二级菜单最多 5 项、名称宽度 14；机器人跨场景面板合计最多 20 个。"
+        else -> "QQ 接口请求失败${code?.let { "（错误码 $it）" }.orEmpty()}，请检查接口权限及参数。"
+    }) {
+    val isLimitFailure: Boolean get() = code == 30013 || code == 40030013
+}

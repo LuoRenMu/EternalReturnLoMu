@@ -9,6 +9,45 @@ class AdminQQMenuPanelServiceTest {
     private val user = "B".repeat(32)
     private fun panel() = QQCommandPanel(listOf(QQPanelItem("/帮助", "查询命令")), "test", version = 99)
 
+    @Test fun `panel text limits count non ASCII code points twice before invoking QQ`() = runBlocking {
+        val client = FakeQQMenuPanelClient()
+        val service = AdminQQMenuPanelService(client)
+        val invalid = listOf(
+            QQPanelItem("查".repeat(8)), QQPanelItem("/" + "查".repeat(7)),
+            QQPanelItem("help", "查".repeat(16)), QQPanelItem("한".repeat(8)),
+            QQPanelItem("😀".repeat(7) + "a"),
+        )
+        for (item in invalid) {
+            val value = QQCommandPanel(listOf(item))
+            assertFailsWith<IllegalArgumentException> { service.create(QQPanelCreateRequest(QQPanelCreate("group", "all", value), true)) }
+            assertFailsWith<IllegalArgumentException> { service.putPanel("p1", QQPanelUpdateRequest(value, true)) }
+        }
+        assertEquals(0, client.writes)
+        for (item in listOf(QQPanelItem("查".repeat(7), "查".repeat(15)), QQPanelItem("/" + "查".repeat(6) + "a"),
+            QQPanelItem("a".repeat(14), "a".repeat(30)), QQPanelItem("😀".repeat(7)))) {
+            service.create(QQPanelCreateRequest(QQPanelCreate("group", "all", QQCommandPanel(listOf(item))), true))
+        }
+        assertEquals(4, client.writes)
+    }
+
+    @Test fun `menu item counts and names enforce QQ first and second level limits`() = runBlocking {
+        val client = FakeQQMenuPanelClient()
+        val service = AdminQQMenuPanelService(client)
+        val item = QQMenuItem("帮助", "send_message", sendMessage = "/帮助")
+        val child = QQSubMenuItem("查询", "send_message", "/帮助")
+        val invalid = listOf(
+            QQCustomMenu(List(11) { item }), QQCustomMenu(listOf(item.copy(name = "查".repeat(6)))),
+            QQCustomMenu(listOf(QQMenuItem("更多", "menu", subMenuItems = List(6) { child }))),
+            QQCustomMenu(listOf(QQMenuItem("更多", "menu", subMenuItems = listOf(child.copy(name = "查".repeat(8)))))),
+        )
+        for (menu in invalid) assertFailsWith<IllegalArgumentException> { service.putMenu(QQMenuUpdateRequest(menu, true)) }
+        assertEquals(0, client.writes)
+        service.putMenu(QQMenuUpdateRequest(QQCustomMenu(List(10) { item.copy(name = "查".repeat(5)) }), true))
+        service.putMenu(QQMenuUpdateRequest(QQCustomMenu(listOf(QQMenuItem("更多", "menu",
+            subMenuItems = List(5) { child.copy(name = "查".repeat(7)) }))), true))
+        assertEquals(2, client.writes)
+    }
+
     @Test fun `reads never publish and all menu actions round trip including explicit clear`() = runBlocking {
         val client = FakeQQMenuPanelClient()
         val service = AdminQQMenuPanelService(client)
@@ -112,7 +151,7 @@ internal class FakeQQMenuPanelClient : QQMenuPanelClient {
     var lastTargets: QQPanelTargets? = null
     var failure: RuntimeException? = null
     override suspend fun getMenu(): QQMenuSnapshot { failure?.let { throw it }; return QQMenuSnapshot(writes, currentMenu) }
-    override suspend fun putMenu(menu: QQCustomMenu?): QQVersion { currentMenu = menu; return QQVersion(++writes) }
+    override suspend fun putMenu(menu: QQCustomMenu?): QQVersion { failure?.let { throw it }; currentMenu = menu; return QQVersion(++writes) }
     override suspend fun listPanels(scope: String, cursor: String?, limit: Int): QQPanelPage {
         pageQuery = Triple(scope, cursor, limit)
         return QQPanelPage(records.values.filter { it.scope == scope }, "", true)

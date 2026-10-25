@@ -11,6 +11,6 @@ import kotlin.test.assertEquals
 class CoreCommandPluginVersionTest {
     @Test
     fun coreCommandPluginUsesCoreVersion() {
-        assertEquals("3.0.4", CoreCommandPlugin().version)
+        assertEquals("3.0.5", CoreCommandPlugin().version)
     }
 }

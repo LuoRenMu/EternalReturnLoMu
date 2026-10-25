@@ -136,6 +136,17 @@ class AdminDashboardPageTest {
         assertContains(dashboard, "LoMu Control Center")
         assertContains(dashboard, "https://example.com/background.jpg")
 
+        val qqPanel = StringWriter().also { output ->
+            configuration.getTemplate("admin/fragments/qq-menu-panel.ftl").process(emptyMap<String, Any>(), output)
+        }.toString()
+        assertContains(qqPanel, "textWidth(item.name) + ' / 14")
+        assertContains(qqPanel, "textWidth(item.desc) + ' / 30")
+        assertContains(qqPanel, "menu.items.length >= 10")
+        assertContains(qqPanel, "item.sub_menu_items.length >= 5")
+        assertContains(qqPanel, "x-model=\"panelJson\"")
+        assertContains(qqPanel, "setPanelEditor('json')")
+        assertContains(qqPanel, "formatPanelJson()")
+
         val login = StringWriter().also { output ->
             configuration.getTemplate("admin/login.ftl").process(
                 mapOf(

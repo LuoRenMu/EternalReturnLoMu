@@ -15,12 +15,13 @@
             <div class="qq-heading"><div><h3 class="font-black">自定义菜单编辑</h3><p class="qq-hint">仅用于机器人 C2C 单聊窗口底部，不是群聊 Markdown 按钮。</p></div><span class="pill" x-text="menuVersion === null ? '尚未读取' : '版本 ' + menuVersion"></span></div>
             <button type="button" class="button" @click="loadMenu()" :disabled="!available || busy || menuLoading" x-text="menuLoading ? '读取中…' : '重新读取线上菜单'"></button>
             <fieldset :disabled="!available || busy || menuLoading || !menuLoaded">
+                <p class="qq-hint">最多 10 个一级菜单，每个最多 5 个二级菜单。显示宽度：ASCII 算 1，中文等非 ASCII 字符算 2。</p>
                 <p class="qq-hint" x-show="menuLoaded && !menu.items.length">QQ 当前没有自定义菜单。添加菜单项后再发布。</p>
                 <template x-for="(item, index) in menu.items" :key="index">
                     <div class="qq-item">
                         <div class="qq-heading"><strong x-text="'菜单 ' + (index + 1)"></strong><div class="qq-actions"><button type="button" class="button" @click="move(menu.items, index, -1)" :disabled="index === 0" aria-label="菜单上移">↑</button><button type="button" class="button" @click="move(menu.items, index, 1)" :disabled="index === menu.items.length - 1" aria-label="菜单下移">↓</button><button type="button" class="button" @click="menu.items.splice(index, 1)">移除</button></div></div>
                         <div class="qq-fields">
-                            <label class="field"><span class="field-label">名称</span><input class="control" x-model="item.name" maxlength="128" placeholder="例如：查询玩家"></label>
+                            <label class="field"><span class="field-label">一级菜单名称（显示宽度最多 10）</span><input class="control" x-model="item.name" maxlength="10" placeholder="例如：查询玩家"><small class="qq-hint" :class="textWidth(item.name) > 10 && 'qq-error'" x-text="textWidth(item.name) + ' / 10 显示宽度'"></small></label>
                             <label class="field"><span class="field-label">动作类型</span><select class="control" x-model="item.type"><option value="send_message">填入消息</option><option value="link">打开链接</option><option value="menu">二级菜单</option><option value="switch">开关</option></select></label>
                         </div>
                         <label class="field" x-show="item.type === 'send_message'"><span class="field-label">填入输入框的消息</span><input class="control" x-model="item.send_message" maxlength="2048" placeholder="/查询玩家 "></label>
@@ -30,16 +31,16 @@
                             <template x-for="(child, childIndex) in item.sub_menu_items" :key="childIndex">
                                 <div class="qq-item">
                                     <div class="qq-heading"><strong x-text="'二级菜单 ' + (childIndex + 1)"></strong><div class="qq-actions"><button type="button" class="button" @click="move(item.sub_menu_items, childIndex, -1)" :disabled="childIndex === 0" aria-label="二级菜单上移">↑</button><button type="button" class="button" @click="move(item.sub_menu_items, childIndex, 1)" :disabled="childIndex === item.sub_menu_items.length - 1" aria-label="二级菜单下移">↓</button><button type="button" class="button" @click="item.sub_menu_items.splice(childIndex, 1)">移除</button></div></div>
-                                    <div class="qq-fields"><label class="field"><span class="field-label">名称</span><input class="control" x-model="child.name" maxlength="128"></label><label class="field"><span class="field-label">动作</span><select class="control" x-model="child.type"><option value="send_message">填入消息</option><option value="link">打开链接</option></select></label></div>
+                                    <div class="qq-fields"><label class="field"><span class="field-label">二级菜单名称（显示宽度最多 14）</span><input class="control" x-model="child.name" maxlength="14"><small class="qq-hint" :class="textWidth(child.name) > 14 && 'qq-error'" x-text="textWidth(child.name) + ' / 14 显示宽度'"></small></label><label class="field"><span class="field-label">动作</span><select class="control" x-model="child.type"><option value="send_message">填入消息</option><option value="link">打开链接</option></select></label></div>
                                     <label class="field" x-show="child.type === 'send_message'"><span class="field-label">消息内容</span><input class="control" x-model="child.send_message" maxlength="2048" placeholder="/帮助"></label>
                                     <label class="field" x-show="child.type === 'link'"><span class="field-label">链接</span><input class="control" x-model="child.link" placeholder="https://example.com"></label>
                                 </div>
                             </template>
-                            <button type="button" class="button" @click="item.sub_menu_items.push(newMenuItem(true))" :disabled="item.sub_menu_items.length >= 20">添加二级菜单项</button>
+                            <button type="button" class="button" @click="item.sub_menu_items.push(newMenuItem(true))" :disabled="item.sub_menu_items.length >= 5">添加二级菜单项</button>
                         </div>
                     </div>
                 </template>
-                <div class="qq-actions"><button type="button" class="button" @click="menu.items.push(newMenuItem())" :disabled="menu.items.length >= 20">添加一级菜单</button><button type="button" class="button button-primary" @click="saveMenu()" :disabled="!menu.items.length">提交并覆盖 QQ 菜单</button><button type="button" class="button" @click="saveMenu(true)">清空线上菜单</button></div>
+                <div class="qq-actions"><button type="button" class="button" @click="menu.items.push(newMenuItem())" :disabled="menu.items.length >= 10">添加一级菜单</button><button type="button" class="button button-primary" @click="saveMenu()" :disabled="!menu.items.length">提交并覆盖 QQ 菜单</button><button type="button" class="button" @click="saveMenu(true)">清空线上菜单</button></div>
             </fieldset>
         </article>
         <aside class="panel qq-card qq-preview">
@@ -60,8 +61,14 @@
         </aside>
         <article class="panel qq-card">
             <div class="qq-heading"><div><h3 class="font-black" x-text="form.id ? '编辑指令面板' : '新建指令面板'"></h3><p class="qq-hint" x-text="form.id || '默认只对指定对象生效，填写 OpenID 后才能创建。'"></p></div><span class="pill" x-show="selectedPanel" x-text="'版本 ' + (selectedPanel?.version ?? selectedPanel?.panel.version ?? '—')"></span></div>
+            <p class="qq-hint">机器人跨场景面板合计最多 20 个，每个最多 20 个元素。显示宽度：ASCII 算 1，中文等非 ASCII 字符算 2；“/”也占 1。</p>
             <p class="qq-hint" x-show="detailLoading">正在读取面板详情…</p>
             <fieldset :disabled="!available || busy || detailLoading">
+                <div class="qq-actions" role="group" aria-label="面板编辑方式">
+                    <button type="button" class="button" :class="panelEditor === 'form' && 'button-primary'" :aria-pressed="panelEditor === 'form'" @click="setPanelEditor('form')">表单编辑</button>
+                    <button type="button" class="button" :class="panelEditor === 'json' && 'button-primary'" :aria-pressed="panelEditor === 'json'" @click="setPanelEditor('json')">JSON 编辑</button>
+                </div>
+                <div x-show="panelEditor === 'form'">
                 <div class="qq-fields">
                     <label class="field"><span class="field-label">生效场景</span><select class="control" x-model="form.scope" @change="scopeChanged()" :disabled="!!form.id"><option value="group">群聊 group</option><option value="c2c">单聊 c2c</option><option value="channel">文字子频道 channel</option><option value="dm">频道私信 dm</option></select></label>
                     <label class="field"><span class="field-label">生效范围</span><select class="control" x-model="form.target_type" :disabled="!!form.id || !['group','c2c'].includes(form.scope)"><option value="specific">指定对象</option><option value="all">该场景的全部对象</option></select></label>
@@ -73,13 +80,19 @@
                     <div class="qq-item">
                         <div class="qq-heading"><strong x-text="'元素 ' + (index + 1)"></strong><div class="qq-actions"><button type="button" class="button" @click="move(form.items, index, -1)" :disabled="index === 0" aria-label="面板元素上移">↑</button><button type="button" class="button" @click="move(form.items, index, 1)" :disabled="index === form.items.length - 1" aria-label="面板元素下移">↓</button><button type="button" class="button" @click="form.items.splice(index,1)">移除</button></div></div>
                         <div class="qq-fields"><label class="field"><span class="field-label">类型</span><select class="control" x-model="item.type"><option value="command">指令（填入输入框）</option><option value="link">链接</option></select></label><label class="qq-check"><input type="checkbox" x-model="item.only_admin">仅群／频道管理员可点击</label></div>
-                        <label class="field"><span class="field-label" x-text="item.type === 'command' ? '填入输入框的指令（QQ 上限 14 字符，约 7 个汉字）' : '显示名称（QQ 上限 14 字符）'"></span><input class="control" x-model="item.name" maxlength="14" placeholder="/查询玩家"></label>
+                        <label class="field"><span class="field-label" x-text="item.type === 'command' ? '填入输入框的指令（显示宽度最多 14）' : '显示名称（显示宽度最多 14）'"></span><input class="control" x-model="item.name" maxlength="14" placeholder="/查询玩家"><small class="qq-hint" :class="textWidth(item.name) > 14 && 'qq-error'" x-text="textWidth(item.name) + ' / 14 显示宽度'"></small></label>
                         <label class="field" x-show="item.type === 'command'"><span class="field-label">从本机已启用命令填入（可选）</span><select class="control" @change="if ($event.target.value) item.name = $event.target.value"><option value="">手动输入／选择命令</option><template x-for="command in commands" :key="command.alias"><option :value="'/' + command.alias" x-text="'/' + command.alias"></option></template></select></label>
-                        <label class="field"><span class="field-label">描述（QQ 上限 30 字符，约 15 个汉字）</span><input class="control" x-model="item.desc" maxlength="30"></label>
+                        <label class="field"><span class="field-label">描述（显示宽度最多 30）</span><input class="control" x-model="item.desc" maxlength="30"><small class="qq-hint" :class="textWidth(item.desc) > 30 && 'qq-error'" x-text="textWidth(item.desc) + ' / 30 显示宽度'"></small></label>
                         <label class="field" x-show="item.type === 'link'"><span class="field-label">HTTP／HTTPS 链接</span><input class="control" x-model="item.link" placeholder="https://example.com"></label>
                     </div>
                 </template>
-                <div class="qq-actions"><button type="button" class="button" @click="form.items.push(newPanelItem())" :disabled="form.items.length >= 20">添加元素</button><span class="qq-hint" x-text="form.items.length + ' / 20'"></span><button type="button" class="button button-primary" @click="savePanel()" :disabled="!form.items.length" x-text="form.id ? '提交元素与备注' : '创建 QQ 线上面板'"></button><button type="button" class="button" x-show="form.id" @click="deletePanel()">删除线上面板</button></div>
+                </div>
+                <div x-show="panelEditor === 'json'">
+                    <label class="field"><span class="field-label" x-text="form.id ? 'QQ 修改请求 JSON（仅 panel）' : 'QQ 创建请求 JSON（含 scope、target_type、panel）'"></span><textarea class="control qq-json-input" rows="18" spellcheck="false" x-model="panelJson" aria-label="QQ 面板请求 JSON"></textarea></label>
+                    <p class="qq-hint">直接填写 QQ API 请求体，不要添加 configuration 或 confirmed 包装。只编辑或格式化不会发送请求；提交仍需二次确认，格式及参数校验不会绕过。</p>
+                    <div class="qq-actions"><button type="button" class="button" @click="formatPanelJson()">格式化 JSON</button></div>
+                </div>
+                <div class="qq-actions"><button type="button" class="button" x-show="panelEditor === 'form'" @click="form.items.push(newPanelItem())" :disabled="form.items.length >= 20">添加元素</button><span class="qq-hint" x-show="panelEditor === 'form'" x-text="form.items.length + ' / 20'"></span><button type="button" class="button button-primary" @click="savePanel()" :disabled="panelEditor === 'form' && !form.items.length" x-text="form.id ? '提交元素与备注' : '创建 QQ 线上面板'"></button><button type="button" class="button" x-show="form.id" @click="deletePanel()">删除线上面板</button></div>
                 <p class="qq-hint">修改已有面板不会改变生效场景或关联对象。指令元素点击后填入输入框，不是直接执行命令。</p>
             </fieldset>
             <div class="qq-targets" x-show="selectedPanel?.target_type === 'specific'">
@@ -87,9 +100,9 @@
                 <p class="qq-hint" x-text="'QQ 当前返回的关联对象：' + ((selectedPanel?.group_openids || selectedPanel?.user_openids || []).join('、') || '未返回')"></p>
                 <fieldset :disabled="!available || busy || detailLoading"><label class="field"><span class="field-label">操作</span><select class="control" x-model="targetOp"><option value="add">增加对象</option><option value="del">移除对象</option></select></label><label class="field"><span class="field-label">群／用户 OpenID（每行一个，每次最多 20 个）</span><textarea class="control" rows="3" x-model="targetText"></textarea></label><button type="button" class="button" @click="updateTargets()">提交关联对象变更</button></fieldset>
             </div>
-            <div class="qq-preview">
+            <div class="qq-preview" x-show="panelEditor === 'form'">
                 <h4 class="font-black">面板内容预览</h4><div class="qq-preview-tiles"><template x-for="(item,index) in form.items" :key="index"><div class="qq-preview-item"><strong x-text="item.name || '未命名'"></strong><span x-text="item.desc || '暂无描述'"></span><small x-text="(item.type === 'link' ? '链接' : '指令') + (item.only_admin ? ' · 仅管理员' : ' · 所有人')"></small></div></template></div>
-                <details><summary>查看待提交面板 JSON</summary><pre x-text="JSON.stringify(panelPayload(), null, 2)"></pre></details>
+                <details><summary>查看待提交请求 JSON（可切换到 JSON 编辑）</summary><pre x-text="JSON.stringify(panelEditorPayload(), null, 2)"></pre></details>
             </div>
         </article>
     </div>
