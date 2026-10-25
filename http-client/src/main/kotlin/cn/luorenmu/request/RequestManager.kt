@@ -12,7 +12,7 @@ import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
+import io.ktor.client.engine.java.Java
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.cache.*
@@ -21,10 +21,10 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.network.sockets.SocketTimeoutException
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -57,19 +57,9 @@ object RequestManager {
 
     private val client = createHttpClient()
 
-    internal fun createHttpClient() = HttpClient(CIO) {
-        engine {
-            maxConnectionsCount = 1000
-            endpoint {
-                maxConnectionsPerRoute = 100
-                pipelineMaxSize = 20
-                keepAliveTime = 5000
-                connectTimeout = 60_000
-                connectAttempts = 3
-            }
-            requestTimeout = 60000
-        }
-
+    // Keep business HTTP off CIO's ConnectionFactory permit bookkeeping (KTOR-5992).
+    // Explicit selection also avoids ServiceLoader order deciding the transport in the application JAR.
+    internal fun createHttpClient() = HttpClient(Java) {
         install(HttpTimeout) {
             requestTimeoutMillis = 60000
             connectTimeoutMillis = 60000
@@ -112,12 +102,13 @@ object RequestManager {
     }
 
     internal fun isRetryableRequestException(exception: Throwable): Boolean {
+        // Caller cancellation must not become another request merely because closing its socket caused IO.
+        if (exception is CancellationException) return false
         var current: Throwable? = exception
         val visited = mutableSetOf<Throwable>()
         while (current != null && visited.add(current)) {
             if (current is EOFException ||
                 current is IOException ||
-                current is SocketTimeoutException ||
                 current is ConnectTimeoutException ||
                 current is HttpRequestTimeoutException ||
                 current is ClosedReceiveChannelException
@@ -182,19 +173,18 @@ object RequestManager {
     }
      suspend fun call(api: Api): HttpResponse {
         log.debug { "call ${api.method.value} ${api.baseUrl}${api.url}" }
-        if (api !is ResourceApi && api.cacheTime != CacheTime.NULL) {
-            if (api.method == HttpMethod.Get) {
-                val cache = cacheMap[api.cacheTime]!!
-                cache.getIfPresent(api.url)?.let {
-                    log.debug { "Cache hit for ${api.url}" }
-                    return it
-                }
-            }
-        }
-        val response = withKeyLock(api.url) {
+        val cache = if (api !is ResourceApi && api.method == HttpMethod.Get && api.cacheTime != CacheTime.NULL)
+            cacheMap.getValue(api.cacheTime) else null
+        cache?.getIfPresent(api.url)?.let { return it }
+        return withKeyLock(api.url) {
+            // A cold caller may have filled the cache while this caller waited for the lock.
+            cache?.getIfPresent(api.url)?.let { return@withKeyLock it }
             val currentTimeMillis = System.currentTimeMillis()
             try {
-                return@withKeyLock executeRequest(api)
+                executeRequest(api).also { response ->
+                    // Publish before unlocking, so all queued callers can reuse the result.
+                    if (response.status.value in 200..207) cache?.put(api.url, response)
+                }
             } catch (e: Exception) {
                 if (!isRetryableRequestException(e)) throw e
                 log.warn(e) { "DakGG request remained unavailable after retries: ${api.baseUrl}${api.url}" }
@@ -203,18 +193,10 @@ object RequestManager {
                 if (api is ResourceApi) {
                     log.debug { "call stream file: ${api.path} from ${api.baseUrl}${api.url}" }
                 } else {
-                    log.debug { "call ${api.method.value} ${api.baseUrl}${api.url} take ${(System.currentTimeMillis() - currentTimeMillis) / 1000.0}m" }
+                    log.debug { "call ${api.method.value} ${api.baseUrl}${api.url} take ${System.currentTimeMillis() - currentTimeMillis}ms" }
                 }
             }
         }
-        if (response.status.value in 200..207) {
-            log.debug { "call success ${api.baseUrl}${api.url} => ${response.status.value}" }
-            if (api.method == HttpMethod.Get) {
-                cacheMap[api.cacheTime]!!.put(api.url, response)
-            }
-        }
-
-        return response
     }
 
     suspend fun callStream(api: PakeResourceApi, path: Path, maxRetries: Int = 3) {

@@ -139,6 +139,12 @@ sealed class EternalReturnDakGGApi<T>(
                 call().body()
         }
 
+        object GetItemStats : Data<DakGGItemStatsResponse>(
+            "/v1/item-stats?dt=7", cacheTime = CacheTime.HOUR
+        ) {
+            override suspend fun execute(): DakGGItemStatsResponse = call().body()
+        }
+
         object GetWeapons : Data<DakGGWeaponResponse>(
             "/v1/data/masteries?hl=zh_cn"
         ) {

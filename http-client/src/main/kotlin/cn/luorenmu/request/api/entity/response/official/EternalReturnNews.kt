@@ -47,6 +47,8 @@ data class EternalReturnNews(
     data class I18ns(
         @SerialName("zh_CN")
         val zhCN: LocaleContent? = null,
+        @SerialName("en_US")
+        val en: LocaleContent? = null,
     )
 
     @Serializable
