@@ -29,9 +29,11 @@
 > 主人，您的宠物"xxx"刚刚进行了一场对局喵~
 
 - 每群最多订阅 **3 位玩家**，每次有效 **7 天**，到期自动停止；重复添加不延长有效期。
+- **到期提醒**：订阅结束时主动告知已暂停监视；重新订阅同一玩家会撤销旧的待发提醒。
 - 订阅前校验昵称并确认玩家存在；首次记录当前对局作为基线，不补发历史战绩。
 - 根据玩家活跃程度调整检查间隔，同一玩家跨群共享查询与图片生成，避免重复请求。
 - 一次发现多场新对局时只发送最新一局；查询或发送失败保留订阅和进度，退避后重试。
+- **未游玩提醒**：最近一局距今满 3 天时主动发送关怀文字，显示未游玩的天／时／分；同一次未游玩状态只提醒一次，恢复游玩后重新计时。
 - 群主关闭主动消息或权限无法确认时暂停检查，恢复权限后继续；玩家被明确确认不存在时停止对应任务。
 - 持久化记录成功推送次数，取消订阅不清空累计统计。
 
@@ -82,9 +84,29 @@ QQ 菜单与面板管理仅在 QQ 适配器连接时可用，实际能力受 QQ 
 示例仅展示功能效果，实际数据与样式以当前版本为准。
 
 <details>
+<summary>直播订阅：开播与下播通知</summary>
+
+**开播通知**
+
+![直播订阅开播通知](docs/images/live-notification-start.png)
+
+**下播通知**
+
+![直播订阅下播通知](docs/images/live-notification-end.png)
+
+</details>
+
+<details>
+<summary>群宠战绩推送</summary>
+
+![群宠新对局战绩推送](docs/images/group-pet-match-push.png)
+
+</details>
+
+<details>
 <summary>角色详情与角色排行</summary>
 
-![角色详情](docs/images/command-character-xilin.png)
+![角色查询：艾丝蒂尔](docs/images/command-character-estelle.png)
 ![角色排行](docs/images/command-character-stats.png)
 
 </details>
@@ -94,6 +116,13 @@ QQ 菜单与面板管理仅在 QQ 适配器连接时可用，实际能力受 QQ 
 
 ![玩家战绩](docs/images/search2.png)
 ![段位统计](docs/images/tier.png)
+
+</details>
+
+<details>
+<summary>玩家查询统计</summary>
+
+![玩家查询统计](docs/images/command-query-statistics.png)
 
 </details>
 
