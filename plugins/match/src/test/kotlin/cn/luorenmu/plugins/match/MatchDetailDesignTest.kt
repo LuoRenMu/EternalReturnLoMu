@@ -7,27 +7,31 @@ import cn.luorenmu.nutdraw.dom.NutText
 import cn.luorenmu.nutdraw.layout.FlexLayoutEngine
 import cn.luorenmu.nutdraw.layout.LayoutBox
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.*
 
 class MatchDetailDesignTest {
     private val root = Path.of(System.getProperty("match.design.root"))
+    @TempDir lateinit var images: Path
+
+    private fun fixtureImage(name: String): String {
+        val image = images.resolve("$name.svg")
+        Files.createDirectories(image.parent)
+        Files.writeString(image, """<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" rx="3" fill="#dbe4ef"/></svg>""")
+        return image.toUri().toString()
+    }
 
     private fun fixture(): MatchDetailData {
         val names = listOf("露米娅观察员", "星河", "流光", "백수", "삼다수는맛있어", "月下听风", "指挥官", "碧海", "청춘", "风信子", "澄空", "Lumia", "神圣审判", "悠然", "晨雾", "라온", "渡鸦", "初雪", "南柯", "HelloWorld", "雪落", "云间", "星尘", "해피")
         val characters = listOf("杰琪", "阿雅", "玄佑", "马格努斯", "菲奥娜", "娜汀", "扎希尔", "哈特")
         val icons = listOf("103504.png", "103701.png", "104501.png", "108701.png", "110503.png").map {
-            root.resolve("resources/images/item/$it").takeIf(Files::isRegularFile)?.toUri()?.toString()
+            fixtureImage("item/$it")
         }
-        val portraits = (1..8).map { character ->
-            val dir = root.resolve("resources/images/character/$character/CharProfile")
-            if (!Files.isDirectory(dir)) null else Files.list(dir).use { files ->
-                files.filter { it.toString().endsWith(".png") }.sorted().findFirst().orElse(null)?.toUri()?.toString()
-            }
-        }
+        val portraits = (1..8).map { fixtureImage("character/$it") }
         val backgrounds = listOf(5, 4, 4, 5, 6).map {
-            root.resolve("resources/images/item/bg/$it.svg").takeIf(Files::isRegularFile)?.toUri()?.toString()
+            fixtureImage("item/bg/$it")
         }
         return MatchDetailData(
             gameId = "DEMO-0001", mode = "排位赛", server = "亚一", startedAt = "2026-09-30 20:18",
@@ -42,12 +46,11 @@ class MatchDetailDesignTest {
                         survivalSeconds = (1311 - (team - 1) * 120).toLong(), rp = if (n == 3) 123456 else 6450 + n * 32,
                         rpChange = 55 - n * 5, healing = (n * 103).toLong(), vision = (18 + n).toLong(), credits = (1060 + n * 22).toLong(),
                         equipment = icons, equipmentBackgrounds = backgrounds,
-                        weaponIcon = root.resolve("resources/images/weapon/${listOf(1, 10, 11, 13)[n % 4]}.png").toUri().toString(),
-                        traitSkillIcon = root.resolve("resources/images/trait/skill/${listOf(7000201, 7000401, 7000501, 7000601)[n % 4]}.png").toUri().toString(),
-                        tacticalSkillIcon = root.resolve("resources/images/tactical/skill/${listOf(500020, 500030, 500120, 500170)[n % 4]}.png").toUri().toString(),
+                        weaponIcon = fixtureImage("weapon/${listOf(1, 10, 11, 13)[n % 4]}"),
+                        traitSkillIcon = fixtureImage("trait/skill/${listOf(7000201, 7000401, 7000501, 7000601)[n % 4]}"),
+                        tacticalSkillIcon = fixtureImage("tactical/skill/${listOf(500020, 500030, 500120, 500170)[n % 4]}"),
                         tierName = listOf("钻石 II", "秘银", "陨石", "永恒")[n % 4],
-                        tierIcon = root.resolve("resources/images/tier/round/${listOf(6, 7, 8, 63)[n % 4]}.png")
-                            .takeIf(Files::isRegularFile)?.toUri()?.toString())
+                        tierIcon = fixtureImage("tier/round/${listOf(6, 7, 8, 63)[n % 4]}"))
                 }
                 MatchTeam(team, team, players.sumOf { it.kills ?: 0 }, players)
             }
