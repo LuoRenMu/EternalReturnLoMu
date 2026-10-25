@@ -41,35 +41,24 @@ internal class ProactiveTestScheduler(
     }
 }
 
-@BotCommand("群主动消息测试", "test", "<action> <room> <target>", adapter = [Adapter.QG_BOT])
+@BotCommand("群主动消息测试", "test", "<action>", adapter = [Adapter.QG_BOT])
 internal class ProactiveTestCommand(
     private val scheduler: ProactiveTestScheduler,
-    private val live: (() -> BiliLiveMonitor)? = null,
     private val permission: suspend (String) -> QQGroupPermissionResult = {
         QQGroupPermissionQuery.query(SimbotQQRuntime.requireBot(), it)
     },
 ) : CommandEvent {
-    override val description = "主动消息测试；/test 直播 房间号 自动监听 B站开播"
-    override val example = "/test；/test 直播 直播间号"
+    override val description = "主动消息权限及发送者身份诊断，5 秒后主动发送测试消息"
+    override val example = "/test"
     override val optionals = listOf(
-        cn.luorenmu.command.entity.CommandOptional("action", "直播，留空测试主动消息", false),
-        cn.luorenmu.command.entity.CommandOptional("room", "房间号、链接、列表或取消", false),
-        cn.luorenmu.command.entity.CommandOptional("target", "取消的房间号", false),
+        cn.luorenmu.command.entity.CommandOptional("action", "留空执行主动消息测试", false),
     )
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
         val group = sender.groupOpenId.toString()
         if (!group.matches(Regex("[A-Fa-f0-9]{32}"))) return "请在 QQ 群内发送 /test".toText()
         val action = command["action"].orEmpty()
         if (action.isNotBlank()) {
-            if (action != "直播") return "用法：/test 或 /test 直播 房间号".toText()
-            return try {
-                val monitor = live?.invoke() ?: return "直播监听未启动".toText()
-                withTimeout(20_000) { monitor.command(group, command["room"].orEmpty(), command["target"].orEmpty()) }.toText()
-            } catch (e: TimeoutCancellationException) {
-                currentCoroutineContext().ensureActive()
-                "直播查询超时，请稍后重试。".toText()
-            } catch (e: CancellationException) { throw e
-            } catch (_: Exception) { "直播间查询或存储失败，请检查房间号，或稍后重试。".toText() }
+            return "直播监听已拆分，请使用 /直播通知 订阅 房间号。/test 仅用于主动消息测试。".toText()
         }
         val result = try {
             withTimeout(8_000) { permission(group) }

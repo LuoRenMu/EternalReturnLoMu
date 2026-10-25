@@ -12,7 +12,6 @@ dependencies {
     testImplementation(libs.simbot.component.qq)
     testImplementation(libs.kotlinx.coroutines.core)
     testImplementation(kotlin("test"))
-    testImplementation(libs.sqlite.jdbc)
 }
 
 kotlin { jvmToolchain(17) }

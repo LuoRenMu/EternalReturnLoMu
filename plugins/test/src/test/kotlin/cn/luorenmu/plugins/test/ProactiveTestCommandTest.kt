@@ -8,6 +8,16 @@ import love.forte.simbot.common.id.StringID.Companion.ID
 import kotlin.test.*
 
 class ProactiveTestCommandTest {
+    @Test fun `removed live subcommand does not query permission schedule sends or access storage`() = runBlocking<Unit> {
+        val scheduler = ProactiveTestScheduler({ error("must not schedule") }, { error("must not send") })
+        scheduler.start()
+        try {
+            val command = ProactiveTestCommand(scheduler) { error("must not probe permission") }
+            val sender = MessageSender("A".repeat(32).ID, "member", "B".repeat(32).ID, "/test 直播 1", "/test 直播 1")
+            assertContains(command.listen(sender, mapOf("action" to "直播")).toString(), "/直播通知 订阅 房间号")
+        } finally { scheduler.stop() }
+    }
+
     @Test fun `test reports group permission separately from sender identity`() = runBlocking<Unit> {
         val scheduler = ProactiveTestScheduler()
         val sender = MessageSender("A".repeat(32).ID, "member", "B".repeat(32).ID, "/test", "/test")

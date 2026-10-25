@@ -1,23 +1,11 @@
-# QGBOT 测试插件 1.7.0
+# QGBOT 测试插件 1.9.0
 
-仅注册 QQ 官方机器人（QGBOT）群聊命令 `/test`。
+仅注册 `/test`，保留主动消息状态／发送者身份诊断，以及 5 秒后在原群发送一次主动消息的测试。
 
-## B站直播监听
+直播订阅已拆到独立的 [bili-live 插件](../bili-live/README.md)，本插件不再访问直播订阅数据库或启动直播轮询。
+旧 `/test 直播 ...` 只返回新命令提示，不触发延迟消息；请改用 `/直播通知 订阅 房间号`。
 
-- `/test 直播 直播间号`：手动订阅，也支持 `https://live.bilibili.com/直播间号`，自动解析短号。
-- `/test 直播 列表`：查看本群监听的房间及最近一次状态。
-- `/test 直播 取消 直播间号`：取消本群监听；建议使用回复中的完整房间号，直接删除无需访问 B站。
-- 无参数 `/test` 保留原主动消息状态、发送者身份和延迟 5 秒发送测试；直播子命令不会触发该测试。
-
-每群最多 3 个房间，测试模块全局最多 50 个不同房间。首次订阅只记录基线，不补发正在进行的直播；之后发现新直播场次时，主动向订阅群发送标题、房间号及直播间链接。状态 `2`（轮播）不视为开播。
-
-后台每轮结束后等待 60 秒再扫描，同一房间被多个群订阅时每轮只查询一次，房间请求之间至少间隔 1 秒；错误按 2、4、8、16、32、60 分钟退避，不将查询错误视为下播。发送间隔至少 6.1 秒。群主需要在机器人页面开启主动发送消息，实际能否发送由 QQ 接口判定。
-
-订阅和已观察场次存入主程序数据库的 `test_bili_live` 表，配置 PostgreSQL 时复用 PostgreSQL，SQLite 后端则复用 SQLite。重载/重启保留监听和去重记录；禁用插件取消轮询。发送前持久化本场记录，避免重载或 QQ 超时导致重复发送；代价是发送失败或保存后崩溃时该场不会自动补发。当前不实现补发队列或下播提醒。
-
-接口使用 B站 `https://api.live.bilibili.com/room/v1/Room/get_info?room_id=...`，无需提供账号 Cookie；直播状态和场次来自 `live_status/live_time`。参考当前 [yt-dlp 的 B站直播提取实现](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/bilibili.py)。接口可能受风控限制，失败时不创建订阅，轮询时保留旧状态并退避。
-
-本次只需热更新 test 插件（主程序已有 3.0.3 时）。构建：`:plugins:test:test :plugins:test:jar`；产物 `plugins/test/build/libs/test-1.0.0.jar`，逻辑版本 1.7.0。
+升级时先热更新本插件，停止旧直播 worker，再安装 bili-live 1.0.0，避免新旧轮询同时运行。主程序 3.0.3 无需更换。
 
 ## 当前行为
 
@@ -43,7 +31,7 @@
 主动消息诊断需要主程序 core/qgbot 3.0.3 或更高：主程序负责将可信的发送者身份带入命令上下文。MessageSender 原有五参数构造函数保持兼容，其他旧插件无需同步升级。
 
 构建：`:qq-rich-media:test :plugins:test:test :qgbot:test :qgbot:jar :plugins:test:jar`。
-产物：`qgbot/build/libs/qgbot-3.0.3.jar`、`plugins/test/build/libs/test-1.0.0.jar`。
+产物：`qgbot/build/libs/qgbot-3.0.4.jar`、`plugins/test/build/libs/test-1.0.0.jar`。
 
 官方与上游：
 - [机器人群内状态](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_bot_state.get.html)
