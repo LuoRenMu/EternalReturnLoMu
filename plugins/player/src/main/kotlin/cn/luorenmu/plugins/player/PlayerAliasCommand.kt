@@ -10,7 +10,10 @@ import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.entity.AliasScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import love.forte.simbot.component.qguild.message.QGMarkdown
+import love.forte.simbot.component.qguild.message.QGKeyboards
 import love.forte.simbot.message.Message
+import love.forte.simbot.message.Messages
+import love.forte.simbot.qguild.model.MessageKeyboard
 import love.forte.simbot.message.toText
 import org.koin.java.KoinJavaComponent.inject
 
@@ -110,7 +113,7 @@ class PlayerAliasCommand : CommandEvent {
         )
 
         if (aliases.isEmpty()) {
-            return "暂无别名，使用 /玩家别名 set <别名> <昵称> 来添加".toText()
+            return withButtons("暂无别名，使用 `/玩家别名 set <别名> <昵称>` 来添加")
         }
 
         val sb = StringBuilder("#玩家别名列表:\n")
@@ -122,11 +125,11 @@ class PlayerAliasCommand : CommandEvent {
         for (a in aliases) {
             sb.appendLine(" - [${scopeIcons[a.scope] ?: ""}] ${aliasDisplay(a.alias)} → ${a.actualNickname}")
         }
-        return QGMarkdown.create(sb.toString())
+        return withButtons(sb.toString())
     }
 
     private fun helpText(): Message {
-        return QGMarkdown.create(
+        return withButtons(
             """## 别名命令   
             **设置** ：`/玩家别名 set <别名> <真实昵称> [群|个人]`   
             **删除** ：`/玩家别名 del <别名> [群|个人]`   
@@ -134,4 +137,21 @@ class PlayerAliasCommand : CommandEvent {
             （你的命令可能出错或你需要帮助）"""
         )
     }
+
+    internal fun withButtons(content: String): Message = Messages.of(
+        QGMarkdown.create(content),
+        QGKeyboards.create(listOf(
+            aliasButton("set", "设置别名", false),
+            aliasButton("del", "删除别名", false),
+            aliasButton("list", "查看列表", true),
+        )),
+    )
+
+    private fun aliasButton(action: String, label: String, execute: Boolean): MessageKeyboard =
+        MessageKeyboard.builder("player-alias-$action")
+            .renderData(label, label, 1)
+            .action(type = 2, permission = MessageKeyboard.ActionPermission.AllAccessible,
+                data = "/玩家别名 $action${if (execute) "" else " "}", enter = execute, reply = false,
+                unsupportTips = "请手动输入 /玩家别名 $action")
+            .build()
 }

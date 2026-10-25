@@ -16,6 +16,12 @@ import kotlinx.coroutines.coroutineScope
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import org.koin.java.KoinJavaComponent.inject
+import java.time.Duration
+
+internal const val CHARACTER_STATS_CACHE_VERSION = "v3"
+internal val CHARACTER_STATS_CACHE_MAX_AGE: Duration = Duration.ofMinutes(15)
+internal fun characterStatsImageFileName(rank: DakGGRank): String =
+    "character_stats_${CHARACTER_STATS_CACHE_VERSION}_${rank.value}.png"
 
 /**
  * @author LoMu
@@ -45,11 +51,12 @@ class CharacterStatsCommand : CommandEvent {
         val rank = DakGGRank.convert(rankStr)
         val outputPath = PathUtils.resourcesPathResolve(
             "render",
-            "character_stats_${CACHE_VERSION}_${rank.value}.png",
+            characterStatsImageFileName(rank),
         )
-        val cachedPath = RenderedFileCache.getOrCreate(outputPath) { path ->
-            preheatRequest()
+        val cachedPath = RenderedFileCache.getOrCreate(outputPath, CHARACTER_STATS_CACHE_MAX_AGE) { path ->
             val stats = characterStatsCollector.collect(rank)
+            // Collect first so newly added characters are present in the metadata cache before downloading images.
+            preheatRequest()
             NutDraw.render(CharacterStatsTemplate(), stats, path)
         }
         return OfflineImage.fileOfflineImage(cachedPath.toString())
@@ -74,9 +81,5 @@ class CharacterStatsCommand : CommandEvent {
                 resourcesDownloadService.downloadCharacterTierIcons(CHARACTER_TIER_GRADES)
             }
         }
-    }
-
-    private companion object {
-        const val CACHE_VERSION = "v2"
     }
 }

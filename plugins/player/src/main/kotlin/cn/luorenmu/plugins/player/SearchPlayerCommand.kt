@@ -12,7 +12,6 @@ import cn.luorenmu.nutdraw.NutDraw
 import cn.luorenmu.repository.NewsRepository
 import cn.luorenmu.repository.PlayerAliasRepository
 import cn.luorenmu.repository.StatisticsRepository
-import cn.luorenmu.repository.entity.EternalReturnNewsRecord
 import cn.luorenmu.request.api.Api.Companion.ioAsync
 import cn.luorenmu.request.api.Api.Companion.ioLaunch
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGCharactersResponse
@@ -26,9 +25,7 @@ import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
 import cn.luorenmu.request.entity.module.MatchingMode
 import cn.luorenmu.request.entity.module.DakGGRank
 import cn.luorenmu.request.entity.module.DakGGTeamMode
-import cn.luorenmu.service.GameActivityVisibility.isRedemptionCodeExpiringTomorrow
 import cn.luorenmu.service.ResourcesDownloadService
-import cn.luorenmu.service.GameActivityVisibility.isVisibleOn
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.CoroutineScope
@@ -39,10 +36,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
-import love.forte.simbot.message.plus
 import love.forte.simbot.message.toText
 import org.koin.java.KoinJavaComponent.inject
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  *
@@ -108,23 +104,20 @@ class SearchPlayerCommand : CommandEvent {
                 actualNickname,
                 preheated.characterStats,
             )
+            // Show the pending lookup in the count; persist it only after successful rendering.
+            val totalQueries = statisticsService.getNicknameQueryCount(actualNickname) + 1
             NutDraw.render(
                 SearchPlayerTemplate(),
-                renderData,
+                renderData.copy(rate = playerRateWithQueryCount(renderData.rate, totalQueries)),
                 outputPath,
             )
-            val findLatestRedemptionCodes = newsRepository.findLatestRedemptionCodes(REDEMPTION_CODE_LOOKUP_LIMIT)
-            val expiringCodes = findLatestRedemptionCodes.asSequence()
-                .filter { it.isRedemptionCodeExpiringTomorrow(LocalDate.now()) }
-                .mapNotNull { it.code?.trim()?.takeIf(String::isNotEmpty) }
-                .distinct()
-                .toList()
+            val reply = playerReplyWithRedemptionCodes(
+                image = OfflineImage.fileOfflineImage(outputPath.toString()),
+                records = newsRepository.findLatestRedemptionCodes(50),
+                now = LocalDateTime.now(),
+            )
             statisticsService.recordPlayerQuery(actualNickname, sender.senderOpenId.toString())
-            if (expiringCodes.isNotEmpty()){
-                OfflineImage.fileOfflineImage(outputPath.toString()).plus("即将过期的兑换码:${expiringCodes.joinToString(",")}".toText())
-            }else{
-                OfflineImage.fileOfflineImage(outputPath.toString())
-            }
+            reply
         }
     }
 
@@ -211,7 +204,4 @@ class SearchPlayerCommand : CommandEvent {
         else -> DakGGRank.DIAMOND_PLUS
     }
 
-    companion object {
-        private const val REDEMPTION_CODE_LOOKUP_LIMIT = 50
-    }
 }

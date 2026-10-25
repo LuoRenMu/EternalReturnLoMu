@@ -130,6 +130,52 @@ class SearchPlayerTemplateRegressionTest {
     }
 
     @Test
+    fun `match time and server id fit inside each card`() {
+        val source = player(matchType = "排位")
+        val data = source.copy(matches = listOf(
+            source.matches.single().copy(gameId = "123456789012345", serverName = "Asia", dateHour = "23:59:59", dateMonth = "12月31日"),
+            source.matches.single().copy(gameId = "987654321098765", serverName = "Europe", dateHour = "01:02:03", dateMonth = "1月2日"),
+        ))
+        val document = SearchPlayerTemplate().build(data)
+        val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+        val fonts = CjkFontResolver()
+        data.matches.forEach { match ->
+            val card = assertNotNull(layout.findById("match-${match.gameId}"))
+            val time = assertNotNull(layout.findById("match-time-${match.gameId}"))
+            val hour = assertNotNull(layout.findById("match-hour-${match.gameId}"))
+            val metadata = assertNotNull(layout.findById("match-server-id-${match.gameId}"))
+            val damageMetric = assertNotNull(layout.findById("match-dmg-${match.gameId}"))
+            val thirdMetric = assertNotNull(layout.findById("match-rp-${match.gameId}"))
+            val hourText = hour.node as NutText
+            val hourWidth = fonts.runs(hourText.value, hourText.style.fontSize, hourText.style.fontWeight).sumOf { it.width.toDouble() }
+            assertTrue(hourWidth <= time.bounds.width, "full time exceeds time box")
+            val text = metadata.node as NutText
+            assertEquals("${match.serverName}-${match.gameId}", text.value)
+            assertEquals(Color.makeRGB(128, 128, 128), text.style.color)
+            assertEquals(Color.TRANSPARENT, text.style.background)
+            val width = fonts.runs(text.value, text.style.fontSize, text.style.fontWeight).sumOf { it.width.toDouble() }
+            assertTrue(width <= metadata.bounds.width, "${metadata.node.id} text exceeds its box")
+            assertTrue(metadata.bounds.right <= card.bounds.right && metadata.bounds.bottom <= card.bounds.bottom)
+            assertEquals(98f, card.bounds.height, "match card must keep its original height")
+            assertTrue(metadata.bounds.bottom <= damageMetric.bounds.top, "metadata must sit above DMG")
+            assertTrue(metadata.bounds.bottom <= thirdMetric.bounds.top, "metadata must sit above the third metric")
+            assertTrue(metadata.bounds.left >= damageMetric.bounds.left - 30f)
+            assertTrue(metadata.bounds.right <= thirdMetric.bounds.right + 40f)
+        }
+    }
+
+    @Test
+    fun `last match remains inside rendered page`() {
+        val source = player(matchType = "排位")
+        val data = source.copy(matches = (1..8).map { source.matches.single().copy(gameId = "game-$it") })
+        val document = SearchPlayerTemplate().build(data)
+        val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+        val lastCard = assertNotNull(layout.findById("match-game-8"))
+        assertTrue(lastCard.bounds.bottom <= document.height - 20f,
+            "last match ends at ${lastCard.bounds.bottom}, outside page height ${document.height}")
+    }
+
+    @Test
     fun `all match types use the same four metric boxes`() {
         listOf("排位", "普通", "钴协议").forEach { type ->
             val document = SearchPlayerTemplate().build(player(matchType = type))

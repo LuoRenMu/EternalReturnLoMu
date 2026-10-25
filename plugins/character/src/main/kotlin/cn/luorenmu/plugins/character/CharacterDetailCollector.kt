@@ -40,7 +40,7 @@ open class CharacterDetailCollector(
 
     companion object {
         private const val TOP_PLAYER_LIMIT = 10
-        private const val SKILL_BUILD_LIMIT = 4
+        private const val SKILL_BUILD_LIMIT = 2
         private const val ITEM_BUILD_LIMIT = 4
         private const val EQUIPMENT_PER_SLOT_LIMIT = 5
         private const val TACTICAL_LIMIT = 4
@@ -60,6 +60,8 @@ open class CharacterDetailCollector(
         teamMode: String,
         matchingMode: String,
         tier: String?,
+        weaponQuery: String? = null,
+        promptForWeapon: Boolean = false,
     ): CharacterDetail {
         val characters = EternalReturnDakGGApi.Data.GetCharacters.execute()
         val character = characters.characters.firstOrNull { c ->
@@ -104,7 +106,10 @@ open class CharacterDetailCollector(
             imageUrl = characterResultPath(character),
             archetypes = page.character.charArcheTypes,
             analysis = snapshotData?.let { buildAnalysis(it, refs) },
-        )
+        ).selectWeapon(weaponQuery)
+
+        // 选择菜单只需要名称与 ID，选定武器后再下载其详情资源。
+        if (promptForWeapon && weaponQuery == null && (detail.analysis?.weapons?.size ?: 0) > 1) return detail
 
         // 预热下载：评级图、角色头像、展示武器图标与最热武器流派用到的全部图片
         detail.analysis?.let { analysis ->

@@ -45,10 +45,32 @@ class CharacterStatsTemplateRegressionTest {
         assertTrue((weapon.node as NutImage).source?.endsWith("/weapon.png") == true)
         assertTrue(tier.node.style.backgroundImage?.endsWith("/character-tier-A.svg") == true)
         assertTrue(tier.node !is NutImage)
-        assertEquals("#3", (rank.node as NutText).value)
+        assertEquals("#1", (rank.node as NutText).value)
         assertEquals("胜率 20.00%", (winRate.node as NutText).value)
         assertEquals("伤害 12,345", (damage.node as NutText).value)
         assertTrue(damage.bounds.top >= winRate.bounds.bottom)
+    }
+
+    @Test
+    fun `portrait badges follow display order regardless of api rank`() {
+        val data = characterStats(120).let { stats ->
+            stats.copy(players = stats.players.mapIndexed { index, player ->
+                player.copy(rank = if (index % 2 == 0) 999 else 0)
+            })
+        }
+        val document = CharacterStatsTemplate().build(data)
+        val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+
+        data.players.indices.forEach { index ->
+            val portrait = assertNotNull(layout.findById("stats-portrait-$index"))
+            val badge = assertNotNull(layout.findById("stats-rank-$index"))
+            assertEquals("#${index + 1}", (badge.node as NutText).value)
+            assertEquals(8f, badge.node.style.fontSize)
+            assertTrue(badge.bounds.left >= portrait.bounds.left)
+            assertTrue(badge.bounds.top >= portrait.bounds.top)
+            assertTrue(badge.bounds.right <= portrait.bounds.right)
+            assertTrue(badge.bounds.bottom <= portrait.bounds.bottom)
+        }
     }
 
     @Test
@@ -68,6 +90,21 @@ class CharacterStatsTemplateRegressionTest {
         NutDraw.render(CharacterStatsTemplate(), characterStats(43), output)
 
         assertTrue(Files.size(output) > 100)
+    }
+
+    @Test
+    fun `missing statistics keeps portrait and weapon without fake D grade or zero metrics`() {
+        val data = characterStats(1).let { stats ->
+            stats.copy(players = stats.players.map { it.copy(tier = "", winRate = NO_CHARACTER_STATISTICS, averageDamage = 0) })
+        }
+        val document = CharacterStatsTemplate().build(data)
+        val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
+        assertNotNull(layout.findById("stats-character-0"))
+        assertNotNull(layout.findById("stats-weapon-0"))
+        assertEquals(null, assertNotNull(layout.findById("stats-tier-0")).node.style.backgroundImage)
+        assertEquals("暂无数据", (assertNotNull(layout.findById("stats-win-rate-0")).node as NutText).value)
+        assertEquals("伤害 —", (assertNotNull(layout.findById("stats-damage-0")).node as NutText).value)
+        assertEquals(11f, assertNotNull(layout.findById("stats-win-rate-0")).node.style.fontSize)
     }
 
     private fun characterStats(size: Int) = CharacterStats(

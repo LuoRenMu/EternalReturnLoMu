@@ -21,12 +21,12 @@ class CharacterDetailCommandTest {
         assertNotNull(annotation)
         assertTrue(annotation.name.isNotBlank())
         assertEquals(annotation.name, annotation.alias)
-        assertEquals("<character> <mode> <tier>", annotation.value)
+        assertEquals("<character> <mode> <tier> <weapon>", annotation.value)
     }
 
     @Test
     fun optionalsAreComplete() {
-        assertEquals(listOf("character", "mode", "tier"), command.optionals.map { it.name })
+        assertEquals(listOf("character", "mode", "tier", "weapon"), command.optionals.map { it.name })
         assertTrue(command.optionals[0].required)
         assertFalse(command.optionals[1].required)
         assertFalse(command.optionals[2].required)

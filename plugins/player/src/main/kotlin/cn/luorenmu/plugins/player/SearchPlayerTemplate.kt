@@ -29,8 +29,10 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
 
 
     override fun build(data: EternalReturnPlayRender): TemplateDocument {
-        val summaryHeight = if (data.summary != null) 190f else 0f
-        val matchesHeight = data.matches.sumOf { 120 + (it.teamMates?.size ?: 0) * 50 }.toFloat()
+        val matchCardsHeight = data.matches.sumOf { 98 + (it.teamMates?.size ?: 0) * 50 }.toFloat()
+        val rightSectionCount = data.matches.size + if (data.summary != null) 1 else 0
+        val rightHeight = 40f + (if (data.summary != null) 170f else 0f) + matchCardsHeight +
+            (rightSectionCount - 1).coerceAtLeast(0) * 10f
         val rankHeight = rankPanelHeight(data)
         val leftSections = buildList {
             add(rankHeight)
@@ -38,8 +40,8 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
             if (data.recentPlayers.isNotEmpty()) add(40f + data.recentPlayers.size * 52f)
         }
         val leftHeight = leftSections.sum() + (leftSections.size - 1).coerceAtLeast(0) * 30f
-        val bodyHeight = max(leftHeight, summaryHeight + matchesHeight + 30)
-        val height = (90 + bodyHeight + 30).toInt()
+        val bodyHeight = max(leftHeight, rightHeight)
+        val height = (20 + 211 + 20 + bodyHeight + 20).toInt()
         val base = data.httpServer
 
         return TemplateDocument(1290, height, Document(CssStyle(width = px(1290), height = px(height), padding = Edges(20f), gap = 20f, background = pageBg, color = ink), id = "content-container") {
@@ -147,11 +149,11 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
         Column(CssStyle(width = px(810), height = px(cardHeight), background = Color.makeARGB(220,255,255,255), border = Border(1f, line), borderRadius = 20f), id = "match-${match.gameId}") {
             Column(CssStyle(position = Position.ABSOLUTE, left = 0f, top = 0f, width = px(15), height = percent(100), background = accent, cornerRadii = CornerRadii(20f, 0f, 0f, 20f)))
             Column(CssStyle(position = Position.ABSOLUTE, right = 0f, top = 0f, width = px(15), height = percent(100), background = accent, cornerRadii = CornerRadii(0f, 20f, 20f, 0f)))
-            Row(CssStyle(width = percent(100), height = px(98), alignItems = AlignItems.CENTER, padding = Edges(0f, 20f), gap = 14f)) {
-                Column(CssStyle(width = px(50), height = px(75), gap = 3f, margin = Edges(left = 3f))) {
+            Row(CssStyle(width = percent(100), height = px(98), alignItems = AlignItems.CENTER, padding = Edges(0f, 20f), gap = 8f)) {
+                Column(CssStyle(width = px(74), height = px(75), gap = 3f, margin = Edges(left = 3f)), id = "match-time-${match.gameId}") {
                     Text(if (isCobalt) if (match.rank == 1) "胜利" else "失败" else if (match.rank == 99) "逃离" else "#${match.rank}" , recordTextStyle(14f, accent, 18f))
                     Text(match.type, recordTextStyle(12f, ink, 16f))
-                    Text(match.dateHour, recordTextStyle(11f, muted, 15f))
+                    Text(match.dateHour, recordTextStyle(11f, muted, 15f), id = "match-hour-${match.gameId}")
                     Text(match.dateMonth, recordTextStyle(11f, muted, 15f))
                 }
                 Column(CssStyle(width = px(70), height = px(90), gap = 4f, alignItems = AlignItems.CENTER)) {
@@ -227,6 +229,11 @@ class SearchPlayerTemplate : ImageTemplate<EternalReturnPlayRender> {
                     }
                 }
             }
+            Text("${match.serverName.ifBlank { "未知" }}-${match.gameId}",
+                recordTextStyle(12f, muted, 20f).copy(
+                    position = Position.ABSOLUTE, left = 322f, top = 3f, width = px(258),
+                    background = Color.TRANSPARENT, fontWeight = 700, textAlign = TextAlign.CENTER),
+                id = "match-server-id-${match.gameId}")
         }
     }
 

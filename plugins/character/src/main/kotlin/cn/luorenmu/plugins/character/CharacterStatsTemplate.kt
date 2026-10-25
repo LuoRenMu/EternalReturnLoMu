@@ -153,7 +153,7 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
                     )
                 }
                 text(
-                    player.rankingLabel(),
+                    "#${index + 1}",
                     CssStyle(
                         width = px(28),
                         height = px(18),
@@ -193,12 +193,13 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
                 }
             }
             text(
-                "胜率 ${player.winRate}",
+                if (player.winRate == NO_CHARACTER_STATISTICS) NO_CHARACTER_STATISTICS else "胜率 ${player.winRate}",
                 metricTextStyle(Color.makeRGB(70, 77, 94)),
                 id = "stats-win-rate-$index",
             )
             text(
-                "伤害 ${String.format(Locale.ROOT, "%,d", player.averageDamage)}",
+                if (player.winRate == NO_CHARACTER_STATISTICS) "伤害 —"
+                else "伤害 ${String.format(Locale.ROOT, "%,d", player.averageDamage)}",
                 metricTextStyle(Color.makeRGB(132, 139, 158)),
                 id = "stats-damage-$index",
             )
@@ -213,9 +214,6 @@ class CharacterStatsTemplate : ImageTemplate<CharacterStats> {
         textAlign = TextAlign.CENTER,
         verticalAlign = VerticalAlign.CENTER,
     )
-
-    private fun CharacterStats.CharacterStatsPlayer.rankingLabel(): String =
-        if (rank > 0) "#$rank" else "--"
 
     private fun String?.resolve(base: String): String? = this
         ?.takeIf(String::isNotBlank)

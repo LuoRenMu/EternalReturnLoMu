@@ -18,6 +18,87 @@ import kotlin.test.assertTrue
  */
 class CharacterDetailTemplateRegressionTest {
     @Test
+    fun `render current detail layout preview with fixture data`() = kotlinx.coroutines.runBlocking {
+        val output = java.nio.file.Path.of(System.getProperty("user.dir"), "build", "previews", "character-detail-current-fixture.png")
+        java.nio.file.Files.createDirectories(output.parent)
+        cn.luorenmu.nutdraw.NutDraw.render(CharacterDetailTemplate(), characterDetail(), output)
+        assertTrue(java.nio.file.Files.size(output) > 100)
+    }
+
+    @Test
+    fun `only first two skill builds are rendered`() {
+        val root = CharacterDetailTemplate().build(characterDetail()).root
+        assertNotNull(root.findById("skill-plan-0"))
+        assertNotNull(root.findById("skill-plan-1"))
+        kotlin.test.assertNull(root.findById("skill-plan-2"))
+        kotlin.test.assertNull(root.findById("skill-plan-3"))
+        val layout = FlexLayoutEngine().layout(root, 1000f, 10000f)
+        val panel = assertNotNull(layout.findById("skill-panel"))
+        assertEquals(0, panel.descendants().count { it.node is NutImage })
+        repeat(2) { index ->
+            val plan = assertNotNull(layout.findById("skill-plan-$index"))
+            assertEquals(110f, plan.bounds.bottom - plan.bounds.top)
+            val priority = assertNotNull(layout.findById("skill-priority-$index"))
+            assertEquals(listOf("T", "Q", "E", "W"), (0..3).map { keyIndex ->
+                (assertNotNull(layout.findById("skill-key-$index-$keyIndex")).node as NutText).value
+            })
+            assertEquals(3, priority.descendants().count { it.node is NutText && (it.node as NutText).value == "→" })
+            assertEquals(22f, assertNotNull(layout.findById("skill-key-$index-0")).node.style.fontSize)
+        }
+    }
+
+    @Test
+    fun `priority icons match slots in priority order not metadata order and missing icons retain keys`() {
+        val data = characterDetail()
+        val analysis = assertNotNull(data.analysis)
+        val skills = listOf("Q", "W", "E", "R", "T").mapIndexed { index, slot ->
+            CharacterDetail.SkillSlot(index.toLong(),slot,"技能 $slot","file:///skills/$slot.png")
+        }
+        val weapon = analysis.weapons.first().copy(skills = skills, skillBySlot = skills.associateBy { it.slot })
+        val doc = CharacterDetailTemplate().build(data.copy(analysis = analysis.copy(weapons = listOf(weapon))))
+        val layout = FlexLayoutEngine().layout(doc.root,doc.width.toFloat(),doc.height.toFloat())
+        for (plan in 0..1) for ((index, slot) in listOf("T", "Q", "E", "W").withIndex()) {
+            val image = assertNotNull(layout.findById("skill-icon-$plan-$index")).node as NutImage
+            assertEquals("file:///skills/$slot.png",image.source)
+        }
+        assertEquals(8,assertNotNull(layout.findById("skill-panel")).descendants().count { it.node is NutImage })
+        val missing = weapon.copy(skills = emptyList(), skillBySlot = emptyMap())
+        val empty = CharacterDetailTemplate().build(data.copy(analysis = analysis.copy(weapons = listOf(missing))))
+        val missingLayout = FlexLayoutEngine().layout(empty.root,empty.width.toFloat(),empty.height.toFloat())
+        kotlin.test.assertNull(missingLayout.findById("skill-icon-0-0"))
+        assertEquals("T",(assertNotNull(missingLayout.findById("skill-key-0-0")).node as NutText).value)
+    }
+
+    @Test
+    fun `selected weapon and its tier become the displayed build`() {
+        val original = characterDetail()
+        val selected = original.selectWeapon("2")
+        assertEquals("其他武器", selected.analysis?.weapons?.first()?.weapon)
+        assertEquals("A", selected.analysis?.characterTier)
+        assertEquals(selected, original.selectWeapon("其他武器"))
+        assertEquals(1, original.analysis?.weapons?.first()?.weaponId?.toInt())
+        kotlin.test.assertFailsWith<cn.luorenmu.exception.MessageReplyException> { original.selectWeapon("999") }
+    }
+
+    @Test
+    fun `weapon buttons fill input without execution and preserve rank`() {
+        val options = CharacterDetailOptions(rank = cn.luorenmu.request.entity.module.DakGGRank.MITHRIL_PLUS)
+        val reply = characterWeaponChoices(characterDetail(), options, true) as love.forte.simbot.message.Messages
+        val keyboard = reply.filterIsInstance<love.forte.simbot.component.qguild.message.QGKeyboards>().single()
+        val buttons = keyboard.keyboards.content.rows.flatMap { it.buttons }
+        assertEquals(2, buttons.size)
+        buttons.forEachIndexed { index, button ->
+            assertEquals(2, button.action?.type)
+            assertEquals(false, button.action?.enter)
+            assertEquals(false, button.action?.reply)
+            assertEquals("/查询角色 1 排位 无暇 ${index + 1}", button.action?.data)
+            assertEquals("character-weapon-1-${index + 1}", button.id)
+        }
+        val plain = characterWeaponChoices(characterDetail(), options, false)
+        assertTrue(plain is love.forte.simbot.message.Text)
+    }
+
+    @Test
     fun `detail shows tier image and pick names`() {
         val document = CharacterDetailTemplate().build(characterDetail())
         val layout = FlexLayoutEngine().layout(document.root, document.width.toFloat(), document.height.toFloat())
@@ -64,19 +145,26 @@ class CharacterDetailTemplateRegressionTest {
         assertTrue(mainWeaponTier.bounds.right - mainWeaponTier.bounds.left <= 20f)
         assertTrue(otherWeaponTier.bounds.right - otherWeaponTier.bounds.left <= 22f)
         assertEquals(0, otherWeapon.descendants().count { it.node is NutImage })
-        assertEquals(Color.makeRGB(240, 243, 248), otherWeapon.node.style.background)
+        assertEquals(Color.TRANSPARENT, otherWeapon.node.style.background)
         assertEquals("主武器排名 #1 / 10", (ranking.node as NutText).value)
         assertTrue(ranking.node.style.fontSize >= 12f)
     }
 
     @Test
-    fun `detail palette uses white surfaces and readable dark text`() {
+    fun `detail palette uses unfilled surfaces pink accents and readable dark text`() {
         val root = CharacterDetailTemplate().build(characterDetail()).root
         val hero = assertNotNull(root.findById("detail-hero"))
 
         assertEquals(Color.WHITE, root.style.background)
-        assertEquals(Color.makeRGB(24, 29, 36), root.style.color)
+        assertEquals(Color.makeRGB(48, 38, 45), root.style.color)
         assertEquals(Color.TRANSPARENT, hero.style.background)
+        assertEquals(Color.TRANSPARENT, assertNotNull(root.findById("main-weapon-strip")).style.background)
+        assertEquals(Color.makeRGB(170, 48, 94), assertNotNull(root.findById("skill-key-0-0")).style.color)
+        val doc = CharacterDetailTemplate().build(characterDetail())
+        val layout = FlexLayoutEngine().layout(doc.root,doc.width.toFloat(),doc.height.toFloat())
+        layout.descendants().filter { it.node is cn.luorenmu.nutdraw.dom.NutElement && it.bounds.width * it.bounds.height > 2000f }.forEach {
+            assertTrue(it.node.style.background in listOf(Color.TRANSPARENT,Color.WHITE),"Colored surface: ${it.node.id}")
+        }
     }
 
     @Test
@@ -156,6 +244,46 @@ class CharacterDetailTemplateRegressionTest {
         kotlin.test.assertNull(layout.findById("infusion-panel"))
         kotlin.test.assertNull(layout.findById("players-panel"))
         assertTrue(doc.height < CharacterDetailTemplate().build(characterDetail()).height)
+    }
+
+    @Test
+    fun `learning and tactical panels align side by side with readable type`() {
+        val doc = CharacterDetailTemplate().build(characterDetail())
+        val layout = FlexLayoutEngine().layout(doc.root, doc.width.toFloat(), doc.height.toFloat())
+        val skill = assertNotNull(layout.findById("skill-panel"))
+        val tactical = assertNotNull(layout.findById("tactical-panel"))
+        assertEquals(skill.bounds.top, tactical.bounds.top)
+        assertEquals(skill.bounds.bottom, tactical.bounds.bottom)
+        assertEquals(16f, tactical.bounds.left - skill.bounds.right)
+        assertEquals(536f, skill.bounds.width)
+        assertEquals(384f, tactical.bounds.width)
+        assertEquals(22f, assertNotNull(layout.findById("skill-priority-0")).node.style.fontSize)
+        repeat(4) { assertNotNull(layout.findById("tactical-choice-$it")) }
+        assertEquals(Color.makeRGB(21, 115, 83), assertNotNull(layout.findById("main-weapon-rp")).node.style.color)
+        assertEquals(Color.makeRGB(190, 48, 57), assertNotNull(layout.findById("other-weapon-rp-0")).node.style.color)
+    }
+
+    @Test
+    fun `sparse and missing sections do not overflow and keep empty state usable`() {
+        val sample = characterDetail()
+        val analysis = assertNotNull(sample.analysis)
+        val weapon = analysis.weapons.first()
+        val variants = listOf(weapon.copy(skillBuilds = emptyList()), weapon.copy(tacticals = emptyList()),
+            weapon.copy(skillBuilds = weapon.skillBuilds.take(1), tacticals = weapon.tacticals.take(1)),
+            weapon.copy(skillBuilds = emptyList(), tacticals = emptyList(), augments = emptyList(),
+                itemBuilds = emptyList(), topEquipments = emptyList(), infusions = emptyList()))
+        for (variant in variants) {
+            val doc = CharacterDetailTemplate().build(sample.copy(analysis = analysis.copy(weapons = listOf(variant))))
+            val layout = FlexLayoutEngine().layout(doc.root, doc.width.toFloat(), doc.height.toFloat())
+            (listOf(layout) + layout.descendants()).forEach { parent -> parent.children.forEach { child ->
+                assertTrue(child.bounds.right <= parent.bounds.right + 0.5f,"${child.node.id} right overflow")
+                assertTrue(child.bounds.bottom <= parent.bounds.bottom + 0.5f,"${child.node.id} bottom overflow")
+            } }
+        }
+        val empty = CharacterDetailTemplate().build(sample.copy(analysis = null))
+        assertEquals(220,empty.height)
+        val emptyLayout = FlexLayoutEngine().layout(empty.root, 1000f, 220f)
+        assertTrue(emptyLayout.descendants().any { it.node is NutText && (it.node as NutText).value.contains("暂无数据") })
     }
 
     private fun characterDetail(): CharacterDetail {

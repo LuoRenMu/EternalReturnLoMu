@@ -11,6 +11,7 @@ import cn.luorenmu.common.util.RenderedFileCache
 import cn.luorenmu.nutdraw.NutDraw
 import cn.luorenmu.request.api.entity.response.dakgg.DakGGItemsResponse.Item
 import cn.luorenmu.request.api.impl.EternalReturnDakGGApi
+import kotlinx.coroutines.CancellationException
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.OfflineImage
 import love.forte.simbot.message.toText
@@ -18,7 +19,7 @@ import love.forte.simbot.message.toText
 @BotCommand("查询装备", "查询装备", "<item>", adapter = [Adapter.QG_BOT, Adapter.ONE_BOT])
 class ItemQueryCommand : CommandEvent {
     override val example = "/查询装备 军刀"
-    override val description = "查询装备品质、属性说明和合成材料"
+    override val description = "查询装备品质、属性、合成材料和高使用率角色"
     override val optionals = listOf(CommandOptional("item", "装备名/拼音/ID", required = true))
 
     override suspend fun listen(sender: MessageSender, command: Map<String, String>): Message {
@@ -31,11 +32,22 @@ class ItemQueryCommand : CommandEvent {
             matches.take(15).joinToString("\n") { "${it.name} (${it.id})" } +
             if (matches.size > 15) "\n共 ${matches.size} 件，请缩小关键词范围。" else "").toText()
         val item = matches.single()
-        val materials = (item.makeMaterials ?: listOfNotNull(item.makeMaterial1, item.makeMaterial2))
-            .filter { it > 0 }.map { id -> items.firstOrNull { it.id == id } ?: Item(id = id, name = "材料 $id") }
-        val key = RenderedFileCache.cacheKey("v2", item.id.toString(), item.tooltip, materials.joinToString())
+        val recipe = buildItemRecipeTree(item, items)
+        val (characters, updatedAt) = try {
+            val stats = EquipmentStatsClient.fetch()
+            val characterData = EternalReturnDakGGApi.Data.GetCharacters.execute().characters
+            val weaponData = EternalReturnDakGGApi.Data.GetWeapons.execute().masteries
+            val ranked = topItemCharacters(item.id, stats, characterData, weaponData)
+            val withPortraits = localizeItemPortraits(ranked, characterData)
+            withPortraits to stats.meta.updatedAt
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            emptyList<ItemCharacterUsage>() to (System.currentTimeMillis() / 3_600_000)
+        }
+        val key = RenderedFileCache.cacheKey("v4", item.id.toString(), item.tooltip,
+            recipe.toString(), updatedAt.toString(), characters.joinToString())
         val path = RenderedFileCache.getOrCreate(PathUtils.resourcesPathResolve("render", "item_$key.png")) {
-            NutDraw.render(ItemQueryTemplate(), ItemQueryData(item, materials), it)
+            NutDraw.render(ItemQueryTemplate(), ItemQueryData(item, recipe, characters), it)
         }
         return OfflineImage.fileOfflineImage(path.toString())
     }

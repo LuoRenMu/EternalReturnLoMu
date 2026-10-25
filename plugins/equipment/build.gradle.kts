@@ -1,4 +1,4 @@
-plugins { kotlin("jvm") }
+plugins { kotlin("jvm"); kotlin("plugin.serialization") }
 
 dependencies {
     implementation(project(":core"))
@@ -7,7 +7,9 @@ dependencies {
     implementation(project(":http-client"))
     implementation(libs.simbot.core)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
     testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.serialization.json)
     testRuntimeOnly(libs.skiko.runtime.windows.x64)
 }
 
