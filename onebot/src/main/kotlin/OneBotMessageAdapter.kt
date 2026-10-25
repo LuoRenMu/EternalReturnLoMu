@@ -1,7 +1,9 @@
 package cn.luorenmu.onebot
 
 import love.forte.simbot.component.qguild.message.QGMarkdown
+import love.forte.simbot.component.qguild.message.QGKeyboards
 import love.forte.simbot.message.Message
+import love.forte.simbot.message.Messages
 import love.forte.simbot.message.toText
 
 /**
@@ -11,6 +13,9 @@ import love.forte.simbot.message.toText
  * Date 2026/8/16
  */
 internal fun Message.toOneBotCompatibleMessage(): Message = when (this) {
+    is Messages -> Messages.of(filterNot { it is QGKeyboards }.map {
+        if (it is QGMarkdown) it.markdown.content.orEmpty().markdownToPlainText().toText() else it
+    })
     is QGMarkdown -> markdown.content.orEmpty().markdownToPlainText().toText()
     else -> this
 }

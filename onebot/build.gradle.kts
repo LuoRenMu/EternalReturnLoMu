@@ -5,10 +5,11 @@ plugins {
 dependencies {
     implementation(project(":core"))
     rootProject.subprojects
-        .filter { it.path.startsWith(":plugins:") }
+        .filter { it.path.startsWith(":plugins:") && it.path != ":plugins:patch-notes" }
         .forEach { implementation(it) }
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.netty)
+    implementation(libs.ktor.client.cio)
     implementation(libs.simbot.core)
     implementation(libs.simbot.component.onebot)
     implementation(libs.simbot.component.qq)
