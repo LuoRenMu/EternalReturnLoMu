@@ -57,3 +57,7 @@ bin/
 /plugins/.cache/
 /plugins/plugin-state.properties
 /data/image-integrity.properties
+/data/group-pet.db*
+/data/
+__pycache__/
+*.py[cod]
