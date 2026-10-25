@@ -71,6 +71,11 @@ object CommandPlugins {
             runCatching { loadExternal(jar) }
                 .onFailure { log.error(it) { "Failed to load command plugin jar: $jar" } }
         }
+        // External implementations have already started; start only remaining built-ins.
+        slots.values.filter { it.enabled && it.source is PluginSource.Builtin }.forEach { slot ->
+            validate(slot.plugin, excludingId = slot.plugin.id)
+            slot.plugin.onEnable()
+        }
         publish()
         log.info { "Loaded command plugins: ${slots.keys}" }
     }
@@ -243,7 +248,12 @@ object CommandPlugins {
                 closeSlot(old)
                 builtinFactories[id]?.let { factory ->
                     val state = savedStates[id]
-                    slots[id] = PluginSlot(factory.create(), state?.enabled != false, state?.disabledReply.orEmpty(), PluginSource.Builtin(factory))
+                    val fallback = PluginSlot(factory.create(), state?.enabled != false, state?.disabledReply.orEmpty(), PluginSource.Builtin(factory))
+                    if (fallback.enabled) {
+                        validate(fallback.plugin, excludingId = id)
+                        fallback.plugin.onEnable()
+                    }
+                    slots[id] = fallback
                 }
             }
         }

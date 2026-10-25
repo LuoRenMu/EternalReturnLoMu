@@ -25,9 +25,11 @@ dependencies {
     implementation(libs.caffeine)
     implementation(libs.ktorm.core)
     implementation(libs.ktorm.support.postgresql)
+    implementation(libs.ktorm.support.sqlite)
     implementation(libs.postgresql)
     implementation(libs.sqlite.jdbc)
     implementation(libs.hikari.cp)
+    implementation("org.eclipse.angus:jakarta.mail:2.0.5")
     testImplementation(kotlin("test"))
     testImplementation(libs.ktor.server.test.host)
     // QGMarkdown 等 QQ 组件类型在核心模块为 compileOnly，测试运行期需要显式加入

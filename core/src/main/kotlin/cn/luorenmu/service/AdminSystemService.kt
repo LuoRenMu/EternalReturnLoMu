@@ -65,10 +65,10 @@ data class AdminSystemView(
     val runtimePort: Int,
 )
 
-private fun Any.readLong(vararg methodNames: String): Long? {
+internal fun Any.readLong(vararg methodNames: String): Long? {
     return methodNames.firstNotNullOfOrNull { methodName ->
         runCatching {
-            javaClass.methods
+            com.sun.management.OperatingSystemMXBean::class.java.methods
                 .firstOrNull { it.name == methodName && it.parameterCount == 0 }
                 ?.invoke(this) as? Number
         }.getOrNull()?.toLong()

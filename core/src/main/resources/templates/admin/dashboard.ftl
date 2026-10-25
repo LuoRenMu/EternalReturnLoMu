@@ -6,9 +6,11 @@
     <title>${pageTitle?html}</title>
     <link rel="icon" href="/static/images/favicon.ico" sizes="any">
     <link rel="stylesheet" href="/static/admin/admin.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    <link rel="stylesheet" href="/static/admin/qq-menu-panel.css">
+    <script defer src="/static/admin/vendor/htmx.min.js"></script>
     <script defer src="/static/admin/admin.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.8/dist/cdn.min.js"></script>
+    <script defer src="/static/admin/qq-menu-panel.js"></script>
+    <script defer src="/static/admin/vendor/alpine.min.js"></script>
     <style>
         html { background:#fff7fb; }
         body::before { content:""; position:fixed; inset:0; z-index:-2; pointer-events:none; background:url("${backgroundImageUrl?html}") center/cover no-repeat; opacity:.72; }
@@ -51,7 +53,8 @@
             <button class="nav-button" :class="view === 'exceptions' && 'nav-button-active'" @click="showView('exceptions', '异常日志')"><span class="rounded-lg bg-white/15 px-2 py-1 text-xs">03</span>异常日志</button>
             <button class="nav-button" :class="view === 'plugins' && 'nav-button-active'" @click="showView('plugins', '命令插件')"><span class="rounded-lg bg-white/15 px-2 py-1 text-xs">04</span>命令插件</button>
             <button class="nav-button" :class="view === 'command' && 'nav-button-active'" @click="showView('command', 'Debug')"><span class="rounded-lg bg-white/15 px-2 py-1 text-xs">05</span>Debug</button>
-            <button class="nav-button" :class="view === 'about' && 'nav-button-active'" @click="showView('about', '关于')"><span class="rounded-lg bg-white/15 px-2 py-1 text-xs">06</span>关于</button>
+            <button class="nav-button" :class="view === 'qqmenus' && 'nav-button-active'" @click="showView('qqmenus', 'QQ 菜单与面板')"><span class="rounded-lg bg-white/15 px-2 py-1 text-xs">06</span>QQ 菜单与面板</button>
+            <button class="nav-button" :class="view === 'about' && 'nav-button-active'" @click="showView('about', '关于')"><span class="rounded-lg bg-white/15 px-2 py-1 text-xs">07</span>关于</button>
         </nav>
         <div class="absolute bottom-5 hidden text-xs text-white/65 lg:block">Power by LuoRenMu</div>
     </aside>
@@ -75,7 +78,7 @@
                     <article class="stat-card bg-gradient-to-br from-white to-[#fff0e5]"><span class="stat-dot"></span><label class="text-xs font-extrabold text-[#9b7187]">服务端口</label><strong class="mt-2 block text-3xl font-black" x-text="overview.serverPort"></strong><small class="font-bold text-lomu-600">运行时端口</small></article>
                 </div>
                 <div class="mt-4 grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
-                    <div id="runtime-panel" class="panel min-h-72" hx-get="/admin/fragments/system" hx-trigger="load, every 15s, refresh-system from:body" hx-swap="innerHTML">
+                    <div id="runtime-panel" class="panel min-h-72" hx-get="/admin/fragments/system" hx-trigger="load, every 15s, refresh-system from:body" hx-swap="innerHTML" hx-request='{"timeout":10000}'>
                         <div class="grid min-h-72 place-items-center text-sm text-[#9b7187]">正在读取运行状态</div>
                     </div>
                     <article class="panel">
@@ -166,6 +169,7 @@
                 <div class="mt-4 rounded-3xl border border-dashed border-lomu-200 bg-white/80 p-5 backdrop-blur" x-show="commandResult"><template x-for="(element,index) in commandResult?.elements || []" :key="index"><div><img class="mt-3 max-h-190 max-w-full rounded-3xl border-4 border-white shadow-xl" style="cursor:zoom-in" x-show="element.type === 'image' && element.imageUrl" :src="element.imageUrl" alt="命令结果预览，点击放大" @click="openImagePreview(element.imageUrl)"><pre class="whitespace-pre-wrap break-words" x-show="element.type !== 'image' || !element.imageUrl" x-text="element.text || element.raw || ''"></pre></div></template></div>
             </section>
 
+            <#include "fragments/qq-menu-panel.ftl">
             <section x-show="view === 'about'" x-cloak>
                 <div class="mb-5"><h2 class="text-2xl font-black text-lomu-900">关于 EternalReturnLoMu</h2><p class="mt-1 text-sm text-[#9b7187]">永恒轮回战绩查询与机器人管理项目。</p></div>
                 <div class="grid max-w-2xl gap-4">

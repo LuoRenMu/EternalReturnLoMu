@@ -16,6 +16,24 @@ import kotlin.test.assertFalse
  */
 class AdminDashboardPageTest {
     @Test
+    fun qqMenuEditorUsesBundledScriptsAndExplicitConfirmedForms() {
+        val template = checkNotNull(javaClass.getResource("/templates/admin/dashboard.ftl")).readText()
+        val fragment = checkNotNull(javaClass.getResource("/templates/admin/fragments/qq-menu-panel.ftl")).readText()
+        val script = checkNotNull(javaClass.getResource("/static/admin/qq-menu-panel.js")).readText()
+        assertContains(template, "/static/admin/qq-menu-panel.js")
+        assertContains(template, "/static/admin/qq-menu-panel.css")
+        assertContains(template, "fragments/qq-menu-panel.ftl")
+        assertContains(fragment, "QQ 菜单与指令面板")
+        assertContains(fragment, "管理面板关联对象")
+        assertContains(fragment, "scopeChanged()")
+        assertContains(script, "confirmed: true")
+        assertContains(script, "confirmChange")
+        assertContains(fragment, "confirmDialog")
+        assertContains(script, "encodeURIComponent(id)")
+        assertFalse(fragment.contains("x-html"), "QQ-returned names and descriptions must never be rendered as HTML")
+    }
+
+    @Test
     fun dashboardUsesFreemarkerHtmxAlpineAndStandaloneCss() {
         val template = checkNotNull(javaClass.getResource("/templates/admin/dashboard.ftl")).readText()
         val loginTemplate = checkNotNull(javaClass.getResource("/templates/admin/login.ftl")).readText()
@@ -35,7 +53,11 @@ class AdminDashboardPageTest {
         assertContains(stylesheet, "--color-lomu-500")
         assertFalse(stylesheet.contains("tailwindcss", ignoreCase = true))
         assertContains(template, "htmx.min.js")
-        assertContains(template, "alpinejs")
+        assertContains(template, "/static/admin/vendor/alpine.min.js")
+        assertFalse(template.contains("cdn.jsdelivr.net"))
+        assertContains(script, "htmx:responseError")
+        assertContains(script, "htmx:timeout")
+        assertContains(script, "管理登录已失效")
         assertContains(template, "x-data=\"adminDashboard\"")
         assertContains(template, "hx-get=\"/admin/fragments/system\"")
         assertContains(template, "hx-trigger=\"load, every 15s")

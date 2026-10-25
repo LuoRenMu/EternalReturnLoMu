@@ -1,6 +1,7 @@
 package cn.luorenmu.repository
 
 import cn.luorenmu.common.util.DatabaseManager
+import cn.luorenmu.common.database.insertIgnoring
 import cn.luorenmu.repository.entity.EternalReturnNewsRecord
 import cn.luorenmu.repository.table.EternalReturnNews
 import cn.luorenmu.service.GameActivityVisibility.hasRedemptionCode
@@ -10,7 +11,6 @@ import org.ktorm.dsl.QueryRowSet
 import org.ktorm.dsl.desc
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.from
-import org.ktorm.dsl.insert
 import org.ktorm.dsl.isNotNull
 import org.ktorm.dsl.limit
 import org.ktorm.dsl.map
@@ -45,29 +45,33 @@ open class NewsRepository(private val dbManager: DatabaseManager) {
         }
     }
 
-    /** 判断文章是否已入库（按 articleId）。 */
+    /** 判断文章是否已入库（按 articleId）；查询失败时抛出，避免重复交给 AI。 */
     open fun isArticleExists(articleId: Int): Boolean {
-        return withDatabase("isArticleExists", false) { database ->
-            database
-                .from(EternalReturnNews)
-                .select(EternalReturnNews.articleId)
-                .where { EternalReturnNews.articleId eq articleId }
-                .map { row -> row[EternalReturnNews.articleId] }
-                .firstOrNull() != null
-        }
+        return dbManager.database
+            .from(EternalReturnNews)
+            .select(EternalReturnNews.articleId)
+            .where { EternalReturnNews.articleId eq articleId }
+            .map { row -> row[EternalReturnNews.articleId] }
+            .firstOrNull() != null
     }
 
-    /** 批量查询已入库的文章 ID，用于启动时填充内存去重集合。 */
+    /** 批量查询已入库的文章 ID；失败时不能当作尚未处理过任何文章。 */
     open fun findExistingArticleIds(): Set<Int> {
-        return withDatabase("findExistingArticleIds", emptySet()) { database ->
-            database
-                .from(EternalReturnNews)
-                .select(EternalReturnNews.articleId)
-                .map { row -> row[EternalReturnNews.articleId] }
-                .filterNotNull()
-                .toSet()
-        }
+        return dbManager.database
+            .from(EternalReturnNews)
+            .select(EternalReturnNews.articleId)
+            .map { row -> row[EternalReturnNews.articleId] }
+            .filterNotNull()
+            .toSet()
     }
+
+    /** Push deduplication needs historical codes too, not just the latest article window. */
+    open fun findRedemptionCodesForPush(): List<EternalReturnNewsRecord> =
+        withDatabase("findRedemptionCodesForPush", emptyList()) { database ->
+            database.from(EternalReturnNews).select()
+                .where { EternalReturnNews.code.isNotNull() }
+                .map { row -> mapRow(row) }.filter { it.hasRedemptionCode() }
+        }
 
     /** 查询最近识别出的兑换码活动。 */
     open fun findLatestRedemptionCodes(limit: Int = 5): List<EternalReturnNewsRecord> {
@@ -104,31 +108,17 @@ open class NewsRepository(private val dbManager: DatabaseManager) {
         }
     }
 
-    /** 插入一条新闻记录（已存在则忽略）。 */
+    /** 按文章 ID 原子插入，重复扫描不得改写兑换码及首次发现时间。SQLite / PostgreSQL 通用。 */
     open fun insert(record: EternalReturnNewsRecord): Boolean {
         return withDatabase("insertNews", false) { database ->
-            if (isArticleExists(record.articleId)) {
-                logger.debug { "文章已存在，跳过插入: articleId=${record.articleId}" }
-                return@withDatabase false
-            }
-            database.insert(EternalReturnNews) {
-                set(it.articleId, record.articleId)
-                set(it.title, record.title)
-                set(it.thumbnailUrl, record.thumbnailUrl)
-                set(it.createdAt, record.createdAt)
-                set(it.contentText, record.contentText)
-                set(it.eventStartTime, record.eventStartTime)
-                set(it.eventEndTime, record.eventEndTime)
-                set(it.isGameActivity, record.isGameActivity)
-                set(it.isRedemptionCode, record.isRedemptionCode)
-                set(it.code, record.code)
-                set(it.reward, record.reward)
-                set(it.note, record.note)
-                set(it.startDate, record.startDate)
-                set(it.endDate, record.endDate)
-                set(it.processedAt, record.processedAt)
-            }
-            true
+            database.insertIgnoring(EternalReturnNews, EternalReturnNews.articleId) {
+                set(it.articleId,record.articleId); set(it.title,record.title); set(it.thumbnailUrl,record.thumbnailUrl)
+                set(it.createdAt,record.createdAt); set(it.contentText,record.contentText)
+                set(it.eventStartTime,record.eventStartTime); set(it.eventEndTime,record.eventEndTime)
+                set(it.isGameActivity,record.isGameActivity); set(it.isRedemptionCode,record.isRedemptionCode)
+                set(it.code,record.code); set(it.reward,record.reward); set(it.note,record.note)
+                set(it.startDate,record.startDate); set(it.endDate,record.endDate); set(it.processedAt,record.processedAt)
+            } > 0
         }
     }
 

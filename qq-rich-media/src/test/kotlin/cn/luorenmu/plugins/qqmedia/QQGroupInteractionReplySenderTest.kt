@@ -23,6 +23,22 @@ import java.util.Base64
 import kotlin.test.*
 
 class QQGroupInteractionReplySenderTest {
+    @Test fun `active cover and text are sent as one SDK message without reply ids`() = runBlocking {
+        val path = root.resolve("live-cover.png")
+        Files.write(path, Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0XcAAAAASUVORK5CYII="))
+        val sent = mutableListOf<GroupMessageSendApi>()
+        QQProactiveGroupSender.send(bot(onSend = { sent += it }), group,
+            love.forte.simbot.message.messagesOf(OfflineImage.fileOfflineImage(path.toString()), "直播提醒".toText()))
+        val body = sent.single().body as GroupAndC2CSendBody
+        // The SDK prefixes an image-first caption with one separator space.
+        assertEquals("直播提醒", body.content.trimStart())
+        assertEquals(7, body.msgType)
+        assertEquals("fixture-info", body.media?.fileInfo)
+        val wire = Json.parseToJsonElement(Json.encodeToString(body)).jsonObject
+        assertNull(wire["msg_id"])
+        assertNull(wire["event_id"])
+    }
+
     @Test fun `active image uses SDK upload without passive reply identifiers`() = runBlocking {
         val path = root.resolve("active-match.png")
         Files.write(path, Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0XcAAAAASUVORK5CYII="))

@@ -10,6 +10,8 @@ import cn.luorenmu.service.AdminConfigService
 import cn.luorenmu.service.AdminDatabaseService
 import cn.luorenmu.service.AdminSystemService
 import cn.luorenmu.service.AdminSystemView
+import cn.luorenmu.health.CoreHeartbeatKey
+import cn.luorenmu.health.HeartbeatStatus
 import cn.luorenmu.service.AdminRowUpdate
 import io.ktor.http.ContentType
 import io.ktor.http.Cookie
@@ -31,6 +33,8 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import kotlinx.serialization.Serializable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import love.forte.simbot.common.id.ID
@@ -59,6 +63,7 @@ private val adminJson = Json {
 }
 
 fun Route.adminRouting() {
+    adminQQMenuPanelRouting()
     val statisticsRepository: StatisticsRepository by inject(StatisticsRepository::class.java)
     val exceptionRepository: ExceptionRepository by inject(ExceptionRepository::class.java)
     val configService: AdminConfigService by inject(AdminConfigService::class.java)
@@ -161,6 +166,13 @@ fun Route.adminRouting() {
         call.respondJson(AdminResponse(data = systemService.view()))
     }
 
+    get("/api/admin/health") {
+        if (!call.requireAdmin()) return@get
+        val status = call.application.attributes.getOrNull(CoreHeartbeatKey)?.status()
+            ?: HeartbeatStatus(enabled = false, state = "not_installed")
+        call.respondJson(AdminResponse(data = status))
+    }
+
     get("/api/admin/exceptions") {
         if (!call.requireAdmin()) return@get
         val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 500) ?: 100
@@ -235,7 +247,7 @@ fun Route.adminRouting() {
 
     get("/api/admin/database/tables") {
         if (!call.requireAdmin()) return@get
-        runCatching { databaseService.tables() }
+        runCatching { withContext(Dispatchers.IO) { databaseService.tables() } }
             .onSuccess { call.respondJson(AdminResponse(data = it)) }
             .onFailure {
                 exceptionRepository.record(it, "admin.database.tables")
@@ -252,7 +264,9 @@ fun Route.adminRouting() {
         val filter = call.request.queryParameters["filter"]
         val sortColumn = call.request.queryParameters["sortColumn"]
         val sortDirection = call.request.queryParameters["sortDirection"] ?: "asc"
-        runCatching { databaseService.page(table, limit, offset, filterColumn, filter, sortColumn, sortDirection) }
+        runCatching { withContext(Dispatchers.IO) {
+            databaseService.page(table, limit, offset, filterColumn, filter, sortColumn, sortDirection)
+        } }
             .onSuccess { call.respondJson(AdminResponse(data = it)) }
             .onFailure {
                 exceptionRepository.record(it, "admin.database.page", "table=$table; limit=$limit; offset=$offset")
@@ -264,7 +278,8 @@ fun Route.adminRouting() {
         if (!call.requireAdmin()) return@put
         val table = call.parameters["table"].orEmpty()
         runCatching {
-            databaseService.update(table, adminJson.decodeFromString<AdminRowUpdate>(call.receiveText()))
+            val request = adminJson.decodeFromString<AdminRowUpdate>(call.receiveText())
+            withContext(Dispatchers.IO) { databaseService.update(table, request) }
         }.onSuccess { updated ->
             if (updated) call.respondJson(AdminResponse(data = true))
             else call.respondJson(AdminResponse<Unit>(ok = false, error = "记录不存在或未更新"), HttpStatusCode.NotFound)
@@ -398,7 +413,7 @@ private fun formatBytes(bytes: Long): String {
     return "%.1f %s".format(value, units[unitIndex])
 }
 
-private suspend fun ApplicationCall.requireAdmin(): Boolean {
+internal suspend fun ApplicationCall.requireAdmin(): Boolean {
     val valid = hasValidAdminToken()
     if (!valid) respondJson(AdminResponse<Unit>(ok = false, error = "管理令牌无效"), HttpStatusCode.Unauthorized)
     return valid
@@ -414,7 +429,7 @@ private fun idOf(value: String): ID {
 }
 
 @Serializable
-private data class AdminResponse<T>(
+internal data class AdminResponse<T>(
     val ok: Boolean = true,
     val data: T? = null,
     val error: String? = null,
@@ -504,7 +519,7 @@ internal data class MessagePreviewElement(
     }
 }
 
-private suspend inline fun <reified T> ApplicationCall.respondJson(
+internal suspend inline fun <reified T> ApplicationCall.respondJson(
     response: AdminResponse<T>,
     status: HttpStatusCode = HttpStatusCode.OK,
 ) {

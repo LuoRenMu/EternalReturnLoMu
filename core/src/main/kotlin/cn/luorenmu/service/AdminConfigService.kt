@@ -3,6 +3,7 @@ package cn.luorenmu.service
 import cn.luorenmu.ConfigFile
 import cn.luorenmu.SERVER_PORT
 import cn.luorenmu.common.util.DatabaseManager
+import cn.luorenmu.health.HeartbeatConfig
 import kotlinx.serialization.Serializable
 
 /**
@@ -10,8 +11,11 @@ import kotlinx.serialization.Serializable
  * @author LoMu
  * Date 2026/8/16 15:30
  */
-class AdminConfigService(private val databaseManager: DatabaseManager) {
-    fun view(): AdminConfigView = ConfigFile.config.toView()
+class AdminConfigService(
+    private val databaseManager: DatabaseManager,
+    private val configuration: () -> ConfigFile.BotConfig = { ConfigFile.config },
+) {
+    fun view(): AdminConfigView = configuration().toView()
 
     private fun ConfigFile.BotConfig.toView() = AdminConfigView(
         port = port,
@@ -31,6 +35,7 @@ class AdminConfigService(private val databaseManager: DatabaseManager) {
             postgres.schema,
         ),
         ai = AiConfigView(ai.apiKey.masked(), ai.model, ai.baseUrl),
+        heartbeat = heartbeat.copy(smtp = heartbeat.smtp.masked()),
     )
 
     private fun String.masked() = if (isBlank()) "" else SECRET_MASK
@@ -56,6 +61,7 @@ data class AdminConfigView(
     val other: Map<String, String>,
     val postgres: PostgresConfigView,
     val ai: AiConfigView,
+    val heartbeat: HeartbeatConfig,
 )
 
 @Serializable

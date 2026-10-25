@@ -23,6 +23,34 @@ import kotlin.test.assertTrue
  */
 class CommandPluginsTest {
     @Test
+    fun `enabled built-in lifecycle starts once and disabled built-in does not start on restart`() {
+        val directory = Files.createTempDirectory("lomu-plugin-lifecycle")
+        var starts = 0
+        var stops = 0
+        CommandPlugins.configureBuiltins(listOf(CommandPluginFactory {
+            object : CommandPlugin {
+                override val id = "lifecycle"
+                override val name = "Lifecycle"
+                override val version = "1"
+                override val commands = emptyList<CommandEvent>()
+                override fun onEnable() { starts++ }
+                override fun onDisable() { stops++ }
+            }
+        }))
+        CommandPlugins.initialize(Adapter.ONE_BOT, directory)
+        assertEquals(1, starts)
+        CommandPlugins.enable("lifecycle")
+        assertEquals(1, starts)
+        CommandPlugins.disable("lifecycle")
+        assertEquals(1, stops)
+        CommandPlugins.initialize(Adapter.ONE_BOT, directory)
+        assertEquals(1, starts)
+        CommandPlugins.enable("lifecycle")
+        assertEquals(2, starts)
+        CommandPlugins.disable("lifecycle")
+    }
+
+    @Test
     fun `disable reply and state survive a loader restart`() {
         val directory = Files.createTempDirectory("lomu-plugin-test")
         CommandPlugins.configureBuiltins(listOf(CommandPluginFactory { TestPlugin() }))

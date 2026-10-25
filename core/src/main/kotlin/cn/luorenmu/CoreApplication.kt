@@ -17,8 +17,13 @@ import cn.luorenmu.repository.StatisticsRepository
 import cn.luorenmu.service.AdminConfigService
 import cn.luorenmu.service.AdminDatabaseService
 import cn.luorenmu.service.AdminSystemService
+import cn.luorenmu.service.AdminQQMenuPanelService
+import cn.luorenmu.qq.QQMenuPanelClient
 import cn.luorenmu.service.ResourcesDownloadService
 import cn.luorenmu.task.EternalReturnNewsTask
+import cn.luorenmu.health.HealthCheck
+import cn.luorenmu.health.HeartbeatConfig
+import cn.luorenmu.health.installHeartbeat
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.freemarker.FreeMarker
@@ -53,7 +58,12 @@ enum class Adapter {
 lateinit var currentAdapter: Adapter
 
 private val logger = KotlinLogging.logger {}
-fun Application.moduleCore(adapter: Adapter, serverPort: Int = ConfigFile.config.port) {
+fun Application.moduleCore(
+    adapter: Adapter,
+    serverPort: Int = ConfigFile.config.port,
+    healthChecks: List<HealthCheck> = emptyList(),
+    qqMenuPanelClient: QQMenuPanelClient? = null,
+) {
     currentAdapter = adapter
     SERVER_PORT = serverPort
     HTTP_SERVER_URL = "http://127.0.0.1:$serverPort"
@@ -68,10 +78,11 @@ fun Application.moduleCore(adapter: Adapter, serverPort: Int = ConfigFile.config
     CommandPlugins.initialize(adapter, PathUtils.pathResolve(paths = arrayOf("plugins")))
     ApiKeyConfig.apiKeyMap = mutableMapOf("x-api-key" to ConfigFile.config.apiKey)
     configureRouting()
-    configureInstall()
+    configureInstall(qqMenuPanelClient)
     getKoin()
         .get<DatabaseManager>()
         .initialize()
+    installHeartbeat(adapter, getKoin().get(), healthChecks)
     // 启动新闻定时任务
     getKoin()
         .get<EternalReturnNewsTask>()
@@ -101,9 +112,9 @@ val appModule = module {
 }
 
 
-fun Application.configureInstall() {
+fun Application.configureInstall(qqMenuPanelClient: QQMenuPanelClient? = null) {
     install(Koin) {
-        modules(appModule)
+        modules(appModule, module { single { AdminQQMenuPanelService(qqMenuPanelClient) } })
     }
     install(FreeMarker) {
         configureAdminTemplates()
@@ -173,6 +184,7 @@ object ConfigFile {
         var other: Map<String, String> = mapOf(),
         var postgres: PostgresConfig = PostgresConfig(),
         var ai: AIConfig = AIConfig(),
+        var heartbeat: HeartbeatConfig = HeartbeatConfig(),
     ) {
         @Serializable
         data class PostgresConfig(

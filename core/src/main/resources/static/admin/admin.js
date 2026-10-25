@@ -46,6 +46,21 @@ function startRuntimeClock(root = document) {
 
 document.addEventListener("htmx:afterSwap", (event) => startRuntimeClock(event.detail.target));
 
+// Show actionable errors instead of leaving the initial loading placeholder forever.
+for (const eventName of ["htmx:responseError", "htmx:sendError", "htmx:timeout"]) {
+    document.addEventListener(eventName, (event) => {
+        const panel = event.detail?.elt;
+        if (panel?.id !== "runtime-panel") return;
+        clearInterval(runtimeClockTimer);
+        const message = document.createElement("div");
+        message.className = "grid min-h-72 place-items-center p-6 text-sm";
+        message.textContent = event.detail?.xhr?.status === 401
+            ? "管理登录已失效，请重新登录后重试。"
+            : "运行状态暂时读取失败，15 秒后自动重试，也可点击刷新。";
+        panel.replaceChildren(message);
+    });
+}
+
 document.addEventListener("alpine:init", () => {
     Alpine.data("adminDashboard", () => ({
         view: "overview",
@@ -112,6 +127,7 @@ document.addEventListener("alpine:init", () => {
             if (view === "exceptions") this.loadExceptions();
             if (view === "plugins") this.loadPlugins();
             if (view === "command") this.loadCommands();
+            if (view === "qqmenus") window.dispatchEvent(new CustomEvent("qq-menu-open"));
         },
 
         async loadCommands() {

@@ -5,6 +5,8 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.ktorm.database.Database
+import org.ktorm.support.postgresql.PostgreSqlDialect
+import org.ktorm.support.sqlite.SQLiteDialect
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.sql.Connection
@@ -37,7 +39,10 @@ open class DatabaseManager(
     private val dataSource: HikariDataSource
         get() = dataSourceDelegate.value
 
-    open val database: Database by lazy { Database.connect(dataSource) }
+    open val database: Database by lazy {
+        val source = dataSource // Force initialization/fallback before selecting the dialect.
+        Database.connect(source, dialect = if (backend == DatabaseBackend.SQLITE) SQLiteDialect() else PostgreSqlDialect())
+    }
 
     fun schema(): String? = if (backend == DatabaseBackend.POSTGRESQL) ConfigFile.config.postgres.schema else null
 
@@ -82,7 +87,6 @@ open class DatabaseManager(
             connectionTimeout = 10000
             maxLifetime = 1800000
             // 连接验证
-            connectionTestQuery = "SELECT 1"
             validationTimeout = 5000
         }
         logger.info { "PostgreSQL 连接池已初始化: ${pg.host}:${pg.port}/${pg.database}?currentSchema=${pg.schema}" }
@@ -99,18 +103,11 @@ open class DatabaseManager(
             maximumPoolSize = 1
             minimumIdle = 1
             connectionTimeout = 10000
-            connectionTestQuery = "SELECT 1"
             poolName = "onebot-sqlite"
         }
         logger.info { "SQLite 数据库初始化: ${sqlitePath.toAbsolutePath().normalize()}" }
         return createInitializedDataSource(config) { dataSource ->
-            dataSource.connection.use { connection ->
-                connection.createStatement().use { statement ->
-                    statement.execute("PRAGMA foreign_keys = ON")
-                    statement.execute("PRAGMA busy_timeout = 5000")
-                    statement.execute("PRAGMA journal_mode = WAL")
-                }
-            }
+            executeInitScript(dataSource,"sql/sqlite-pragmas.sql")
             executeInitScript(dataSource, SQLITE_INIT_SQL_RESOURCE)
         }
     }

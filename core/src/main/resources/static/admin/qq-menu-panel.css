@@ -1,0 +1,35 @@
+.qq-admin { min-width:0; }
+.qq-admin .qq-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+.qq-admin .qq-hint { color:#79536b; font-size:.875rem; line-height:1.65; margin:.4rem 0 .8rem; overflow-wrap:anywhere; }
+.qq-admin .qq-status, .qq-admin .qq-feedback { padding:1rem 1.25rem; margin-bottom:1rem; line-height:1.6; }
+.qq-admin .qq-error { color:#9d244f; border-color:#cc618b; }
+.qq-admin .qq-tabs, .qq-admin .qq-actions { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; }
+.qq-admin .qq-tabs { margin:1.25rem 0; }
+.qq-admin .qq-menu-grid { display:grid; grid-template-columns:minmax(0, 1.7fr) minmax(240px, 1fr); gap:1.25rem; align-items:start; }
+.qq-admin .qq-panels-grid { display:grid; grid-template-columns:minmax(220px, .75fr) minmax(0, 2fr); gap:1.25rem; align-items:start; }
+.qq-admin .qq-card { padding:1.25rem; min-width:0; }
+.qq-admin fieldset { border:0; padding:0; margin:1rem 0 0; min-width:0; }
+.qq-admin fieldset:disabled { opacity:.65; }
+.qq-admin button:disabled { cursor:not-allowed; opacity:.55; }
+.qq-admin .field { margin-bottom:.9rem; min-width:0; }
+.qq-admin .control { width:100%; min-width:0; }
+.qq-admin .qq-fields { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:1rem; }
+.qq-admin .qq-item { border:1px solid #e8b9ce; border-radius:1rem; padding:1rem; margin:1rem 0; background:rgb(255 255 255 / .2); }
+.qq-admin .qq-check { display:flex; align-items:center; gap:.5rem; align-self:center; font-size:.875rem; margin:.5rem 0; }
+.qq-admin .qq-check input { accent-color:#c75288; }
+.qq-admin .qq-submenus { border-left:2px solid #e8b9ce; padding-left:.9rem; }
+.qq-admin .qq-preview-item { display:flex; flex-direction:column; gap:.4rem; padding:.9rem; margin:.8rem 0; border:1px solid #e8b9ce; border-radius:.8rem; overflow-wrap:anywhere; }
+.qq-admin .qq-preview-item span, .qq-admin .qq-preview-item small { color:#79536b; font-size:.8rem; }
+.qq-admin .qq-preview-tiles { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.6rem; }
+.qq-admin .qq-preview-tiles .qq-preview-item { margin:0; }
+.qq-admin .qq-panel-record { display:flex; flex-direction:column; gap:.4rem; text-align:left; width:100%; margin:.8rem 0; padding:.9rem; border:1px solid #e8b9ce; border-radius:.8rem; background:rgb(255 255 255 / .3); overflow-wrap:anywhere; }
+.qq-admin .qq-panel-record span, .qq-admin .qq-panel-record small { font-size:.8rem; color:#79536b; }
+.qq-admin .qq-selected { border-color:#bb467b; box-shadow:inset 3px 0 #bb467b; }
+.qq-admin .qq-targets { border-top:1px dashed #dba0bc; margin-top:1.5rem; padding-top:1.25rem; }
+.qq-admin details { margin-top:1rem; font-size:.875rem; }
+.qq-admin summary { cursor:pointer; }
+.qq-admin pre { white-space:pre-wrap; overflow-wrap:anywhere; margin-top:.8rem; font-size:.8rem; line-height:1.6; }
+.qq-admin .qq-confirm { padding:0; margin:auto; max-width:min(560px,calc(100vw - 2rem)); border:1px solid #dba0bc; border-radius:1rem; background:#fff7fb; color:#533447; }
+.qq-admin .qq-confirm::backdrop { background:rgb(91 48 70 / .35); }
+@media (max-width:1000px) { .qq-admin .qq-menu-grid, .qq-admin .qq-panels-grid { grid-template-columns:minmax(0,1fr); } }
+@media (max-width:560px) { .qq-admin .qq-fields, .qq-admin .qq-preview-tiles { grid-template-columns:minmax(0,1fr); } .qq-admin .qq-card { padding:1rem; } }

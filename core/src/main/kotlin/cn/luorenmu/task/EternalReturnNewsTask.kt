@@ -12,6 +12,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -25,14 +27,26 @@ import kotlin.time.Duration.Companion.milliseconds
  * @author LoMu
  * Date 2026/5/23 18:31
  */
-class EternalReturnNewsTask(
-    private val classifier: NewsClassifier,
+class EternalReturnNewsTask internal constructor(
     private val newsRepository: NewsRepository,
+    private val fetchArticles: suspend () -> List<EternalReturnNews.Article>,
+    private val fetchHtml: suspend (String) -> String,
+    private val classify: suspend (String, String) -> NewsClassifier.RedemptionCodeResult?,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+    private val contentFetchDelayMillis: Long = CONTENT_FETCH_DELAY_MS,
 ) {
+    constructor(classifier: NewsClassifier, newsRepository: NewsRepository) : this(
+        newsRepository,
+        { EternalReturnOfficialApi.Posts.GetNews.execute().articles },
+        { fetchContentHtml(it) },
+        classifier::classify,
+    )
 
     private val log = KotlinLogging.logger {}
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val seenIds = ConcurrentHashMap.newKeySet<Int>()
+    private val scanMutex = Mutex()
+    private var restoredIds = false
+    private var pollingJob: Job? = null
 
     data class ParsedNews(
         val articleId: Int,
@@ -49,13 +63,16 @@ class EternalReturnNewsTask(
     }
 
     /** 启动定时任务，每 30 分钟拉取一次。 */
+    @Synchronized
     fun start(intervalMillis: Long = 1_800_000L) {
-        scope.launch {
-            newsRepository.findExistingArticleIds().let { seenIds.addAll(it) }
+        require(intervalMillis > 0) { "扫描间隔必须大于 0" }
+        if (pollingJob?.isActive == true) return
+        pollingJob = scope.launch {
             while (isActive) {
                 try {
-                    val news = fetchAndParseNews()
-                    saveNews(news)
+                    scanOnce()
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     log.error(e) { "新闻拉取失败: ${e.message}" }
                 }
@@ -66,10 +83,16 @@ class EternalReturnNewsTask(
 
 
     /** 拉取新闻列表 → 筛选未读 → 获取正文 → 解析 HTML → 提取时间 → AI 分类。 */
-    suspend fun fetchAndParseNews(): List<ParsedNews> {
-        val newsResponse = EternalReturnOfficialApi.Posts.GetNews.execute()
-        val articles = newsResponse.articles.filter { article ->
-            !article.i18ns.zhCN?.title.isNullOrBlank() && seenIds.add(article.id)
+    suspend fun fetchAndParseNews(): List<ParsedNews> = scanMutex.withLock { fetchUnprocessedNews() }
+
+    private suspend fun fetchUnprocessedNews(): List<ParsedNews> {
+        if (!restoredIds) {
+            // 仅持久化成功的 ID 才是已完成；读取失败则中止本轮，不能当作空数据库。
+            seenIds.addAll(newsRepository.findExistingArticleIds())
+            restoredIds = true
+        }
+        val articles = fetchArticles().distinctBy { it.id }.filter { article ->
+            !article.i18ns.zhCN?.title.isNullOrBlank() && article.id !in seenIds
         }
 
         log.debug { "新文章数量: ${articles.size}" }
@@ -77,7 +100,7 @@ class EternalReturnNewsTask(
         return articles.mapNotNull { article ->
             val result = parseArticle(article)
             // 每抓取一篇正文后间隔一段时间，避免频繁请求官方服务器
-            delay(CONTENT_FETCH_DELAY_MS.milliseconds)
+            delay(contentFetchDelayMillis.milliseconds)
             result
         }
     }
@@ -89,11 +112,16 @@ class EternalReturnNewsTask(
         return try {
             // 交给 AI 之前验证文章 ID 是否已入库，已入库则跳过，避免重复调用 AI
             if (newsRepository.isArticleExists(article.id)) {
+                seenIds.add(article.id)
                 log.debug { "文章已入库，跳过 AI 处理: ${i18n.title} (articleId=${article.id})" }
                 return null
             }
-            val html = fetchContentHtml(contentLink)
-            val codeResult = classifier.classify(i18n.title, html)
+            val html = fetchHtml(contentLink)
+            val codeResult = classify(i18n.title, html) ?: run {
+                log.warn { "文章尚未完成 AI 识别，保留重试: articleId=${article.id}" }
+                return null
+            }
+            currentCoroutineContext().ensureActive()
             ParsedNews(
                 articleId = article.id,
                 title = i18n.title,
@@ -102,6 +130,8 @@ class EternalReturnNewsTask(
                 contentText = html,
                 redemptionCode = codeResult,
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             log.error(e) { "解析新闻内容失败: ${i18n.title} -> $contentLink" }
             null
@@ -113,13 +143,19 @@ class EternalReturnNewsTask(
         news.forEach { item ->
             val inserted = newsRepository.insert(item.toRecord())
             if (inserted) {
+                seenIds.add(item.articleId)
                 saved++
                 log.debug { "已入库文章: ${item.title}" }
+            } else if (newsRepository.isArticleExists(item.articleId)) {
+                // 其他扫描实例先入库时也视为完成，但不更新首次发现时间。
+                seenIds.add(item.articleId)
             }
         }
         log.info { "新闻入库: 本次新增 $saved 篇" }
         return saved
     }
+
+    internal suspend fun scanOnce(): Int = scanMutex.withLock { saveNews(fetchUnprocessedNews()) }
 
     internal fun ParsedNews.toRecord(now: LocalDateTime = LocalDateTime.now()): EternalReturnNewsRecord {
         val activity = redemptionCode
@@ -152,6 +188,7 @@ class EternalReturnNewsTask(
             note = activity?.note,
             startDate = startTime?.toLocalDate()?.toString(),
             endDate = endTime?.toLocalDate()?.toString(),
+            processedAt = now,
         )
     }
 
@@ -178,24 +215,24 @@ class EternalReturnNewsTask(
         }.getOrNull()
     }
 
-    private suspend fun fetchContentHtml(url: String): String {
-        val fullUrl = if (url.startsWith("http")) url else "https://playeternalreturn.com$url"
-        val api = ContentHtmlApi(fullUrl)
-        return RequestManager.call(api).bodyAsText()
-    }
+}
 
+private class ContentHtmlApi(
+    htmlUrl: String,
+) : PakeApi(
+    url = htmlUrl,
+    method = HttpMethod.Get,
+    headers = mutableMapOf(
+        "Accept-language" to "zh-CN,zh;q=0.9",
+        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    ),
+    cacheTime = CacheTime.NULL,
+) {
+    override var baseUrl: String = ""
+}
 
-    private class ContentHtmlApi(
-        htmlUrl: String,
-    ) : PakeApi(
-        url = htmlUrl,
-        method = HttpMethod.Get,
-        headers = mutableMapOf(
-            "Accept-language" to "zh-CN,zh;q=0.9",
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-        ),
-        cacheTime = CacheTime.NULL,
-    ) {
-        override var baseUrl: String = ""
-    }
+private suspend fun fetchContentHtml(url: String): String {
+    val fullUrl = if (url.startsWith("http")) url else "https://playeternalreturn.com$url"
+    val api = ContentHtmlApi(fullUrl)
+    return RequestManager.call(api).bodyAsText()
 }
